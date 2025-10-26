@@ -134,6 +134,12 @@ content-auto-manager/
 - 每个稳定版本都会打上标签并发布到Releases
 - 如需回退版本，请使用Git命令进行版本管理
 
+## 配套主题
+
+本插件有一个官方配套主题："内容管家辅助主题"，可从以下地址获取：
+- GitHub仓库：https://github.com/pptt121212/content-manager-custom-theme
+- 下载地址：https://github.com/pptt121212/content-manager-custom-theme/releases
+
 ## 支持
 
 如遇到问题或有建议，请在GitHub仓库提交Issue。
