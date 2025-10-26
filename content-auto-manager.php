@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: 内容自动生成管家
- * Plugin URI: https://example.com/content-auto-manager
+ * Plugin URI: https://www.kdjingpai.com/
  * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
  * Version: 1.0.2
  * Author: AI TOOL
