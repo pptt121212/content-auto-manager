@@ -1,0 +1,225 @@
+/**
+ * 内容自动生成管家插件样式
+ */
+
+}
+/* 调试工
+具特定样式 */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.stat-item {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.stat-item h4 {
+    margin: 0 0 10px 0;
+    color: #0073aa;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.stat-item p {
+    margin: 5px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+/* 表结构信息样式 */
+.table-info {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #fafafa;
+}
+
+.table-info h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.table-info .status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.table-info .status.exists {
+    background: #d4edda;
+    color: #155724;
+}
+
+.table-info .status.missing {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.table-info p {
+    margin: 5px 0;
+    color: #666;
+    font-style: italic;
+}
+
+.table-info .field-list {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.table-info .field-list li {
+    margin: 3px 0;
+    font-size: 13px;
+    color: #555;
+}
+
+/* 验证工具样式 */
+.validation-tools {
+    margin: 15px 0;
+}
+
+.validation-tools .button {
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.result-container {
+    margin-top: 20px;
+    min-height: 50px;
+}
+
+.validation-details {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.validation-details h4,
+.validation-details h5 {
+    margin: 10px 0 5px 0;
+    color: #0073aa;
+}
+
+.validation-details ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.validation-details li {
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.validation-details pre {
+    background: #f1f1f1;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 10px;
+    font-size: 12px;
+    overflow-x: auto;
+    max-height: 300px;
+}
+
+/* 日志管理样式 */
+.log-stats {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.log-stats h4 {
+    margin: 0 0 10px 0;
+    color: #0073aa;
+}
+
+.log-stats p {
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.log-actions {
+    margin: 15px 0;
+}
+
+.log-actions p {
+    color: #dc3232;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.button-danger {
+    background: #dc3232 !important;
+    border-color: #dc3232 !important;
+    color: #fff !important;
+}
+
+.button-danger:hover {
+    background: #c62d2d !important;
+    border-color: #c62d2d !important;
+}
+
+/* 数据库操作按钮样式 */
+.database-operations {
+    margin: 20px 0;
+}
+
+.database-operations form {
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .validation-tools .button {
+        display: block;
+        width: 100%;
+        margin-right: 0;
+        text-align: center;
+    }
+    
+    .database-operations form {
+        display: block;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .database-operations .button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* 新增字段标识样式 */
+.field-new {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.field-new::after {
+    content: " (新增)";
+    font-size: 11px;
+    background: #00a32a;
+    color: white;
+    padding: 1px 4px;
+    border-radius: 2px;
+    margin-left: 5px;
+}

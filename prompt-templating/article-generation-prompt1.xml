@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article_generator>
+  
+  <task>
+    根据提供的标题和参数，直接生成一篇markdown格式文章。
+    从第一个##章节标题开始输出，无任何前置内容。
+    当前时间：{{CURRENT_DATE}}
+  </task>
+
+  <language>{{LANGUAGE_INSTRUCTION}}</language>
+  <language_name>{{LANGUAGE_NAME}}</language_name>
+  <role>{{ROLE_DESCRIPTION}}当前时间：{{CURRENT_DATE}}</role>
+
+  <!-- 输入参数 -->
+  <input>
+    <title>{{TITLE}}</title>
+    <category>{{MATCHED_CATEGORY}}</category>
+    <keywords>{{SEO_KEYWORDS}}</keywords>
+    <length>{{TARGET_LENGTH}}</length>
+    <angle>{{SOURCE_ANGLE}}</angle>
+    {{TARGET_AUDIENCE_BLOCK}}
+    {{CONTENT_STRATEGY_BLOCK}}
+    <value>{{USER_VALUE}}</value>
+    {{STRUCTURE_BLOCK}}
+    {{REFERENCE_MATERIAL_BLOCK}}
+  </input>
+  
+  <!-- 参数解释：如何影响写作 -->
+  <parameter_guide>
+    
+    <param name="category">
+      内容边界：所有内容必须属于该领域，专业术语和案例来自该领域
+    </param>
+    
+    <param name="audience">
+      决定表达方式：
+      • 潜在客户 → 痛点共鸣 + 解决方案 + 通俗易懂
+      • 现有客户 → 深度技巧 + 最佳实践 + 进阶内容
+      • 行业人士 → 专业洞察 + 趋势判断 + 可用术语
+      • 普通大众 → 降低门槛 + 场景化 + 类比解释
+    </param>
+    
+    <param name="strategy">
+      决定内容配方：
+      • 深度分析 → 数据30% + 案例30% + 洞察40%，客观理性
+      • 转化驱动 → 痛点50% + 方案40% + 信任10%，说服导向
+      • 品牌建设 → 理念60% + 差异化20% + 愿景20%，感染力
+      • 流量获取 → 钩子开篇 + 实用价值 + 易传播，轻松有趣
+    </param>
+    
+    <param name="angle">
+      决定组织方式：
+      • 案例与场景 → 用真实场景串联知识点
+      • 方法论 → 以可执行步骤为核心
+      • 趋势洞察 → 以时间线和因果链为主线
+      • 对比评测 → 以多维对比矩阵为框架
+    </param>
+    
+    <param name="structure">
+      这是内容思考维度（不是章节大纲）：
+      1. 提取其中的核心要素
+      2. 根据标题和字数规划3-6个章节
+      3. 将要素合理分配到各章节
+      4. 章节标题简洁（5-12字）
+    </param>
+    
+    <param name="keywords">
+      自然融入：在标题、首段、章节标题中出现核心词，正文用同义词和相关词丰富表达，不追求固定密度
+    </param>
+    
+    <param name="value">
+      必须兑现：文章让读者获得具体收益（理解概念/学会方法/避免错误/做出决策）
+    </param>
+
+    <param name="reference_material">
+      有用则用：如果提供了参考资料，将其关键信息自然融入到相关章节中，作为内容的有益补充，确保参考资料与文章主题高度相关
+    </param>
+    
+    {{REFERENCE_MATERIAL_STRATEGY}}
+    {{REFERENCE_MATERIAL_PRINCIPLE}}
+
+  </parameter_guide>
+  
+  <!-- 写作规则 -->
+  <writing_rules>
+    
+    <structure>
+      • 规划3-6个章节，字数根据总长度均衡分配
+      • 每章2-4个段落，每段80-200字
+      • 章节逻辑：问题→方案→效果 或 背景→现状→趋势 或 认知→方法→案例
+    </structure>
+    
+    <paragraph>
+      • 每段一个完整信息单元：观点 + 支撑（案例/数据/分析）+ 延伸
+      • 段落开篇用主题句，收尾总结或引出下段
+      • 避免空洞表达，每段必须有实质信息
+    </paragraph>
+    
+    <sentence>
+      • 15-35字为主，避免超过50字
+      • 具体化表达：用"提升15%"代替"显著提升"
+      • 避免陈词滥调："随着XX发展"、"在当今时代"
+      • 避免空洞术语：过度使用"赋能"、"闭环"、"抓手"
+    </sentence>
+    
+    <originality>
+      • 视角创新：避免常见角度（如"5大好处"改为"为什么失败"）
+      • 深度挖掘：揭示底层逻辑，不停留在表面方法
+      • 表达创新：创造新类比，不照搬行业套话
+    </originality>
+    
+    <readability>
+      • 长短段落交替（2长1短）
+      • 列表仅用于并列要点、步骤、对比
+      • 适度加粗（每段最多1处核心概念）
+      • 用过渡词连接：因此、同时、然而、具体而言
+    </readability>
+    
+    <ending>
+      • 不强制添加"总结"章节
+      • 最后一章自然收尾：行动建议/趋势展望/理念升华/回扣开篇
+    </ending>
+    
+  </writing_rules>
+  
+  <!-- 输出要求 -->
+  <output_format>
+    <rule priority="critical">直接从##章节标题开始，禁止输出文章主标题、作者、日期、摘要等元信息</rule>
+    <rule priority="critical">使用标准markdown：## 章节，### 子章节（如需），段落无#</rule>
+    <rule priority="critical">章节间空1行，段落间空1行</rule>
+    <rule priority="high">字数达到length范围的85-100%</rule>
+    <rule priority="high">所有内容与category高度相关</rule>
+    <rule priority="high">完全兑现title的价值承诺和value的收益</rule>
+  </output_format>
+  
+  {{IMAGE_INSTRUCTIONS}}
+
+  {{INTERNAL_LINKING_INSTRUCTIONS}}
+
+  {{INTERNAL_LINKING_STRATEGY}}
+
+  {{INTERNAL_LINKING_STANDARD}}
+
+  <!-- 质量标准 -->
+  <quality_check>
+    输出前确认：
+    ✓ 从##标题开始，无前置内容
+    ✓ 标题承诺在首段兑现
+    ✓ 每章有独立价值，每段有实质信息
+    ✓ 字数达标，关键词自然融入
+    ✓ 无空洞表达和陈词滥调
+  </quality_check>
+  
+</article_generator>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article_content_generator>
+  
+  <role>{{ROLE_DESCRIPTION}}当前真实时间是{{CURRENT_DATE}}。</role>
+  
+  <language_requirements>
+    {{LANGUAGE_INSTRUCTION}}
+  </language_requirements>
+  
+  <output_rules priority="CRITICAL">
+    <rule id="1">直接从第一个章节的markdown标题（##）开始输出，这是文章的第一行内容</rule>
+    <rule id="2">不输出文章主标题、作者信息、日期、来源等元数据</rule>
+    <rule id="3">严格按照chapter_structure中定义的章节结构组织内容</rule>
+    <rule id="4">每个章节标题后必须有实质性内容段落，章节间用空行分隔</rule>
+    <rule id="5">文章结尾自然收束，不额外添加"总结"、"结语"等章节</rule>
+    <rule id="6">使用标准markdown格式，便于直接发布</rule>
+  </output_rules>
+  {{IMAGE_INSTRUCTIONS}}
+  {{INTERNAL_LINKING_INSTRUCTIONS}}
+  <input_context>
+    <article_title>
+      <title>{{TITLE}}</title>
+      <source_angle>{{SOURCE_ANGLE}}</source_angle>
+      <user_value>{{USER_VALUE}}</user_value>
+    </article_title>
+
+    <source_materials>
+      <seo_keywords>{{SEO_KEYWORDS}}</seo_keywords>
+      <matched_category>{{MATCHED_CATEGORY}}</matched_category>
+      {{REFERENCE_MATERIAL_BLOCK}}
+    </source_materials>
+    
+    <writing_requirements>
+      <target_length>{{TARGET_LENGTH}}</target_length>
+      {{CONTENT_STRATEGY_BLOCK}}
+      {{TARGET_AUDIENCE_BLOCK}}
+    </writing_requirements>
+  </input_context>
+
+  {{STRUCTURE_BLOCK}}
+
+  <writing_strategies>
+    <strategy name="标题呼应">文章开篇必须明确回应标题承诺的价值</strategy>
+    <strategy name="角度一致">严格按照source_angle的特点组织内容</strategy>
+    <strategy name="价值导向">每个段落都要体现对用户的具体帮助</strategy>
+    <strategy name="逻辑递进">内容按照选定结构逐层深入展开</strategy>
+    <strategy name="实用落地">提供可执行的方法和具体操作建议</strategy>
+    <strategy name="策略适配">根据content_strategy调整内容的商业策略和表达方式</strategy>
+    <strategy name="受众匹配">根据target_audience调整语言风格和沟通重点</strategy>
+    {{REFERENCE_MATERIAL_STRATEGY}}
+    {{INTERNAL_LINKING_STRATEGY}}
+  </writing_strategies>
+
+  <content_optimization>
+    <seo_integration>
+      <keyword_density>关键词自然分布，主词密度控制在2-4%</keyword_density>
+      <heading_keywords>在H2、H3标题中合理融入关键词</heading_keywords>
+      <semantic_relevance>围绕matched_category主题保持语义相关性</semantic_relevance>
+    </seo_integration>
+    
+    <readability_enhancement>
+      <visual_hierarchy>合理使用标题层级和列表提升可读性</visual_hierarchy>
+      <language_accessibility>根据content_strategy和target_audience调整语言复杂度</language_accessibility>
+    </readability_enhancement>
+  </content_optimization>
+
+  <quality_standards>
+    <standard name="标题契合度">文章内容必须完全兑现标题承诺</standard>
+    <standard name="角度准确性">严格遵循source_angle的内容特点</standard>
+    <standard name="价值实现度">充分体现user_value的具体收益</standard>
+    <standard name="信息权威性">内容准确可靠，避免误导表达</standard>
+    <standard name="结构完整性">按照对应结构完整展开所有章节</standard>
+    <standard name="参考资料运用">{{REFERENCE_MATERIAL_PRINCIPLE}}</standard>
+    {{INTERNAL_LINKING_STANDARD}}
+  </quality_standards>
+
+  <output_constraints>
+    <constraint name="输出语言">整篇文章内容必须使用{{LANGUAGE_NAME}}语言撰写</constraint>
+    <constraint name="字数控制">以{{TARGET_LENGTH}}范围的最大值为目标生成文章，为用户提供完整详实的内容</constraint>
+    <constraint name="关键词使用">所有seo_keywords必须自然融入文章</constraint>
+    <constraint name="分类相关性">内容必须与matched_category高度匹配</constraint>
+    <constraint name="格式规范">使用标准markdown格式便于发布</constraint>
+    <constraint name="策略匹配">内容策略必须与content_strategy要求一致</constraint>
+    <constraint name="受众适配">表达方式必须与target_audience定位相符</constraint>
+  </output_constraints>
+
+  <output_format>
+    <format_requirement>使用标准markdown格式输出文章</format_requirement>
+    <content_integration>在适当位置融入seo_keywords和matched_category相关内容</content_integration>
+  </output_format>
+
+</article_content_generator>

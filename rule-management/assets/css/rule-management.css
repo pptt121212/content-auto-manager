@@ -1,0 +1,106 @@
+
+/* 网址采集功能样式 */
+.url-fetch-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.url-fetch-section h4 {
+    margin: 0 0 12px 0;
+    color: #2c3e50;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.url-fetch-section .url-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.url-fetch-section #content_url {
+    flex: 1;
+    max-width: 400px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.url-fetch-section #content_url:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+.url-fetch-section #fetch_content_btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    height: auto;
+    line-height: 1.4;
+}
+
+.url-fetch-section #fetch_content_btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.url-fetch-section #fetch_status {
+    font-size: 12px;
+    margin-top: 5px;
+    min-height: 16px;
+    transition: color 0.3s ease;
+}
+
+.url-fetch-section #fetch_status.success {
+    color: #46b450;
+}
+
+.url-fetch-section #fetch_status.error {
+    color: #dc3232;
+}
+
+.url-fetch-section #fetch_status.warning {
+    color: #ffb900;
+}
+
+.url-fetch-section #fetch_status.loading {
+    color: #666;
+}
+
+/* 文本计数器样式 */
+#text-count {
+    font-size: 12px;
+    color: #666;
+    margin-top: 8px;
+}
+
+#current-count {
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+#current-count.warning {
+    color: #ffb900;
+}
+
+#current-count.error {
+    color: #dc3232;
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 768px) {
+    .url-fetch-section .url-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .url-fetch-section #content_url {
+        max-width: none;
+    }
+}

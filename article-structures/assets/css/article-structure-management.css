@@ -1,0 +1,207 @@
+/* Article Structures Page Layout */
+#structures-container {
+    display: flex;
+    gap: 20px;
+}
+
+.angle-list-wrapper {
+    flex: 0 0 125px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 0 12px;
+}
+
+.angle-list .spinner {
+    margin: 20px auto;
+    display: block;
+}
+
+.angle-list ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.angle-list li {
+    padding: 10px 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+}
+
+.angle-list li:hover {
+    background: #f0f0f1;
+}
+
+/* 角度类型样式 */
+.angle-item.angle-fixed {
+    background-color: #f8f9fa;
+    border-left: 3px solid #007cba;
+}
+
+.angle-item.angle-dynamic {
+    background-color: #fff8e1;
+    border-left: 3px solid #ff9800;
+    position: relative;
+}
+
+.angle-item.angle-dynamic .angle-content {
+    display: inline-block;
+    width: calc(100% - 25px);
+}
+
+.angle-separator {
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    background-color: #f0f0f1 !important;
+    padding: 8px 15px !important;
+    margin: 5px 0;
+    cursor: default !important;
+    border-left: none !important;
+}
+
+.angle-separator:hover {
+    background-color: #f0f0f1 !important;
+}
+
+.delete-angle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-angle-btn:hover {
+    background: #c82333;
+}
+
+.delete-angle-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.angle-list li.active {
+    background: #007cba;
+    color: #fff;
+    font-weight: bold;
+}
+
+.structure-detail-wrapper {
+    flex: 1;
+}
+
+.structure-detail-placeholder {
+    padding: 50px;
+    text-align: center;
+    background: #fff;
+    border: 1px dashed #ccd0d4;
+}
+
+/* Header for detail view */
+.structure-detail-header {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.structure-detail-header h2 {
+    margin: 0;
+}
+
+/* Structure List (reusing some old styles) */
+.structure-cards-wrapper {
+    display: grid;
+    grid-template-columns: 1fr; /* Single column list view */
+    gap: 15px;
+}
+
+.structure-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: 0.3fr 1.5fr auto;
+    gap: 15px;
+    align-items: center;
+}
+
+.structure-card .structure-title {
+    font-weight: bold;
+    margin: 0;
+}
+
+.structure-card .structure-content {
+    font-size: 0.9em;
+    color: #333;
+    line-height: 1.5;
+}
+
+.structure-card .structure-content div {
+    margin-bottom: 3px;
+}
+
+.structure-card .structure-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.structure-meta-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#modal-body ul {
+    list-style: disc;
+    padding-left: 20px;
+}
+
+#modal-body li {
+    margin-bottom: 10px;
+}
+
+#modal-close {
+    margin-top: 20px;
+}
