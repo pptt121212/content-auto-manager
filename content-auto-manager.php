@@ -2,7 +2,7 @@
 /**
  * Plugin Name: 内容自动生成管家
  * Plugin URI: https://www.kdjingpai.com/
- * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
+ * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。配套主题：内容管家辅助主题 (https://github.com/pptt121212/content-manager-custom-theme) - 专为本插件设计的官方配套主题，提供SEO矩阵、专题聚合、关键词子频道等高级功能。
  * Version: 1.0.2
  * Author: AI TOOL
  * Author URI: https://www.kdjingpai.com/
@@ -12,6 +12,9 @@
  * 
  * 此插件仅供个人和非商业用途使用。
  * 严禁将此插件或其任何部分用于商业目的。
+ * 
+ * 配套主题：内容管家辅助主题 (仅限与插件配套使用，无法独立使用)
+ * 主题下载：https://github.com/pptt121212/content-manager-custom-theme/releases/download/v1.0.2/content-manager-custom-theme-v1.0.2.zip
  */
 
 // 防止直接访问
