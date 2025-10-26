@@ -137,8 +137,19 @@ content-auto-manager/
 ## 配套主题
 
 本插件有一个官方配套主题："内容管家辅助主题"，可从以下地址获取：
+
 - GitHub仓库：https://github.com/pptt121212/content-manager-custom-theme
-- 下载地址：https://github.com/pptt121212/content-manager-custom-theme/releases
+- 主题下载：https://github.com/pptt121212/content-manager-custom-theme/releases/download/v1.0.2/content-manager-custom-theme-v1.0.2.zip
+- 主题要求：此主题仅限与内容自动生成管家插件配套使用，无法独立使用
+
+## 版本更新
+
+- **主题最新版本**: v1.0.2
+- **更新内容**: 
+  - 更新了主题说明，明确说明仅限与插件配套使用
+  - 添加了插件依赖关系信息
+  - 在样式表中添加了插件依赖声明
+  - 提供了插件项目的链接
 
 ## 支持
 
