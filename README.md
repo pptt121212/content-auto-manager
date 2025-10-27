@@ -124,6 +124,38 @@ content-auto-manager/
 
 此插件遵循"内容自动生成管家限制性开源许可证"，仅供个人和非商业用途使用，不允许商业化。详细条款请参见 [LICENSE](LICENSE) 文件。
 
+## 版本管理
+
+本插件使用Git进行版本管理。所有版本发布都可通过GitHub Releases获取。
+
+## 插件开发
+
+- 如需进行插件的迭代开发，请参考 VERSION_CONTROL.md 文件中的说明
+- 每个稳定版本都会打上标签并发布到Releases
+- 如需回退版本，请使用Git命令进行版本管理
+
+## 配套主题
+
+本插件有一个官方配套主题："内容管家辅助主题"，可从以下地址获取：
+
+- GitHub仓库：https://github.com/pptt121212/content-manager-custom-theme
+- 主题下载：https://github.com/pptt121212/content-manager-custom-theme/releases/download/v1.0.3/content-manager-custom-theme-v1.0.3.zip
+- 主题要求：此主题仅限与内容自动生成管家插件配套使用，无法独立使用
+
+## 版本更新
+
+- **主题最新版本**: v1.0.3
+- **更新内容**: 
+  - 更新了主题说明，明确说明仅限与插件配套使用
+  - 添加了插件依赖关系信息
+  - 在样式表中添加了插件依赖声明
+  - 提供了插件项目的链接
+  - 添加了使用限制说明
+  - 更新了README文件，包含中英文版本
+  - 添加了详细的THEME_INFO.md和USAGE_GUIDE.md说明文件
+  - 添加了RELEASE_NOTES.md和VERSION文件
+  - 创建了完整的项目文档体系
+
 ## 支持
 
 如遇到问题或有建议，请在GitHub仓库提交Issue。
