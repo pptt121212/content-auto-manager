@@ -1,17 +1,13 @@
 <?php
 /**
  * Plugin Name: 内容自动生成管家
- * Plugin URI: https://www.kdjingpai.com/
+ * Plugin URI: https://example.com/content-auto-manager
  * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
- * Version: 1.0.2
- * Author: AI TOOL
- * Author URI: https://www.kdjingpai.com/
- * License: Custom Non-Commercial License
- * License URI: https://example.com/license
+ * Version: 1.0.0
+ * Author: Your Name
+ * Author URI: https://example.com
+ * License: GPL v2 or later
  * Text Domain: content-auto-manager
- * 
- * 此插件仅供个人和非商业用途使用。
- * 严禁将此插件或其任何部分用于商业目的。
  */
 
 // 防止直接访问
