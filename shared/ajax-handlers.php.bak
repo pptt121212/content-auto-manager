@@ -687,14 +687,14 @@ function content_auto_run_full_validation() {
             $message_parts = array();
             
             if (!empty($all_errors)) {
-                $message_parts[] = sprintf(__("❌ 发现错误 (%s):", "content-auto-manager"), count($all_errors));
+                $message_parts[] = __('❌ 发现错误 (' . count($all_errors) . '):', 'content-auto-manager');
                 foreach ($all_errors as $error) {
                     $message_parts[] = "• $error";
                 }
             }
             
             if (!empty($all_warnings)) {
-                $message_parts[] = sprintf(__("⚠️ 发现警告 (%s):", "content-auto-manager"), count($all_warnings));
+                $message_parts[] = __('⚠️ 发现警告 (' . count($all_warnings) . '):', 'content-auto-manager');
                 foreach ($all_warnings as $warning) {
                     $message_parts[] = "• $warning";
                 }

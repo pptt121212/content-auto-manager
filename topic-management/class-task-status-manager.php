@@ -104,7 +104,7 @@ class ContentAuto_TaskStatusManager {
     public function get_status_label($status) {
         $normalized = $this->normalize_status($status);
         if (isset($this->status_labels[$normalized])) {
-            return __($this->status_labels[$normalized], 'content-auto-manager');
+            return sprintf(__("%s", "content-auto-manager"), $this->status_labels[$normalized]);
         }
         return $normalized;
     }

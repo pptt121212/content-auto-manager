@@ -285,7 +285,6 @@ function content_auto_manager_check_version() {
 
 function content_auto_manager_init() {
     // 加载文本域
-    load_plugin_textdomain('content-auto-manager', false, dirname(plugin_basename(__FILE__)) . '/languages');
     
     // 初始化数据库
     $database = new ContentAuto_Database();

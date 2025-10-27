@@ -80,9 +80,9 @@ if (isset($_POST['action']) && isset($_POST['content_auto_debug_nonce'])) {
             // 重新创建所有表
             $result = $database->create_tables();
             if ($result['success']) {
-                $message = __('所有表已重新创建。成功创建的表：' . implode(', ', $result['created_tables']), 'content-auto-manager');
+                $message = sprintf(__("所有表已重新创建。成功创建的表：%s", "content-auto-manager"), implode(", ", $result["created_tables"]));
             } else {
-                $message = __('表创建过程中出现错误：' . implode('; ', $result['errors']), 'content-auto-manager');
+                $message = sprintf(__("表创建过程中出现错误：%s", "content-auto-manager"), implode("; ", $result["errors"]));
                 $error = true;
             }
             break;
@@ -93,7 +93,7 @@ if (isset($_POST['action']) && isset($_POST['content_auto_debug_nonce'])) {
             if ($result['success']) {
                 $message = __('数据库表结构已更新到最新版本。所有必要字段已同步。', 'content-auto-manager');
             } else {
-                $message = __('数据库更新过程中出现错误：' . implode('; ', $result['errors']), 'content-auto-manager');
+                $message = sprintf(__("数据库更新过程中出现错误：%s", "content-auto-manager"), implode("; ", $result["errors"]));
                 $error = true;
             }
             break;
