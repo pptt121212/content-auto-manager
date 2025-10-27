@@ -1,4 +1,4 @@
-# 内容自动生成管家 (Content Auto Manager)
+# Content Auto Manager
 
 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
 
@@ -32,11 +32,11 @@
 或通过FTP方式：
 
 1. 解压插件文件到 `/wp-content/plugins/` 目录
-2. 在WordPress后台激活"内容自动生成管家"
+2. 在WordPress后台激活"Content Auto Manager"
 
 ## 配置步骤
 
-1. 激活插件后，在WordPress管理菜单中找到"内容自动生成管家"
+1. 激活插件后，在WordPress管理菜单中找到"Content Auto Manager"
 2. 配置API设置（在"API设置"页面）
 3. 设置文章生成规则（在"规则管理"页面）
 4. 配置发布规则（在"发布设置"页面）
@@ -122,7 +122,7 @@ content-auto-manager/
 
 ## 许可证
 
-此插件遵循"内容自动生成管家限制性开源许可证"，仅供个人和非商业用途使用，不允许商业化。详细条款请参见 [LICENSE](LICENSE) 文件。
+此插件遵循"Content Auto Manager限制性开源许可证"，仅供个人和非商业用途使用，不允许商业化。详细条款请参见 [LICENSE](LICENSE) 文件。
 
 ## 版本管理
 
@@ -140,7 +140,7 @@ content-auto-manager/
 
 - GitHub仓库：https://github.com/pptt121212/content-manager-custom-theme
 - 主题下载：https://github.com/pptt121212/content-manager-custom-theme/releases/download/v1.0.3/content-manager-custom-theme-v1.0.3.zip
-- 主题要求：此主题仅限与内容自动生成管家插件配套使用，无法独立使用
+- 主题要求：此主题仅限与Content Auto Manager插件配套使用，无法独立使用
 
 ## 版本更新
 

@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: 内容自动生成管家
- * Plugin URI: https://example.com/content-auto-manager
- * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
+ * Plugin Name: Content Auto Manager
+ * Plugin URI: https://www.kdjingpai.com/
+ * Description: A smart content generation plugin that helps WordPress administrators automatically generate high-quality articles.
  * Version: 1.0.0
- * Author: Your Name
- * Author URI: https://example.com
+ * Author: AI Productivity Tools
+ * Author URI: https://www.kdjingpai.com/
  * License: GPL v2 or later
  * Text Domain: content-auto-manager
  */
