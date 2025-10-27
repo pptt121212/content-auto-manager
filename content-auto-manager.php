@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Content Auto Manager
- * Plugin URI: https://www.kdjingpai.com/
- * Description: A smart content generation plugin that helps WordPress administrators automatically generate high-quality articles.
+ * Plugin URI: https://github.com/pptt121212/content-auto-manager
+ * Description: A smart content generation plugin that helps WordPress administrators automatically generate high-quality articles. Activation authorization contact WX: qn006699
  * Version: 1.0.0
  * Author: AI Productivity Tools
- * Author URI: https://www.kdjingpai.com/
+ * Author URI: https://www.kdjingpai.com/author
  * License: GPL v2 or later
  * Text Domain: content-auto-manager
  */
