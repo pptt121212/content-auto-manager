@@ -99,7 +99,7 @@ jQuery(document).ready(function($) {
         ajaxRequest(
             'keyword_research_mine',
             { 
-                keyword: encodeURIComponent(baseKeyword),
+                keyword: baseKeyword,
                 data_sources: selectedDataSources,
                 depth: depth,
                 session_id: sessionId,
@@ -189,7 +189,7 @@ jQuery(document).ready(function($) {
             completedSteps++;
             
             const stepData = {
-                keyword: encodeURIComponent(baseKeyword),
+                keyword: baseKeyword,
                 session_id: sessionId,
                 data_source: step.data_source,
                 step_type: step.step_type,
@@ -252,7 +252,7 @@ jQuery(document).ready(function($) {
         ajaxRequest(
             'keyword_research_finalize_mine',
             { 
-                keyword: encodeURIComponent(baseKeyword),
+                keyword: baseKeyword,
                 session_id: sessionId
             },
             function(response) { // Success Callback
@@ -297,7 +297,7 @@ jQuery(document).ready(function($) {
         cell.addClass('loading');
         ajaxRequest(
             'keyword_research_trend',
-            { keyword: encodeURIComponent(keyword) },
+            { keyword: keyword },
             function(response) {
                 cell.removeClass('loading');
                 if (response.success && response.data) {

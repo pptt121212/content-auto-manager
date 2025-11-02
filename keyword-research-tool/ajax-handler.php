@@ -10,25 +10,26 @@ if (!defined('ABSPATH')) {
 class Keyword_Research_AJAX_Handler {
 
     private function get_decoded_keyword($param_name = 'keyword') {
-        if (!isset($_POST[$param_name]) || empty($_POST[$param_name])) {
+        if (!isset($_POST[$param_name])) {
             return '';
         }
 
-        $raw_encoded_keyword = $_POST[$param_name];
-
-        // Sanitize_text_field works for mixed CJK/English, but fails for pure CJK.
-        $keyword_v1 = sanitize_text_field($raw_encoded_keyword);
-
-        // Urldecode works for pure CJK, but user reported issues with mixed CJK/English.
-        $keyword_v2 = trim(wp_unslash(urldecode($raw_encoded_keyword)));
-
-        // Prioritize the result from sanitize_text_field, as it handles the more complex mixed-language case.
-        // Fallback to urldecode if the first method returns an empty string (as it does for pure CJK).
-        if (!empty($keyword_v1)) {
-            return $keyword_v1;
-        } else {
-            return $keyword_v2;
+        $raw_value = wp_unslash($_POST[$param_name]);
+        if ($raw_value === '') {
+            return '';
         }
+
+        // Sanitize_text_field works for mixed CJK/English strings when provided with the raw value.
+        $sanitized_value = sanitize_text_field($raw_value);
+        if ($sanitized_value !== '') {
+            return $sanitized_value;
+        }
+
+        // Fallback to decoding in case the value was URL-encoded before reaching this handler.
+        $decoded_value = urldecode($raw_value);
+        $decoded_value = sanitize_text_field($decoded_value);
+
+        return trim($decoded_value);
     }
 
     public function __construct() {

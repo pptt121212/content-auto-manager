@@ -179,29 +179,26 @@ class ContentAuto_AdminMenu {
             'content-auto-manager-brand-profiles',
             array($this, 'render_brand_profiles_page')
         );
-        
 
-        // 调试工具页面 - 使用更高的优先级确保显示在最后
-        add_action('admin_menu', function() {
-            add_submenu_page(
-                'content-auto-manager',
-                __('调试工具', 'content-auto-manager'),
-                __('调试工具', 'content-auto-manager'),
-                'manage_options',
-                'content-auto-manager-debug-tools',
-                array($this, 'render_debug_tools_page')
-            );
+        // 调试工具页面
+        add_submenu_page(
+            'content-auto-manager',
+            __('调试工具', 'content-auto-manager'),
+            __('调试工具', 'content-auto-manager'),
+            'manage_options',
+            'content-auto-manager-debug-tools',
+            array($this, 'render_debug_tools_page')
+        );
 
-            // 变量说明页面
-            add_submenu_page(
-                'content-auto-manager',
-                __('变量说明', 'content-auto-manager'),
-                __('变量说明', 'content-auto-manager'),
-                'manage_options',
-                'content-auto-manager-variable-guide',
-                array($this, 'render_variable_guide_page')
-            );
-        }, 999);
+        // 变量说明页面
+        add_submenu_page(
+            'content-auto-manager',
+            __('变量说明', 'content-auto-manager'),
+            __('变量说明', 'content-auto-manager'),
+            'manage_options',
+            'content-auto-manager-variable-guide',
+            array($this, 'render_variable_guide_page')
+        );
 
         $this->override_menu_titles();
 
