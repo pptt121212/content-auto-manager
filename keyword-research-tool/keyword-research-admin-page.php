@@ -90,7 +90,7 @@ require_once plugin_dir_path(__FILE__) . 'free_keyword_apis.php';
                                             <option value="1" selected>1 (固定)</option>
                                         </select>
                                     </div>
-                                    <button id="start-mining-btn" class="button button-primary">
+                                    <button type="button" id="start-mining-btn" class="button button-primary">
                                         <span class="dashicons dashicons-hammer"></span> 开始挖掘
                                     </button>
                                     <span class="spinner"></span>
