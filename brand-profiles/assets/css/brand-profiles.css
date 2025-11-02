@@ -1,0 +1,468 @@
+/* Brand Profiles Management Page Styles */
+#cam-brand-profiles-container {
+    display: flex;
+    gap: 20px;
+}
+
+.form-container, .list-container {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+.form-container {
+    flex: 1;
+    max-width: 400px;
+}
+
+.list-container {
+    flex: 2;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input[type='text'],
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.image-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.image-input-group input {
+    flex-grow: 1;
+}
+
+.submit-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#cam-brand-profiles-list .profile-item {
+    border: 1px solid #e5e5e5;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,.08);
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+
+#cam-brand-profiles-list .profile-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,.12);
+}
+
+/* 品牌资料头部（标题栏） */
+.profile-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #23282d;
+    flex-grow: 1;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.profile-actions .button {
+    font-size: 12px;
+    padding: 4px 12px;
+    height: auto;
+    line-height: 1.4;
+}
+
+/* 品牌资料主体内容区域 */
+.profile-body {
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+/* 预览区域 - 统一尺寸 */
+.profile-preview {
+    flex-shrink: 0;
+    width: 120px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 自定义HTML类型的预览区域需要更大空间 */
+.profile-item[data-type="custom_html"] .profile-preview {
+    width: 240px;
+    min-height: 160px;
+}
+
+/* 标准样式图片预览 */
+.profile-image {
+    width: 120px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* 自定义HTML预览 */
+.profile-custom-html-preview {
+    width: 240px;
+    height: 160px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.profile-custom-html-preview > div {
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 12px;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 参考资料预览 */
+.profile-reference-preview {
+    width: 120px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f8ff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.reference-icon {
+    text-align: center;
+    color: #666;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.reference-icon small {
+    font-size: 11px;
+    color: #999;
+    display: block;
+    margin-top: 4px;
+}
+
+/* 内容详情区域 */
+.profile-details {
+    flex-grow: 1;
+    min-width: 0; /* 防止flex子项撑开 */
+}
+
+.profile-details .profile-description {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #555;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.profile-details .profile-link {
+    margin: 8px 0 0;
+}
+
+.profile-details .profile-link a {
+    font-size: 13px;
+    color: #0073aa;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.profile-details .profile-link a:hover {
+    text-decoration: underline;
+}
+
+/* 物料类型相关样式 */
+.profile-type-badge {
+    background: #0073aa;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 10px;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-type-badge:nth-of-type(1) {
+    background: #0073aa; /* 标准样式 - 蓝色 */
+}
+
+/* 根据类型设置不同颜色 */
+.profile-item[data-type="custom_html"] .profile-type-badge {
+    background: #d63638; /* 自定义HTML - 红色 */
+}
+
+.profile-item[data-type="reference"] .profile-type-badge {
+    background: #00a32a; /* 参考资料 - 绿色 */
+}
+
+/* 自定义HTML表单样式 */
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+#cam-brand-profile-custom-html {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 200px;
+}
+
+#custom-html-preview {
+    max-height: 300px;
+    overflow: auto;
+    resize: vertical;
+}
+
+#custom-html-preview * {
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* 确保自定义HTML内容自适应 */
+.profile-custom-html-preview * {
+    max-width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* 表单字段切换动画 */
+#standard-fields, #custom-html-fields, #reference-fields {
+    transition: opacity 0.3s ease;
+}
+
+/* 预览按钮样式 */
+#cam-preview-html-button {
+    margin-top: 10px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    #cam-brand-profiles-container {
+        flex-direction: column;
+    }
+    
+    .form-container {
+        max-width: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-body {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .profile-preview {
+        width: 100%;
+        min-height: 120px;
+        justify-content: flex-start;
+    }
+    
+    .profile-image,
+    .profile-custom-html-preview,
+    .profile-reference-preview {
+        width: 100%;
+        max-width: 200px;
+        height: 120px;
+    }
+    
+    .profile-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .profile-header h3 {
+        margin-bottom: 5px;
+    }
+    
+    .profile-actions {
+        align-self: flex-end;
+    }
+}
+
+/* 改进的交互效果 */
+.profile-item .edit-btn {
+    background: #0073aa;
+    color: white;
+    border: none;
+}
+
+.profile-item .edit-btn:hover {
+    background: #005a87;
+}
+
+.profile-item .delete-btn {
+    background: #d63638;
+    color: white;
+    border: none;
+}
+
+.profile-item .delete-btn:hover {
+    background: #b32d2e;
+}
+
+/* 空状态样式 */
+.profile-empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    background: #f9f9f9;
+    border: 1px dashed #ccd0d4;
+    border-radius: 6px;
+}
+
+/* 列表头部和控件样式 */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.list-header h2 {
+    margin: 0;
+    color: #23282d;
+}
+
+.list-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-select {
+    padding: 6px 12px;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+    min-width: 120px;
+}
+
+.filter-select:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+/* 分页样式 */
+.pagination-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pagination-info {
+    color: #666;
+    font-size: 13px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    border: 1px solid #ccd0d4;
+    background: #fff;
+    color: #0073aa;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination-btn:hover {
+    background: #f0f6fc;
+    border-color: #0073aa;
+}
+
+.pagination-btn.current {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+.pagination-btn:disabled {
+    background: #f6f7f7;
+    color: #a7aaad;
+    cursor: not-allowed;
+    border-color: #dcdcde;
+}
+
+.pagination-btn:disabled:hover {
+    background: #f6f7f7;
+    border-color: #dcdcde;
+}
+
+.pagination-ellipsis {
+    padding: 6px 8px;
+    color: #666;
+    font-size: 13px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .list-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .pagination-container {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .pagination-controls {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}

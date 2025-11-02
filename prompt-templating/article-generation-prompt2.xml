@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article_content_generator>
+  
+  <role>{{ROLE_DESCRIPTION}}当前时间：{{CURRENT_DATE}}</role>
+  
+  <language_requirements>{{LANGUAGE_INSTRUCTION}}</language_requirements>
+  <language_name>{{LANGUAGE_NAME}}</language_name>
+  
+  <!-- 核心执行规则 -->
+  <core_execution priority="CRITICAL">
+    <output_format>
+      <rule>直接从第一个章节的markdown标题（##）开始输出</rule>
+      <rule>不输出文章主标题、作者信息、日期等元数据</rule>
+      <rule>使用标准markdown格式，便于直接发布</rule>
+      <rule>文章结尾自然收束，不额外添加"总结"等章节</rule>
+      <rule>输出内容严格限制为纯粹的文章正文，不包含任何对话性、解释性或引导性文字</rule>
+    </output_format>
+    
+    
+    <content_depth>
+      <rule>以{{TARGET_LENGTH}}范围最大值为目标，通过内容自然展开达到字数要求</rule>
+      <rule>各章节内容深度相对均衡，避免某些章节过于简略</rule>
+      <rule>每个段落承载有价值信息，避免填充性内容</rule>
+      <rule>运用详细解释、多角度展开、具体化表达、情境说明、对比分析、延伸思考等方法丰富内容</rule>
+    </content_depth>
+  </core_execution>
+  {{IMAGE_INSTRUCTIONS}}
+  {{INTERNAL_LINKING_INSTRUCTIONS}}
+  <input_context>
+    <article_title>
+      <title>{{TITLE}}</title>
+      <source_angle>{{SOURCE_ANGLE}}</source_angle>
+      <user_value>{{USER_VALUE}}</user_value>
+    </article_title>
+
+    <source_materials>
+      <seo_keywords>{{SEO_KEYWORDS}}</seo_keywords>
+      <matched_category>{{MATCHED_CATEGORY}}</matched_category>
+      {{REFERENCE_MATERIAL_BLOCK}}
+    </source_materials>
+    
+    <writing_requirements>
+      <target_length>{{TARGET_LENGTH}}</target_length>
+      {{CONTENT_STRATEGY_BLOCK}}
+      {{TARGET_AUDIENCE_BLOCK}}
+    </writing_requirements>
+  </input_context>
+
+  {{STRUCTURE_BLOCK}}
+  {{STRUCTURE_USAGE_GUIDANCE}}
+
+  <!-- 核心写作策略 -->
+  <writing_strategy>
+    <content_principles>
+      <principle>标题呼应：文章开篇明确回应标题承诺的价值</principle>
+      <principle>角度一致：严格按照source_angle特点组织内容</principle>
+      <principle>价值导向：每个段落体现对用户的具体帮助</principle>
+      <principle>实用落地：提供可执行的方法和具体操作建议</principle>
+      {{REFERENCE_MATERIAL_PRINCIPLE}}
+      {{REFERENCE_MATERIAL_STRATEGY}}
+    </content_principles>
+    
+    <adaptation_rules>
+      <rule>根据content_strategy调整商业策略和表达方式</rule>
+      <rule>根据target_audience调整语言风格和沟通重点</rule>
+      <rule>根据文章类型和受众特点调整内容深度重点</rule>
+      <rule>始终围绕为目标读者提供价值来组织内容</rule>
+      <rule>确保所有内容与文章主题高度相关，避免偏题</rule>
+    </adaptation_rules>
+    
+    {{INTERNAL_LINKING_STRATEGY}}
+  </writing_strategy>
+
+  <!-- SEO和可读性优化 -->
+  <optimization>
+    <seo_requirements>
+      <requirement>关键词自然分布，主词密度2-4%</requirement>
+      <requirement>在H2、H3标题中合理融入关键词</requirement>
+      <requirement>围绕matched_category主题保持语义相关性</requirement>
+      <requirement>所有seo_keywords必须自然融入文章</requirement>
+    </seo_requirements>
+    
+    <readability_requirements>
+      <requirement>合理使用标题层级和列表提升可读性</requirement>
+      <requirement>根据content_strategy和target_audience调整语言复杂度</requirement>
+      <requirement>段落间保持清晰逻辑关系和自然过渡</requirement>
+    </readability_requirements>
+  </optimization>
+
+  <!-- 质量保证 -->
+  <quality_assurance>
+    <mandatory_standards>
+      <standard>文章内容完全兑现标题承诺</standard>
+      <standard>严格遵循source_angle的内容特点</standard>
+      <standard>充分体现user_value的具体收益</standard>
+      <standard>内容准确可靠，避免误导表达</standard>
+      <standard>内容必须与matched_category高度匹配</standard>
+      <standard>表达方式必须与target_audience定位相符</standard>
+    </mandatory_standards>
+    
+    {{INTERNAL_LINKING_STANDARD}}
+  </quality_assurance>
+
+  <!-- 最终约束 -->
+  <final_constraints>
+    <constraint>整篇文章使用{{LANGUAGE_NAME}}语言撰写</constraint>
+    <constraint>输出内容必须是纯粹的文章正文，禁止任何解释性或过程性描述</constraint>
+    <constraint>确保所有内容与文章主题高度相关，避免偏题</constraint>
+    <constraint>每个章节都有充实内容，段落长度适中</constraint>
+  </final_constraints>
+
+</article_content_generator>

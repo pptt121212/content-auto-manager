@@ -1,0 +1,7 @@
+# Protect cache directory
+Order deny,allow
+Deny from all
+<Files ~ "\.(json|log)$">
+    Order deny,allow
+    Deny from all
+</Files>

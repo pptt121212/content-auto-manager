@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article_content_generator>
+  
+  <role>{{ROLE_DESCRIPTION}}当前真实时间是{{CURRENT_DATE}}。</role>
+  
+  <language_requirements>
+    {{LANGUAGE_INSTRUCTION}}
+  </language_requirements>
+  
+  <output_rules priority="CRITICAL">
+    <rule id="1">文章内容直接从第一个章节的markdown标题（##）开始输出</rule>
+    <rule id="2">不输出文章主标题、作者信息、日期、来源等元数据</rule>
+    <rule id="3">每个章节标题后必须有实质性内容段落，章节间用空行分隔</rule>
+    <rule id="4">文章结尾自然收束，不额外添加"总结"、"结语"等章节</rule>
+    <rule id="5">使用标准markdown格式，便于直接发布</rule>
+  </output_rules>
+  {{IMAGE_INSTRUCTIONS}}
+  {{INTERNAL_LINKING_INSTRUCTIONS}}
+  <input_context>
+    <article_title>
+      <title>{{TITLE}}</title>
+      <source_angle>{{SOURCE_ANGLE}}</source_angle>
+      <user_value>{{USER_VALUE}}</user_value>
+    </article_title>
+
+    <source_materials>
+      <seo_keywords>{{SEO_KEYWORDS}}</seo_keywords>
+      <matched_category>{{MATCHED_CATEGORY}}</matched_category>
+      {{REFERENCE_MATERIAL_BLOCK}}
+    </source_materials>
+    
+    <writing_requirements>
+      <target_length>{{TARGET_LENGTH}}</target_length>
+      {{CONTENT_STRATEGY_BLOCK}}
+      {{TARGET_AUDIENCE_BLOCK}}
+    </writing_requirements>
+  </input_context>
+
+  {{STRUCTURE_BLOCK}}
+  {{STRUCTURE_USAGE_GUIDANCE}}
+
+  <writing_strategies>
+    <strategy name="标题呼应">文章开篇必须明确回应标题承诺的价值</strategy>
+    <strategy name="角度一致">严格按照source_angle的特点组织内容</strategy>
+    <strategy name="价值导向">每个段落都要体现对用户的具体帮助</strategy>
+    <strategy name="实用落地">提供可执行的方法和具体操作建议</strategy>
+    <strategy name="策略适配">根据content_strategy调整内容的商业策略和表达方式</strategy>
+    <strategy name="受众匹配">根据target_audience调整语言风格和沟通重点</strategy>
+    {{REFERENCE_MATERIAL_STRATEGY}}
+    {{INTERNAL_LINKING_STRATEGY}}
+  </writing_strategies>
+
+
+  <core_requirements>
+    <requirement name="内容质量">文章内容必须完全兑现标题承诺，严格遵循source_angle特点，充分体现user_value收益</requirement>
+    <requirement name="语言输出">整篇文章使用{{LANGUAGE_NAME}}语言撰写，表达方式与target_audience相符</requirement>
+    <requirement name="字数目标">以{{TARGET_LENGTH}}范围的最大值为目标，提供完整详实的内容</requirement>
+    <requirement name="SEO优化">所有seo_keywords必须自然融入文章，内容与matched_category高度匹配</requirement>
+    <requirement name="策略执行">严格按照content_strategy要求调整内容策略和表达方式</requirement>
+    <requirement name="信息准确">内容准确可靠，避免误导表达</requirement>
+    {{REFERENCE_MATERIAL_PRINCIPLE}}
+    {{INTERNAL_LINKING_STANDARD}}
+  </core_requirements>
+
+  <output_format>
+    <format_requirement>使用标准markdown格式输出纯粹的文章正文</format_requirement>
+    <content_boundary>输出内容严格限制为文章正文本身，从文章第一个章节标题(##)开始，到文章最后一个自然段落结束，不要包含任何文章内容以外的对话性、解释性或说明文字</content_boundary>
+  </output_format>
+
+</article_content_generator>

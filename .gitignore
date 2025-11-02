@@ -1,0 +1,33 @@
+# WordPress 文件
+wp-config.php
+wp-content/uploads/
+*.log
+debug.log
+
+# 临时文件
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Composer
+vendor/
+composer.lock
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 其他
+logs/
+*.sql
+*.sql.gz

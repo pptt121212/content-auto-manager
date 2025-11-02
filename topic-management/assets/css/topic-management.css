@@ -1,0 +1,15 @@
+
+.vector-yes {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.vector-no {
+    color: #6c757d;
+}
+
+.vector-failed {
+    color: #dc3545;
+    font-weight: bold;
+    cursor: help;
+}

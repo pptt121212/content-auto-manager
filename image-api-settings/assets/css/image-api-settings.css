@@ -1,0 +1,15 @@
+/* CSS for Image API Settings Tabs */
+.tab-content {
+    display: none;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-top: 0;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.nav-tab-wrapper .nav-tab.nav-tab-active {
+    border-bottom-color: #f0f0f1;
+}
