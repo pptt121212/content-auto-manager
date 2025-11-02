@@ -373,15 +373,15 @@ class ContentAuto_AdminMenu {
         );
 
         // 其次，根据特定页面加载其独有的脚本和样式
-        if ($hook == 'toplevel_page_content-auto-manager' || $hook == 'content-auto-manager_page_content-auto-manager') {
-            // 仪表盘页面
+        if ($hook == 'toplevel_page_content-auto-manager') {
+            // 仪表盘页面（顶级菜单）
         } 
         
-        if ($hook == 'content-auto-manager_page_content-auto-manager-api') {
+        if (strpos($hook, 'content-auto-manager-api') !== false) {
             // API设置页面
         }
         
-        if ($hook == 'content-auto-manager_page_content-auto-manager-rules') {
+        if (strpos($hook, 'content-auto-manager-rules') !== false) {
             // 规则管理页面
             wp_enqueue_style(
                 'content-auto-manager-rules-css',
@@ -397,18 +397,9 @@ class ContentAuto_AdminMenu {
                 CONTENT_AUTO_MANAGER_VERSION,
                 true
             );
-
-            // 也加载通用admin脚本以获取contentAutoManager对象
-            wp_enqueue_script(
-                'content-auto-manager-admin-js',
-                CONTENT_AUTO_MANAGER_PLUGIN_URL . 'shared/assets/js/admin.js',
-                array('jquery'),
-                CONTENT_AUTO_MANAGER_VERSION,
-                true
-            );
         }
         
-        if ($hook == 'content-auto-manager_page_content-auto-manager-topic-jobs' || $hook == 'content-auto-manager_page_content-auto-manager-topics') {
+        if (strpos($hook, 'content-auto-manager-topic-jobs') !== false || strpos($hook, 'content-auto-manager-topics') !== false) {
             // 主题任务和主题管理页面
             wp_enqueue_style(
                 'content-auto-manager-topic-css',
@@ -418,7 +409,7 @@ class ContentAuto_AdminMenu {
             );
         }
         
-        if ($hook == 'content-auto-manager_page_content-auto-manager-article-tasks') {
+        if (strpos($hook, 'content-auto-manager-article-tasks') !== false) {
             // 文章任务页面
             wp_enqueue_style(
                 'content-auto-manager-article-css',
@@ -428,7 +419,7 @@ class ContentAuto_AdminMenu {
             );
         }
         
-        if ($hook == 'content-auto-manager_page_content-auto-manager-debug-tools') {
+        if (strpos($hook, 'content-auto-manager-debug-tools') !== false) {
             // 调试工具页面
             wp_enqueue_style(
                 'content-auto-manager-debug-css',
@@ -446,7 +437,7 @@ class ContentAuto_AdminMenu {
             );
         }
 
-        if ($hook == 'content-auto-manager_page_content-auto-manager-variable-guide') {
+        if (strpos($hook, 'content-auto-manager-variable-guide') !== false) {
             // 变量说明页面
             wp_enqueue_style(
                 'content-auto-manager-variable-guide-css',
@@ -464,7 +455,8 @@ class ContentAuto_AdminMenu {
             );
         }
 
-        if ($hook == 'content-auto-manager_page_content-auto-manager-keyword-tool') {
+        // 关键词工具页面 - 使用更灵活的匹配方式
+        if (strpos($hook, 'content-auto-manager-keyword-tool') !== false) {
             // 关键词工具页面
             wp_enqueue_style(
                 'keyword-research-tool-css',
