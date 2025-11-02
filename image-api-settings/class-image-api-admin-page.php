@@ -62,11 +62,11 @@ class CAM_Image_API_Admin_Page {
         }
 
         if (!wp_verify_nonce($_POST['cam_save_image_api_settings_nonce'], 'cam_save_image_api_settings')) {
-            wp_die('Nonce verification failed.');
+            wp_die(__('Nonce verification failed.', 'content-auto-manager'));
         }
 
         if (!current_user_can('manage_options')) {
-            wp_die('You do not have sufficient permissions to access this page.');
+            wp_die(__('You do not have sufficient permissions to access this page.', 'content-auto-manager'));
         }
 
         // Get existing settings to merge with

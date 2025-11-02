@@ -25,7 +25,7 @@ class ContentAuto_ClusteringAdminPage {
         // Handle the form submission
         if (isset($_POST['start_clustering'])) {
             if (!isset($_POST['clustering_nonce']) || !wp_verify_nonce($_POST['clustering_nonce'], 'start_clustering_action')) {
-                wp_die('安全验证失败!');
+                wp_die(__('安全验证失败!', 'content-auto-manager'));
             }
             // Pass the auto-calculated number of clusters to the handler
             $this->handle_clustering_process($num_clusters);
@@ -34,7 +34,7 @@ class ContentAuto_ClusteringAdminPage {
         // Handle the similarity search form submission
         if (isset($_POST['find_similar_titles'])) {
             if (!isset($_POST['similarity_nonce']) || !wp_verify_nonce($_POST['similarity_nonce'], 'find_similar_titles_action')) {
-                wp_die('安全验证失败!');
+                wp_die(__('安全验证失败!', 'content-auto-manager'));
             }
             $this->handle_similarity_search();
         }
