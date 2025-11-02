@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试关键词研究按钮</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="assets/css/keyword-research.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .button {
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button-primary {
+            background: #0073aa;
+            color: white;
+        }
+        .button-primary:hover {
+            background: #005177;
+        }
+        .dashicons {
+            font-family: dashicons;
+            font-size: 16px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <h1>关键词研究工具 - 按钮测试</h1>
+    <p>这是一个独立的测试页面，用于验证"开始挖掘"按钮是否正常工作。</p>
+    
+    <div id="keyword-research-tool-app">
+        <div id="keyword-input-section">
+            <p>输入一个基础关键词，然后点击"开始挖掘"。</p>
+            <input type="text" id="base-keywords-input" style="width: 100%; padding: 10px; margin-bottom: 10px;" placeholder="例如：wordpress插件" value="测试关键词" />
+            <div class="controls">
+                <select id="srt-language-specifics">
+                    <option value="cn-zh-CN" selected>China (Simplified)</option>
+                    <option value="us-en">United States</option>
+                </select>
+                <div id="data-source-options" style="display: inline-block; margin-left: 10px;">
+                    <label style="margin-right: 10px;">
+                        <input type="checkbox" name="data_sources[]" value="default" checked> 谷歌
+                    </label>
+                    <label style="margin-right: 10px;">
+                        <input type="checkbox" name="data_sources[]" value="baidu"> 百度
+                    </label>
+                </div>
+                <div id="depth-options" style="display: inline-block; margin-left: 10px;">
+                    <label for="mining-depth">挖掘深度:</label>
+                    <select id="mining-depth" disabled>
+                        <option value="1" selected>1 (固定)</option>
+                    </select>
+                </div>
+                <button type="button" id="start-mining-btn" class="button button-primary">
+                    <span class="dashicons dashicons-hammer"></span> 开始挖掘
+                </button>
+                <span class="spinner"></span>
+            </div>
+            <div id="progress-section" style="display: none; margin-top: 15px;">
+                <p id="progress-status-text"></p>
+                <div style="background: #eee; border: 1px solid #ccc; padding: 2px;">
+                    <div id="progress-bar" style="background: #0073aa; width: 0%; height: 20px; text-align: center; color: white; line-height: 20px;">0%</div>
+                </div>
+            </div>
+        </div>
+        <div id="keyword-results-section" style="display:none;">
+            <h3>挖掘结果 <span id="results-count"></span></h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input id="cb-select-all-1" type="checkbox"></th>
+                        <th>关键词</th>
+                    </tr>
+                </thead>
+                <tbody id="keyword-results-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border: 1px solid #ccc;">
+        <h3>调试信息</h3>
+        <p>请打开浏览器的开发者工具（F12）查看控制台日志。</p>
+        <p><strong>预期的控制台输出：</strong></p>
+        <ul>
+            <li>=== Keyword Research Tool: Script Starting ===</li>
+            <li>keywordResearchToolData exists? true/false</li>
+            <li>=== Localization data validated successfully ===（如果数据正确）</li>
+            <li>=== Attaching click handler to start button ===</li>
+            <li>=== Click handler attached successfully ===</li>
+            <li>=== Keyword Research Tool: Initialization Complete ===</li>
+        </ul>
+        <p><strong>点击按钮后：</strong></p>
+        <ul>
+            <li>=== START BUTTON CLICKED ===</li>
+        </ul>
+    </div>
+    
+    <script>
+        // 模拟 WordPress 本地化数据
+        var keywordResearchToolData = {
+            ajaxurl: '/wp-admin/admin-ajax.php',
+            nonce: 'test-nonce-12345'
+        };
+        console.log('Test page: keywordResearchToolData has been set:', keywordResearchToolData);
+    </script>
+    <script src="assets/js/keyword-research.js"></script>
+</body>
+</html>
