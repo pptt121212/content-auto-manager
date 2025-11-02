@@ -27,7 +27,7 @@ class ContentAuto_RuleHandler {
 
         // 检查用户权限
         if (!current_user_can('manage_options')) {
-            wp_die('您没有权限执行此操作。');
+            wp_die(__('您没有权限执行此操作。', 'content-auto-manager'));
         }
 
         global $wpdb;
