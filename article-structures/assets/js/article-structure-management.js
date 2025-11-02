@@ -65,8 +65,6 @@ jQuery(document).ready(function($) {
             return;
         }
 
-        console.log('开始加载数据，AJAX URL:', articleStructures.ajaxurl);
-
         // Fetch angles, structures, and popularity stats in parallel
         $.when(
             $.ajax({
@@ -94,8 +92,6 @@ jQuery(document).ready(function($) {
                 }
             })
         ).done(function(anglesResponse, structuresResponse, popularityResponse) {
-            console.log('AJAX响应:', {anglesResponse, structuresResponse, popularityResponse});
-
             if (anglesResponse[0].success) {
                 // 处理新的角度数据结构：固定角度 + 动态角度
                 const angleData = anglesResponse[0].data;
@@ -110,15 +106,10 @@ jQuery(document).ready(function($) {
                         fixed: fixedAngles,
                         dynamic: dynamicAngles
                     };
-                    
-                    console.log('加载的内容角度:', allAngles);
-                    console.log('固定角度:', fixedAngles);
-                    console.log('动态角度:', dynamicAngles);
                 } else {
                     // 兼容旧格式：直接是角度数组
                     allAngles = Array.isArray(angleData) ? angleData : [];
                     window.angleTypes = { fixed: allAngles, dynamic: [] };
-                    console.log('加载的内容角度（兼容模式）:', allAngles);
                 }
                 renderAngleList();
             } else {
@@ -128,13 +119,11 @@ jQuery(document).ready(function($) {
             if (structuresResponse[0].success) {
                 allStructures = structuresResponse[0].data.structures;
                 angleUsageTotals = structuresResponse[0].data.usage_totals || {};
-                console.log('加载的文章结构:', allStructures);
             } else {
                 console.error('文章结构加载失败:', structuresResponse[0].data);
             }
             if (popularityResponse[0].success) {
                 popularityStats = popularityResponse[0].data;
-                console.log('加载的受欢迎度统计:', popularityStats);
             }
             renderAngleList(); // 重新渲染以显示使用次数和受欢迎度
         }).fail(function() {
