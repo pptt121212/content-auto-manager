@@ -2,59 +2,59 @@
 
 ## 📖 产品目录
 
-### [仪表盘 (Dashboard)](#dashboard)
+### [仪表盘 (Dashboard)](#仪表盘-dashboard)
 - **功能**: 插件核心功能概览、任务状态监控、系统性能展示
 - **用途**: 查看所有生成任务的总体状态、系统运行情况、关键指标统计
 
-### [API设置 (API Settings)](#api-settings)
+### [API设置 (API Settings)](#api设置-api-settings)
 - **功能**: 配置AI模型提供商的API密钥、端点、模型参数
 - **用途**: 管理OpenAI、Claude、Gemini等AI平台的连接信息，测试API连接状态
 
-### [图像API (Image API)](#image-api)
+### [图像API (Image API)](#图像api-image-api)
 - **功能**: 配置图像生成服务提供商、模型参数、API密钥
 - **用途**: 管理图像自动生成功能，支持ModelScope、OpenAI、SiliconFlow等服务
 
-### [关键词工具 (Keyword Tool)](#keyword-tool)
+### [关键词工具 (Keyword Tool)](#关键词工具-keyword-tool)
 - **功能**: 关键词研究、挖掘、分析工具
 - **用途**: 智能分析相关关键词，提供百度搜索建议，支持关键词分类和优化
 
-### [规则管理 (Rule Management)](#rule-management)
+### [规则管理 (Rule Management)](#规则管理-rule-management)
 - **功能**: 定义内容生成规则、模板、变量配置
 - **用途**: 创建和管理内容生成规则，控制生成逻辑、内容类型、生成频率等
 
-### [主题任务 (Topic Jobs)](#topic-jobs)
+### [主题任务 (Topic Jobs)](#主题任务-topic-jobs)
 - **功能**: 管理主题生成任务队列、状态、进度
 - **用途**: 查看和操作主题生成任务，支持批量操作、状态管理、进度追踪
 
-### [主题管理 (Topic Management)](#topic-management)
+### [主题管理 (Topic Management)](#主题管理-topic-management)
 - **功能**: 管理AI生成的主题、关键词、分类信息
 - **用途**: 查看已生成的主题列表，进行分类、编辑、批量操作等管理功能
 
-### [文章任务 (Article Tasks)](#article-tasks)
+### [文章任务 (Article Tasks)](#文章任务-article-tasks)
 - **功能**: 管理基于主题的文章生成任务
 - **用途**: 监控文章生成进度、状态、错误处理，支持暂停、恢复、重试等操作
 
-### [发布规则 (Publish Rules)](#publish-rules)
+### [发布规则 (Publish Rules)](#发布规则-publish-rules)
 - **功能**: 配置文章发布设置、SEO参数、发布状态
 - **用途**: 定义文章发布规则，包括分类范围、发布状态、SEO优化参数等
 
-### [向量聚类 (Vector Clustering)](#vector-clustering)
+### [向量聚类 (Vector Clustering)](#向量聚类-vector-clustering)
 - **功能**: AI向量分析、聚类计算、相似性匹配
 - **用途**: 使用K-means算法对内容进行聚类分析，提升内容匹配精度和质量
 
-### [文章结构 (Article Structures)](#article-structures)
+### [文章结构 (Article Structures)](#文章结构-article-structures)
 - **功能**: 管理文章结构模板、内容角度、结构受欢迎度
 - **用途**: AI生成标准化文章结构，分类管理内容角度，分析结构效果
 
-### [品牌资料 (Brand Profiles)](#brand-profiles)
+### [品牌资料 (Brand Profiles)](#品牌资料-brand-profiles)
 - **功能**: 管理品牌信息、参考材料、品牌语调
 - **用途**: 存储品牌相关信息，用于在文章中保持一致的品牌调性和信息准确性
 
-### [调试工具 (Debug Tools)](#debug-tools)
+### [调试工具 (Debug Tools)](#调试工具-debug-tools)
 - **功能**: 系统调试、日志查看、性能监控
 - **用途**: 查看系统日志、调试信息，启用/禁用调试模式，系统性能分析
 
-### [变量说明 (Variable Guide)](#variable-guide)
+### [变量说明 (Variable Guide)](#变量说明-variable-guide)
 - **功能**: 变量说明、模板变量使用指南
 - **用途**: 详细说明所有可用模板变量，提供用法示例和编辑建议
 
@@ -64,7 +64,7 @@
 
 一款强大的WordPress插件，用于智能生成和管理SEO优化的高质量内容。通过AI技术驱动，帮助WordPress管理员自动生成文章、管理内容结构、优化SEO表现，并提供全面的内容分析系统。
 
-## 🚀 核心功能 {#core-features}
+## 🚀 核心功能
 
 ### 🧠 AI内容生成
 - **多API支持**：兼容OpenAI、Claude、Gemini、自定义API等多个AI平台
@@ -114,7 +114,7 @@
 - **日志管理**：完整的操作和错误日志系统
 - **性能分析**：系统性能监控和优化建议
 
-## 📋 系统要求 {#system-requirements}
+## 📋 系统要求
 
 - **WordPress**: 5.0 或更高版本
 - **PHP**: 7.4 或更高版本
@@ -122,7 +122,7 @@
 - **内存限制**: 推荐 256MB 或更高
 - **执行时间**: 推荐 300 秒或更高
 
-## 🛠️ 安装步骤 {#installation-steps}
+## 🛠️ 安装步骤
 
 ### 方法一：通过WordPress后台
 1. 下载插件压缩包
@@ -139,7 +139,7 @@ cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/your-username/content-auto-manager.git
 ```
 
-## ⚙️ 配置指南 {#configuration-guide}
+## ⚙️ 配置指南
 
 ### 1. API配置
 1. 进入后台 → 内容自动生成管家 → API配置
@@ -161,7 +161,7 @@ git clone https://github.com/your-username/content-auto-manager.git
 2. 添加或批量导入主题关键词
 3. 配置任务参数并启动生成
 
-## 📈 使用场景 {#use-cases}
+## 📈 使用场景
 
 ### SEO内容营销
 - 批量生成SEO优化的文章内容
@@ -178,13 +178,13 @@ git clone https://github.com/your-username/content-auto-manager.git
 - 基于向量聚类的智能内容归档
 - 内容相似性分析和去重
 
-## 🔐 许可证说明 {#license}
+## 🔐 许可证说明
 
 - **个人和非商业用途**：免费使用
 - **商业用途**：禁止使用此插件或其任何部分用于商业目的
 - **开源协议**：采用GPL v2或更高版本协议
 
-## 📞 技术支持 {#support}
+## 📞 技术支持
 
 ### 域名授权
 此插件的发布规则功能需要获取域名授权才能使用完整功能。如需获取域名授权：
@@ -201,7 +201,7 @@ git clone https://github.com/your-username/content-auto-manager.git
 - **文档支持**：完整使用文档和教程
 - **问题反馈**：通过GitHub Issues提交问题
 
-## 💡 高级功能 {#advanced-features}
+## 💡 高级功能
 
 ### 向量聚类管理
 - **批量聚类**：对大量向量数据进行K-means聚类
@@ -226,7 +226,7 @@ git clone https://github.com/your-username/content-auto-manager.git
 - **性能优化**：多线程和异步处理机制
 - **监控报告**：详细的任务执行报告
 
-## 🔧 故障排除 {#troubleshooting}
+## 🔧 故障排除
 
 ### 常见问题
 1. **API连接失败**：检查API密钥是否正确，网络连接是否正常
@@ -240,7 +240,7 @@ git clone https://github.com/your-username/content-auto-manager.git
 - 使用缓存机制提升访问速度
 - 优化数据库性能
 
-## 🤝 贡献指南 {#contribution}
+## 🤝 贡献指南
 
 如果你希望为项目做出贡献：
 1. Fork 项目
@@ -248,7 +248,7 @@ git clone https://github.com/your-username/content-auto-manager.git
 3. 提交你的修改
 4. 发起 Pull Request
 
-## 📄 更新日志 {#changelog}
+## 📄 更新日志
 
 ### v1.0.2
 - 增强向量聚类算法，提升相似性匹配准确性
@@ -269,7 +269,7 @@ git clone https://github.com/your-username/content-auto-manager.git
 - 任务管理系统
 - 传统发布规则配置
 
-## 📞 联系我们 {#contact}
+## 📞 联系我们
 
 - **作者**：[AI TOOL](https://www.kdjingpai.com/)
 - **插件主页**：[访问插件主页](https://www.kdjingpai.com/)
