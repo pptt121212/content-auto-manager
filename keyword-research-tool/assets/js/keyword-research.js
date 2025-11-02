@@ -1,10 +1,19 @@
 jQuery(document).ready(function($) {
+    console.log('=== Keyword Research Tool: Script Starting ===');
+    console.log('keywordResearchToolData exists?', typeof keywordResearchToolData !== 'undefined');
+    if (typeof keywordResearchToolData !== 'undefined') {
+        console.log('keywordResearchToolData:', keywordResearchToolData);
+    }
+    
     // Check for localized data first
     if (typeof keywordResearchToolData === 'undefined' || !keywordResearchToolData.ajaxurl || !keywordResearchToolData.nonce) {
         console.error('Keyword Research Tool: Missing or incomplete localization data (keywordResearchToolData).');
-        alert('关键数据加载失败，插件无法正常工作。请联系管理员。');
+        console.error('typeof keywordResearchToolData:', typeof keywordResearchToolData);
+        alert('关键数据加载失败，插件无法正常工作。请联系管理员。\n\n请在浏览器控制台查看详细错误信息。');
         return;
     }
+    
+    console.log('=== Localization data validated successfully ===');
 
     // DOM Elements
     const app = $('#keyword-research-tool-app');
@@ -286,7 +295,19 @@ jQuery(document).ready(function($) {
         );
     }
 
-    startBtn.on('click', startOrchestration);
+    console.log('=== Attaching click handler to start button ===');
+    console.log('startBtn element:', startBtn);
+    console.log('startBtn length:', startBtn.length);
+    console.log('startBtn is disabled?', startBtn.prop('disabled'));
+    console.log('startBtn CSS display:', startBtn.css('display'));
+    console.log('startBtn CSS pointer-events:', startBtn.css('pointer-events'));
+    
+    startBtn.on('click', function() {
+        console.log('=== START BUTTON CLICKED ===');
+        startOrchestration();
+    });
+    
+    console.log('=== Click handler attached successfully ===');
 
 
     // --- Trend Analysis (remains the same) ---
@@ -412,4 +433,7 @@ jQuery(document).ready(function($) {
         };
         return str.replace(/[&<>'"/]/g, function(m) { return map[m]; });
     }
+    
+    console.log('=== Keyword Research Tool: Initialization Complete ===');
+    console.log('All event handlers have been attached and the tool is ready to use.');
 });
