@@ -351,29 +351,11 @@ class ContentAuto_AdminMenu {
     }
 
     /**
-     * 渲染调试工具页面
-     */
-  
-    
-    /**
-     * 渲染用户体验测试页面
-     */
-    
-    
-    /**
-     * 渲染用户体验测试结果页面
-     */
-    
-    
-    /**
      * 加载后台脚本和样式
      */
     public function enqueue_admin_scripts($hook) {
         // 只在插件页面加载
         if (strpos($hook, 'content-auto-manager') === false && $hook !== '%e5%86%85%e5%ae%b9%e8%87%aa%e5%8a%a8%e7%94%9f%e6%88%90_page_content-auto-manager-logs') {
-            return;
-        }
-        if (strpos($hook, 'content-auto-manager') === false) {
             return;
         }
         
@@ -396,14 +378,10 @@ class ContentAuto_AdminMenu {
         // 其次，根据特定页面加载其独有的脚本和样式
         if ($hook == 'toplevel_page_content-auto-manager' || $hook == 'content-auto-manager_page_content-auto-manager') {
             // 仪表盘页面
-
-
         } 
         
         if ($hook == 'content-auto-manager_page_content-auto-manager-api') {
             // API设置页面
-
-
         }
         
         if ($hook == 'content-auto-manager_page_content-auto-manager-rules') {
@@ -443,7 +421,7 @@ class ContentAuto_AdminMenu {
             );
         }
         
-        if ($hook == 'content-auto-manager_page_content-auto-manager-article-jobs') {
+        if ($hook == 'content-auto-manager_page_content-auto-manager-article-tasks') {
             // 文章任务页面
             wp_enqueue_style(
                 'content-auto-manager-article-css',
@@ -451,8 +429,6 @@ class ContentAuto_AdminMenu {
                 array(),
                 CONTENT_AUTO_MANAGER_VERSION
             );
-            
-
         }
         
         if ($hook == 'content-auto-manager_page_content-auto-manager-debug-tools') {
@@ -491,7 +467,7 @@ class ContentAuto_AdminMenu {
             );
         }
 
-        if ($hook == 'content-automation_page_content-auto-manager-keyword-tool') {
+        if ($hook == 'content-auto-manager_page_content-auto-manager-keyword-tool') {
             // 关键词工具页面
             wp_enqueue_style(
                 'keyword-research-tool-css',
@@ -519,10 +495,8 @@ class ContentAuto_AdminMenu {
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('content_auto_manager_nonce')
         ));
-
-            }
+    }
     
-  
     /**
      * 渲染调试工具页面
      */
