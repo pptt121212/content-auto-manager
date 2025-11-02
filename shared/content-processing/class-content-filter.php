@@ -4,6 +4,14 @@
  * 内容过滤器类
  * 用于过滤文章内容的外部包装标记
  * 
+ * 过滤流程：
+ * 1. 移除 Pollinations 广告内容
+ * 2. 移除 AI 模型思考标签 (<think></think>)
+ * 3. 修复转义字符
+ * 4. 提取 JSON 字段内容（如适用）
+ * 5. 移除 Markdown 代码块包装
+ * 6. 优化 Markdown 链接格式
+ * 
  * @package ContentAutoManager
  * @subpackage ContentFilter
  */
@@ -16,6 +24,14 @@ class ContentAuto_ContentFilter {
     
     /**
      * 过滤文章内容，移除外部包装标记
+     * 
+     * 处理步骤：
+     * 1. 移除 Pollinations 广告内容
+     * 2. 移除 AI 模型思考标签 (<think></think>) - 某些 AI 模型会返回包含思考过程的标签
+     * 3. 修复转义字符，防止 Markdown 解析错误
+     * 4. 提取 JSON 字段内容（如果内容是 JSON 格式）
+     * 5. 移除 Markdown 代码块包装
+     * 6. 优化 Markdown 链接格式
      * 
      * @param string $content 原始内容
      * @return string 过滤后的内容
@@ -60,6 +76,28 @@ class ContentAuto_ContentFilter {
                 'content_length_after_ad_removal' => strlen($content),
                 'is_empty_after_ad_removal' => empty($content),
                 'content_preview_after_ad_removal' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
+            ));
+        }
+
+        // 零步骤之二：过滤思考标签内容（某些AI模型返回的 <think></think> 标签）
+        $content_before_think_filter = $content;
+        $content = $this->remove_think_tags($content);
+        
+        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if ($content_before_think_filter !== $content) {
+                $logger->debug('THINK_TAGS_REMOVED', '移除思考标签内容', array(
+                    'content_before_removal' => $content_before_think_filter,
+                    'content_after_removal' => $content,
+                    'think_tags_removed' => true,
+                    'removed_length' => strlen($content_before_think_filter) - strlen($content)
+                ));
+            }
+            
+            // 添加调试：检查思考标签移除后的内容长度
+            $logger->debug('DEBUG_AFTER_THINK_REMOVAL', '思考标签移除后的内容状态', array(
+                'content_length_after_think_removal' => strlen($content),
+                'is_empty_after_think_removal' => empty($content),
+                'content_preview_after_think_removal' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
             ));
         }
 
@@ -145,6 +183,7 @@ class ContentAuto_ContentFilter {
                     'filter_path' => 'standard_filtering',
                     'processing_steps' => array(
                         'ads_filtered' => ($content_before_ad_filter !== $content),
+                        'think_tags_removed' => ($content_before_think_filter !== $content),
                         'escaped_characters_fixed' => true,
                         'markdown_wrapper_removed' => ($content_before_wrapper !== $content),
                         'links_optimized' => ($content_before_optimization !== $content)
@@ -182,6 +221,34 @@ class ContentAuto_ContentFilter {
         }
 
         // 如果没有找到广告标记，返回原内容
+        return $content;
+  }
+
+  /**
+     * 移除思考标签内容
+     * 某些AI模型会返回包含 <think></think> 标签的内容，其中包含模型的思考过程
+     * 这些内容应该被过滤掉，不应该出现在最终的文章中
+     * 
+     * @param string $content 原始内容
+     * @return string 移除思考标签后的内容
+     */
+  private function remove_think_tags($content) {
+        if (empty($content)) {
+            return $content;
+        }
+
+        // 移除 <think>...</think> 标签及其内容
+        // 使用 s 修饰符使 . 能匹配换行符，处理多行内容
+        // 使用非贪婪匹配 .*? 避免匹配过多内容
+        $content = preg_replace('/<think\b[^>]*>.*?<\/think>/is', '', $content);
+        
+        // 清理可能留下的多余空白
+        $content = preg_replace('/^\s*\n/m', '', $content);
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+        
+        // 清理开头和结尾的空白
+        $content = trim($content);
+        
         return $content;
   }
 
