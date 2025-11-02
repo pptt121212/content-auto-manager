@@ -10,11 +10,6 @@ jQuery(document).ready(function($) {
     const tabContents = $('.tab-content');
     const activeProviderInput = $('#cam_image_api_provider');
 
-    // Debug: Check if elements exist
-    console.log('Tabs found:', tabs.length);
-    console.log('Tab contents found:', tabContents.length);
-    console.log('Active provider input found:', activeProviderInput.length);
-
     function activateTab(tab) {
         const target = $(tab).attr('href');
         tabs.removeClass('nav-tab-active');
@@ -110,11 +105,7 @@ jQuery(document).ready(function($) {
         }
     }
 
-    // Debug: Check if ModelScope test button exists
-    const modelscopeBtn = $('#test_api_button_modelscope');
-    console.log('ModelScope test button found:', modelscopeBtn.length);
-
-      // Use event delegation to handle dynamically hidden/showed buttons
+    // Use event delegation to handle dynamically hidden/showed buttons
     $(document).on('click', '#test_api_button_modelscope', function() {
         stopModelScopePolling(); // Stop any previous polling
         const resultDiv = $('#modelscope_test_result');
@@ -154,14 +145,6 @@ jQuery(document).ready(function($) {
     });
 
     // --- Synchronous Test Logic (OpenAI, Silicon Flow, Pollinations) ---
-    // Debug: Check if other test buttons exist
-    const openaiBtn = $('#test_api_button_openai');
-    const siliconflowBtn = $('#test_api_button_siliconflow');
-    const pollinationsBtn = $('#test_api_button_pollinations');
-    console.log('OpenAI test button found:', openaiBtn.length);
-    console.log('SiliconFlow test button found:', siliconflowBtn.length);
-    console.log('Pollinations test button found:', pollinationsBtn.length);
-
     // Use event delegation for other test buttons as well
     $(document).on('click', '#test_api_button_openai, #test_api_button_siliconflow, #test_api_button_pollinations', function() {
         const provider = $(this).data('provider');
