@@ -47,12 +47,12 @@ jQuery(document).ready(function($) {
     }
 
     function pollModelScopeTask(taskId, config, resultDiv) {
-        const maxPollTime = 120000; // 2 minutes
+        const maxPollTime = 180000; // 3 minutes (increased from 2 minutes to handle longer processing times)
 
         // Stop polling after timeout
         modelscopePollTimeout = setTimeout(function() {
             stopModelScopePolling();
-            resultDiv.html('<p style="color: red;"><strong>测试失败:</strong> 轮询超时 (2分钟)。</p>');
+            resultDiv.html('<p style="color: orange;"><strong>测试状态:</strong> 轮询超时 (3分钟)，任务可能仍在处理中。您可以稍后手动检查任务状态或尝试使用处理速度更快的模型。</p>');
         }, maxPollTime);
 
         // Poll immediately, then set interval
@@ -94,7 +94,10 @@ jQuery(document).ready(function($) {
                         case 'PENDING':
                         case 'RUNNING':
                         case 'PROCESSING':
-                            resultDiv.find('.cam-test-status').text('状态: ' + task.task_status + '...');
+                            // 显示时间戳，让用户知道仍在轮询中
+                            const now = new Date();
+                            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0') + ':' + now.getSeconds().toString().padStart(2, '0');
+                            resultDiv.find('.cam-test-status').text('状态: ' + task.task_status + '... (最后更新: ' + timeStr + ')');
                             break;
                         default:
                             stopModelScopePolling();
@@ -129,7 +132,7 @@ jQuery(document).ready(function($) {
             return;
         }
 
-        resultDiv.html('<p>✅ 任务已提交，正在等待结果... <span class="cam-test-status"></span></p><span class="spinner is-active" style="float: none; margin-top: 5px;"></span>');
+        resultDiv.html('<p>✅ 任务已提交，正在等待结果... <span class="cam-test-status">状态: SUBMITTED</span></p><p style="font-size: 12px; color: #666;">注意: 某些模型可能需要较长时间处理，请耐心等待...</p><span class="spinner is-active" style="float: none; margin-top: 5px;"></span>');
 
         $.ajax({
             url: contentAutoManager.ajaxurl,
