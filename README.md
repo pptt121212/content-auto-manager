@@ -174,7 +174,7 @@
 ### 方法三：Git克隆（开发者）
 ```bash
 cd /path/to/wordpress/wp-content/plugins/
-git clone https://github.com/your-username/content-auto-manager.git
+git clone https://github.com/pptt121212/content-auto-manager.git
 ```
 
 ## ⚙️ 配置指南
@@ -324,7 +324,7 @@ git clone https://github.com/your-username/content-auto-manager.git
 - **作者**：[AI TOOL](https://www.kdjingpai.com/)
 - **插件主页**：[访问插件主页](https://www.kdjingpai.com/)
 - **微信联系**：qn006699（域名授权和技术支持）
-- **GitHub**：[项目地址](https://github.com/your-username/content-auto-manager)
+- **GitHub**：[项目地址](https://github.com/pptt121212/content-auto-manager)
 
 ---
 
