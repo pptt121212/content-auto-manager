@@ -6,6 +6,9 @@ if (!defined('ABSPATH')) exit;
 ?>
 <h2>ModelScope 设置</h2>
 <p>您可以在 <a href="https://www.modelscope.cn/aigc/models" target="_blank">ModelScope AIGC模型</a> 页面查找可用的模型ID，并确保您的 ModelScope 账号已绑定阿里云账号。</p>
+<p style="background-color: #fff8e1; border-left: 4px solid #ffb300; padding: 10px; margin: 10px 0; font-size: 13px;">
+    <strong>提示：</strong>部分模型（如Qwen/Qwen-Image）处理时间可能较长，请耐心等待结果。如需快速测试，可尝试使用响应更快的模型。
+</p>
 <table class="form-table">
     <tbody>
         <tr>

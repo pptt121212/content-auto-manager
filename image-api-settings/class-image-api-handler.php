@@ -130,13 +130,16 @@ class CAM_Image_API_Handler {
         if (isset($task_data['task_status']) && $task_data['task_status'] === 'SUCCEED') {
             if (!empty($task_data['output_images'][0])) {
                 $image_url = $task_data['output_images'][0];
-                $image_response = wp_remote_get($image_url, ['timeout' => 30]);
+                
+                // 对于魔搭API的OSS图像下载，需要特殊处理Content-Encoding问题
+                // 魔搭的OSS服务器可能返回非标准的Content-Encoding: utf-8
+                $image_response = self::download_image_with_encoding_fix($image_url);
 
                 if (is_wp_error($image_response)) {
                     $task_data['task_status'] = 'FAILED';
                     $task_data['message'] = 'Image download failed: ' . $image_response->get_error_message();
                 } else {
-                    $image_bytes = wp_remote_retrieve_body($image_response);
+                    $image_bytes = $image_response;
                     if (empty($image_bytes)) {
                         $task_data['task_status'] = 'FAILED';
                         $task_data['message'] = 'Image download succeeded but body was empty.';
@@ -211,6 +214,70 @@ class CAM_Image_API_Handler {
     }
 
     /**
+     * Download image with special handling for Content-Encoding issues with ModelScope OSS.
+     * This method addresses the issue where ModelScope's OSS returns Content-Encoding: utf-8
+     * which is not a standard HTTP content encoding and causes cURL error 61.
+     * 
+     * @param string $image_url The URL of the image to download
+     * @return string|WP_Error The image data on success, or WP_Error on failure
+     */
+    private static function download_image_with_encoding_fix($image_url) {
+        // First, try the standard WordPress method
+        $default_response = wp_remote_get($image_url, [
+            'timeout' => 30,
+            'headers' => [
+                'Accept-Encoding' => 'gzip, deflate'  // Only accept standard encodings
+            ]
+        ]);
+
+        if (!is_wp_error($default_response)) {
+            $response_code = wp_remote_retrieve_response_code($default_response);
+            if ($response_code >= 200 && $response_code < 300) {
+                return wp_remote_retrieve_body($default_response);
+            }
+        }
+
+        // If the standard method fails, try with direct cURL to handle the encoding issue
+        if (function_exists('curl_version')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $image_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; WordPress)');
+            
+            // Only accept standard encodings to avoid the Content-Encoding: utf-8 issue
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Accept-Encoding: gzip, deflate',
+            ]);
+            
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            
+            curl_close($ch);
+            
+            if (!empty($error)) {
+                return new WP_Error('http_request_failed', $error);
+            }
+            
+            if ($http_code >= 200 && $http_code < 300) {
+                return $response;
+            } else {
+                return new WP_Error('http_request_failed', 'HTTP ' . $http_code . ' when downloading image');
+            }
+        } else {
+            // Fallback: if cURL is not available, return the original error
+            if (is_wp_error($default_response)) {
+                return $default_response;
+            } else {
+                return new WP_Error('http_request_failed', 'Failed to download image and cURL is not available');
+            }
+        }
+    }
+
+    /**
      * Handles image generation via Silicon Flow API.
      *
      * @param string $prompt The generation prompt.
@@ -263,12 +330,15 @@ class CAM_Image_API_Handler {
         $image_url = $data['images'][0]['url'];
 
         // Download the image and base64 encode it
-        $image_response = wp_remote_get($image_url, ['timeout' => 30]);
-        if (is_wp_error($image_response) || wp_remote_retrieve_response_code($image_response) >= 300) {
-            return new WP_Error('image_download_failed', 'Failed to download the generated image from the URL provided by Silicon Flow.');
+        // Use the special download method to handle potential Content-Encoding issues (e.g., with OSS services)
+        $image_response = self::download_image_with_encoding_fix($image_url);
+        
+        if (is_wp_error($image_response)) {
+            return new WP_Error('image_download_failed', 'Failed to download the generated image from the URL provided by Silicon Flow: ' . $image_response->get_error_message());
         }
         
-        $image_bytes = wp_remote_retrieve_body($image_response);
+        // $image_response is the image bytes when successful
+        $image_bytes = $image_response;
         return base64_encode($image_bytes);
     }
 
