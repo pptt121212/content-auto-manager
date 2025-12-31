@@ -96,6 +96,8 @@
       <standard>内容准确可靠，避免误导表达</standard>
       <standard>内容必须与matched_category高度匹配</standard>
       <standard>表达方式必须与target_audience定位相符</standard>
+      <standard>禁止使用"众所周知"、"随着...的发展"、"在当今社会"等陈词滥调，用具体事实、数据、场景替代抽象描述</standard>
+      <standard>每个观点必须有具体论据支撑，提供独特分析角度或不常见的切入点，避免人云亦云</standard>
     </mandatory_standards>
     
     {{INTERNAL_LINKING_STANDARD}}

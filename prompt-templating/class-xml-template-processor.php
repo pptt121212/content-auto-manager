@@ -10,6 +10,29 @@ if (!defined('ABSPATH')) {
 class ContentAuto_XmlTemplateProcessor {
     
     /**
+     * 当前任务ID（用于批量多样性追踪）
+     */
+    private $current_task_id = null;
+    
+    /**
+     * 设置当前任务ID
+     * 
+     * @param int|null $task_id 任务ID
+     */
+    public function set_task_id($task_id) {
+        $this->current_task_id = $task_id;
+    }
+    
+    /**
+     * 获取当前任务ID
+     * 
+     * @return int|null 任务ID
+     */
+    public function get_task_id() {
+        return $this->current_task_id;
+    }
+    
+    /**
      * 根据主题数据和发布规则生成XML模板提示词
      */
     public function generate_prompt($topic_data, $publish_rules, $related_content = array(), $similar_articles = array()) {
@@ -78,6 +101,13 @@ class ContentAuto_XmlTemplateProcessor {
     
     /**
      * 获取动态文章结构，如果失败则回退到静态结构
+     * 
+     * 增强版：集成智能结构优化系统
+     * - 检查功能开关
+     * - 集成 Cold_Start_Manager 获取阶段
+     * - 集成 Smart_Structure_Selector 执行选择
+     * - 集成 Diversity_Controller 应用惩罚/提升
+     * - 实现回退逻辑（功能禁用或异常时）
      */
     private function get_dynamic_article_structure($topic_data, $is_enabled) {
         // 如果功能未启用，则返回空结构
@@ -130,9 +160,14 @@ class ContentAuto_XmlTemplateProcessor {
         $top_n = min(20, count($scored_structures));
         $top_structures = array_slice($scored_structures, 0, $top_n);
 
-        // 6. 从前20个中随机选择一个
-        $random_index = array_rand($top_structures);
-        $selected_structure = $top_structures[$random_index]['structure'];
+        // 6. 尝试使用智能结构选择
+        $selected_structure = $this->smart_select_structure($topic_data, $top_structures);
+        
+        if (!$selected_structure) {
+            // 智能选择失败，回退到原始随机选择
+            $random_index = array_rand($top_structures);
+            $selected_structure = $top_structures[$random_index]['structure'];
+        }
 
         // 7. 更新使用次数
         $wpdb->query($wpdb->prepare(
@@ -146,6 +181,94 @@ class ContentAuto_XmlTemplateProcessor {
             'name' => $selected_structure['title'], // Use the structure's own title as its name
             'sections' => $selected_structure['structure']
         ];
+    }
+    
+    /**
+     * 智能结构选择
+     * 
+     * 集成智能结构优化系统进行选择：
+     * - 检查功能开关
+     * - 获取冷启动阶段
+     * - 应用多样性控制
+     * - 执行智能选择
+     * 
+     * @param array $topic_data 主题数据
+     * @param array $top_structures 候选结构列表（已按相似度排序）
+     * @return array|null 选中的结构或null（需要回退）
+     */
+    private function smart_select_structure($topic_data, $top_structures) {
+        try {
+            // 检查智能优化功能是否启用
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-optimization-config.php';
+            $config = new ContentAuto_OptimizationConfig();
+            
+            if (!$config->is_optimization_enabled()) {
+                // 功能未启用，返回null触发回退逻辑
+                return null;
+            }
+            
+            // 加载智能选择器
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-smart-structure-selector.php';
+            
+            // 初始化日志记录器（可选）
+            $logger = null;
+            if (class_exists('ContentAuto_PluginLogger')) {
+                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+                $logger = new ContentAuto_PluginLogger();
+            }
+            
+            $selector = new ContentAuto_SmartStructureSelector($logger);
+            
+            // 准备候选结构数据（提取结构信息）
+            $candidates = array();
+            foreach ($top_structures as $item) {
+                $structure = $item['structure'];
+                $structure['similarity'] = $item['similarity'];
+                $candidates[] = $structure;
+            }
+            
+            // 应用多样性控制（惩罚/提升）
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-diversity-controller.php';
+            $diversity_controller = new ContentAuto_DiversityController($logger);
+            
+            $content_angle = isset($topic_data['source_angle']) ? $topic_data['source_angle'] : '';
+            
+            foreach ($candidates as &$candidate) {
+                $structure_id = isset($candidate['id']) ? $candidate['id'] : 0;
+                
+                // 获取多样性调整系数
+                $adjustment = $diversity_controller->get_adjustment_factor($structure_id, $content_angle);
+                
+                // 应用调整系数到候选结构
+                $candidate['diversity_factor'] = $adjustment['factor'];
+                $candidate['penalty_applied'] = $adjustment['penalty_applied'];
+                $candidate['boost_applied'] = $adjustment['boost_applied'];
+            }
+            unset($candidate);
+            
+            // 执行智能选择
+            $result = $selector->select_structure_safe(
+                $topic_data,
+                $candidates,
+                $this->current_task_id
+            );
+            
+            // 返回选中的结构
+            if ($result && isset($result['structure']) && $result['structure']) {
+                return $result['structure'];
+            }
+            
+            return null;
+            
+        } catch (Exception $e) {
+            // 记录错误日志
+            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+                error_log('ContentAuto: 智能结构选择失败 - ' . $e->getMessage());
+            }
+            
+            // 返回null触发回退逻辑
+            return null;
+        }
     }
 
     /**
@@ -492,8 +615,8 @@ class ContentAuto_XmlTemplateProcessor {
 
         if (!empty($reference_material)) {
             $reference_material_block = "\n    <reference_material>\n      <reference_content>" . htmlspecialchars($reference_material) . "</reference_content>\n    </reference_material>";
-            $reference_material_strategy = '<strategy name="参考资料融合">将reference_material中的关键信息自然融入到相关章节中，作为内容的有益补充，确保参考资料与文章主题高度相关</strategy>';
-            $reference_material_principle = '<principle>参考资料运用：合理运用reference_material中的信息，不生硬堆砌，确保参考资料内容与文章主题和章节内容自然融合</principle>';
+            $reference_material_strategy = '<strategy name="资料辅助原则">reference_material仅作为辅助材料。必须以文章标题(TITLE)为绝对核心，仅提取资料中与标题直接相关的证据、数据或案例。若资料内容偏离标题，必须果断舍弃，严禁被资料带偏节奏。</strategy>';
+            $reference_material_principle = '<principle>参考资料运用原则：坚持"标题为纲"。参考资料必须服务于当前章节的论述目标。如果参考资料与标题意图冲突，以标题意图为准。禁止生硬堆砌不相关的资料信息。</principle>';
         }
         
         // 获取语言的AI识别名称
@@ -661,82 +784,12 @@ class ContentAuto_XmlTemplateProcessor {
 
     /**
      * 获取主题关联的参考资料（按优先级：主题级->规则级->品牌资料级）
+     * 委托给专门的参考资料服务类处理
      */
     private function get_reference_material($topic_data, $publish_rules = array()) {
-        // 1. 优先使用主题级参考资料
-        if (isset($topic_data['reference_material']) && !empty(trim($topic_data['reference_material']))) {
-            return trim($topic_data['reference_material']);
-        }
-        
-        // 2. 回退到规则级参考资料
-        if (isset($topic_data['rule_id']) && !empty($topic_data['rule_id'])) {
-            global $wpdb;
-            $rules_table = $wpdb->prefix . 'content_auto_rules';
-
-            $rule = $wpdb->get_var($wpdb->prepare(
-                "SELECT reference_material FROM {$rules_table} WHERE id = %d",
-                $topic_data['rule_id']
-            ));
-
-            if ($rule && !empty(trim($rule))) {
-                return trim($rule);
-            }
-        }
-
-        // 3. 如果发布规则启用了参考资料功能，从品牌资料中获取
-        if (isset($publish_rules['enable_reference_material']) && $publish_rules['enable_reference_material']) {
-            return $this->get_brand_profile_reference_material($topic_data);
-        }
-
-        return '';
-    }
-
-    /**
-     * 从品牌资料中获取参考资料
-     */
-    private function get_brand_profile_reference_material($topic_data) {
-        // 检查主题是否有向量
-        if (empty($topic_data['vector_embedding'])) {
-            return '';
-        }
-
-        $topic_vector = content_auto_decompress_vector_from_base64($topic_data['vector_embedding']);
-        if (!$topic_vector) {
-            return '';
-        }
-
-        global $wpdb;
-        $brand_profiles_table = $wpdb->prefix . 'content_auto_brand_profiles';
-
-        // 获取所有参考资料类型的品牌资料
-        $reference_profiles = $wpdb->get_results($wpdb->prepare(
-            "SELECT title, description, vector FROM {$brand_profiles_table} WHERE type = %s AND vector IS NOT NULL AND vector != ''",
-            'reference'
-        ), ARRAY_A);
-
-        if (empty($reference_profiles)) {
-            return '';
-        }
-
-        $best_match = null;
-        $highest_similarity = 0.0;
-
-        // 计算相似度并找到最匹配的参考资料
-        foreach ($reference_profiles as $profile) {
-            $profile_vector = content_auto_decompress_vector_from_base64($profile['vector']);
-            if ($profile_vector) {
-                $similarity = content_auto_calculate_cosine_similarity($topic_vector, $profile_vector);
-
-                // 只有相似度不低于0.8的才考虑
-                if ($similarity >= 0.8 && $similarity > $highest_similarity) {
-                    $highest_similarity = $similarity;
-                    $best_match = $profile;
-                }
-            }
-        }
-
-        // 返回最匹配的参考资料的描述
-        return $best_match ? trim($best_match['description']) : '';
+        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-reference-material-service.php';
+        $reference_service = new ContentAuto_ReferenceMaterialService();
+        return $reference_service->get_reference_material($topic_data, $publish_rules);
     }
 
     /**

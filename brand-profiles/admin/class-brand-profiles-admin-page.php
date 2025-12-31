@@ -89,13 +89,12 @@ class ContentAuto_Brand_Profiles_Admin_Page {
 
         $data = $this->prepare_brand_profile_data($_POST);
 
-        // Generate vector from title only for better comparison with article topics
-        $text_to_vectorize = $data['title'];
+        // 使用标题生成向量
         if (!class_exists('ContentAuto_VectorApiHandler')) {
             require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
         }
         $vector_handler = new ContentAuto_VectorApiHandler();
-        $vector_result = $vector_handler->generate_embeddings_batch([$text_to_vectorize]);
+        $vector_result = $vector_handler->generate_embeddings_batch([$data['title']]);
 
         if ($vector_result && !empty($vector_result['embeddings'])) {
             $data['vector'] = $vector_result['embeddings'][0]['embedding'];
@@ -134,13 +133,12 @@ class ContentAuto_Brand_Profiles_Admin_Page {
 
         $data = $this->prepare_brand_profile_data($_POST);
 
-        // Generate vector from title only for better comparison with article topics
-        $text_to_vectorize = $data['title'];
+        // 使用标题生成向量
         if (!class_exists('ContentAuto_VectorApiHandler')) {
             require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
         }
         $vector_handler = new ContentAuto_VectorApiHandler();
-        $vector_result = $vector_handler->generate_embeddings_batch([$text_to_vectorize]);
+        $vector_result = $vector_handler->generate_embeddings_batch([$data['title']]);
 
         if ($vector_result && !empty($vector_result['embeddings'])) {
             $data['vector'] = $vector_result['embeddings'][0]['embedding'];

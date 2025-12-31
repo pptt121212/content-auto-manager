@@ -58,6 +58,8 @@
     <requirement name="SEO优化">所有seo_keywords必须自然融入文章，内容与matched_category高度匹配</requirement>
     <requirement name="策略执行">严格按照content_strategy要求调整内容策略和表达方式</requirement>
     <requirement name="信息准确">内容准确可靠，避免误导表达</requirement>
+    <requirement name="原创表达">避免使用"众所周知"、"随着...的发展"、"在当今社会"等陈词滥调，用具体事实、数据、场景替代抽象泛泛的描述</requirement>
+    <requirement name="独特视角">每个观点必须有具体论据支撑，提供不常见的分析角度或独到见解，避免人云亦云的表述</requirement>
     {{REFERENCE_MATERIAL_PRINCIPLE}}
     {{INTERNAL_LINKING_STANDARD}}
   </core_requirements>

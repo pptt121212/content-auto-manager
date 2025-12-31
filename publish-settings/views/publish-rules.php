@@ -199,6 +199,9 @@ if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
         'enable_brand_profile_insertion' => isset($_POST['enable_brand_profile_insertion']) ? 1 : 0,
         'brand_profile_position' => isset($_POST['brand_profile_position']) ? sanitize_text_field($_POST['brand_profile_position']) : 'before_second_paragraph',
         'enable_reference_material' => isset($_POST['enable_reference_material']) ? 1 : 0,
+        'enable_ai_reference_select' => isset($_POST['enable_ai_reference_select']) ? 1 : 0,
+        'enable_auto_material_search' => isset($_POST['enable_auto_material_search']) ? 1 : 0,
+        'enable_intent_inference' => isset($_POST['enable_intent_inference']) ? 1 : 0,
         'publish_interval_minutes' => intval($_POST['publish_interval_minutes']),
         'publish_language' => sanitize_text_field($_POST['publish_language']),
         'role_description' => sanitize_textarea_field($_POST['role_description']),
@@ -360,6 +363,9 @@ if (!$publish_rule) {
         'enable_internal_linking' => 0,  // 默认关闭文章内链功能
         'enable_brand_profile_insertion' => 0, // 默认关闭品牌资料植入功能
         'enable_reference_material' => 0, // 默认关闭参考资料功能
+        'enable_ai_reference_select' => 0, // 默认关闭大模型精选召回
+        'enable_auto_material_search' => 0, // 默认关闭自动素材搜索
+        'enable_intent_inference' => 0, // 默认关闭搜索意图推断
         'publish_interval_minutes' => 0,  // 默认立即发布
         'publish_language' => 'zh-CN',    // 默认中文
         'role_description' => '专业内容创作专家，精通SEO文案、用户体验设计、知识传播策略。您的任务是基于提供的文章标题创作正文内容，输出时直接从第一个章节标题开始，无需重复已提供的主标题。', // 默认角色描述
@@ -700,11 +706,50 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                     <th scope="row"><?php _e('启用参考物料', 'content-auto-manager'); ?></th>
                     <td>
                         <label>
-                            <input type="checkbox" name="enable_reference_material" value="1" <?php checked($publish_rule['enable_reference_material'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <input type="checkbox" name="enable_reference_material" id="enable_reference_material" value="1" <?php checked($publish_rule['enable_reference_material'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
                             <?php _e('启用参考资料功能', 'content-auto-manager'); ?>
                         </label>
                         <p class="description">
-                            <?php _e('启用后，当主题和规则中都没有参考资料时，系统将从品牌资料中查找物料类型为"参考资料"的内容，按相似度匹配（相似度不低于0.8），并将描述内容插入到文章生成的提示词模板中作为参考资料。', 'content-auto-manager'); ?>
+                            <?php _e('启用后，当主题和规则中都没有参考资料时，系统将从品牌资料中查找物料类型为"参考资料"的内容，按相似度匹配，并将描述内容插入到文章生成的提示词模板中作为参考资料。', 'content-auto-manager'); ?>
+                        </p>
+                        
+                        <!-- 大模型精选召回选项 -->
+                        <div id="ai_reference_select_options" style="margin-top: 15px; padding: 15px; background: #f9f9f9; border-left: 3px solid #0073aa; display: <?php echo ($publish_rule['enable_reference_material'] ?? 0) ? 'block' : 'none'; ?>;">
+                            <label>
+                                <input type="checkbox" name="enable_ai_reference_select" id="enable_ai_reference_select" value="1" <?php checked($publish_rule['enable_ai_reference_select'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                <strong><?php _e('启用大模型精选召回', 'content-auto-manager'); ?></strong>
+                            </label>
+                            <p class="description" style="margin-top: 8px;">
+                                <?php _e('启用后，系统将降低相似度阈值（从0.8降至0.5）召回前10条候选参考资料，然后调用大模型分析每个候选资料与文章主题的相关性，由大模型选择最具参考价值的资料插入到提示词模板中。', 'content-auto-manager'); ?>
+                            </p>
+                                <span class="dashicons dashicons-warning" style="font-size: 14px; width: 14px; height: 14px;"></span>
+                                <?php _e('注意：启用此功能会额外消耗一次API调用，可能增加文章生成时间和成本。', 'content-auto-manager'); ?>
+                            </p>
+                            
+                            <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+                                <label>
+                                    <input type="checkbox" name="enable_auto_material_search" id="enable_auto_material_search" value="1" <?php checked($publish_rule['enable_auto_material_search'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                    <strong><?php _e('启用自动素材搜索（异步）', 'content-auto-manager'); ?></strong>
+                                </label>
+                                <p class="description" style="margin-top: 8px;">
+                                    <?php _e('启用后，当主题和关联规则都没有参考资料时，系统将自动执行搜索、筛选和汇总任务（异步后台执行），并将结果补充到主题的参考资料中。', 'content-auto-manager'); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php _e('搜索意图推断', 'content-auto-manager'); ?></th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="enable_intent_inference" id="enable_intent_inference" value="1" <?php checked($publish_rule['enable_intent_inference'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <?php _e('启用搜索意图推断', 'content-auto-manager'); ?>
+                        </label>
+                        <p class="description">
+                            <?php _e('启用后，生成主题时AI将先分析源内容背后可能的用户搜索意图（如：想了解概念、想解决问题、想做对比选择等），然后基于不同意图方向生成更符合用户真实搜索习惯的文章标题。', 'content-auto-manager'); ?>
+                        </p>
+                        <p class="description" style="margin-top: 5px;">
+                            <?php _e('适用场景：希望生成的标题更贴近用户在搜索引擎中实际输入的查询词，提升SEO效果和点击率。', 'content-auto-manager'); ?>
                         </p>
                     </td>
                 </tr>
@@ -929,17 +974,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // 参考资料选项切换
+    var enableReferenceMaterial = document.getElementById('enable_reference_material');
+    var aiReferenceSelectOptions = document.getElementById('ai_reference_select_options');
+
+    function toggleAiReferenceSelectOptions() {
+        if (enableReferenceMaterial && aiReferenceSelectOptions) {
+            if (enableReferenceMaterial.checked) {
+                aiReferenceSelectOptions.style.display = 'block';
+            } else {
+                aiReferenceSelectOptions.style.display = 'none';
+                // 同时取消勾选大模型精选召回
+                var aiReferenceSelect = document.getElementById('enable_ai_reference_select');
+                if (aiReferenceSelect) {
+                    aiReferenceSelect.checked = false;
+                }
+                var autoMaterialSearch = document.getElementById('enable_auto_material_search');
+                if (autoMaterialSearch) {
+                    autoMaterialSearch.checked = false;
+                }
+            }
+        }
+    }
+
     // 初始化显示状态
     toggleCategoryRows();
     toggleIntervalRow();
     toggleAutoImageOptions();
     toggleBrandProfileOptions();
+    toggleAiReferenceSelectOptions();
 
     // 监听模式变化
     categoryMode.addEventListener('change', toggleCategoryRows);
     postStatus.addEventListener('change', toggleIntervalRow);
     autoImageInsertion.addEventListener('change', toggleAutoImageOptions);
     enableBrandProfile.addEventListener('change', toggleBrandProfileOptions);
+    if (enableReferenceMaterial) {
+        enableReferenceMaterial.addEventListener('change', toggleAiReferenceSelectOptions);
+    }
 });
 </script>
 

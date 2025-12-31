@@ -184,7 +184,7 @@ class ContentAuto_ArticleTaskManager {
                 'job_id' => $task_id,
                 'subtask_id' => 'subtask_' . uniqid(),  // 使用唯一ID替换索引
                 'reference_id' => $topic_id, // reference_id 存储主题ID
-                'priority' => 5,
+                'priority' => 50, // 文章生成优先级（中等）
                 'retry_count' => 0,
                 'status' => CONTENT_AUTO_STATUS_PENDING,
                 'error_message' => '',
@@ -462,7 +462,9 @@ class ContentAuto_ArticleTaskManager {
             'topic_title' => $topic['title']
         )));
         
-        $result = $article_generator->generate_article_for_topic($topic);
+        // 传递 task_id 用于批量多样性追踪
+        $task_id = isset($task['id']) ? $task['id'] : null;
+        $result = $article_generator->generate_article_for_topic($topic, $task_id);
         
         $this->logger->log_info('ARTICLE_GENERATOR_COMPLETE', '文章生成器执行完成', array_merge($base_context, array(
             'topic_id' => $topic_id,

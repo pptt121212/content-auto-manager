@@ -12,6 +12,35 @@ if (!current_user_can('manage_options')) {
     wp_die(__('抱歉，您没有权限访问此页面。'));
 }
 
+// 处理 Jina Reader API 配置表单提交
+if (isset($_POST['submit_reader_api'])) {
+    if (!isset($_POST['content_auto_manager_reader_nonce']) || !wp_verify_nonce($_POST['content_auto_manager_reader_nonce'], 'content_auto_manager_reader_config')) {
+        wp_die(__('安全验证失败。'));
+    }
+    $jina_api_key = sanitize_text_field($_POST['jina_api_key']);
+    update_option('content_auto_jina_api_key', $jina_api_key);
+    echo '<div class="notice notice-success"><p>' . __('Jina Reader API 配置已保存。', 'content-auto-manager') . '</p></div>';
+}
+
+// 处理搜索API配置表单提交
+if (isset($_POST['submit_search_api'])) {
+    // 验证nonce
+    if (!isset($_POST['content_auto_manager_search_nonce']) || !wp_verify_nonce($_POST['content_auto_manager_search_nonce'], 'content_auto_manager_search_config')) {
+        wp_die(__('安全验证失败。'));
+    }
+
+    $search_settings = array(
+        'region' => sanitize_text_field($_POST['search_region']),
+        'max_results' => intval($_POST['search_max_results']),
+        'safesearch' => sanitize_text_field($_POST['search_safesearch']),
+        'time' => sanitize_text_field($_POST['search_time']),
+        'backend' => sanitize_text_field($_POST['search_backend']),
+    );
+
+    update_option('content_auto_search_settings', $search_settings);
+    echo '<div class="notice notice-success"><p>' . __('搜索API配置已保存。', 'content-auto-manager') . '</p></div>';
+}
+
 // 处理自定义API和向量API表单提交（排除预置API）
 if ((isset($_POST['submit']) || isset($_POST['submit_custom_api']) || isset($_POST['submit_vector_api'])) && !isset($_POST['submit_predefined_api']) && !isset($_POST['predefined_api_nonce'])) {
     
@@ -333,6 +362,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
     </a>
     <a href="?page=content-auto-manager-api&tab=vector" class="tab-button <?php echo $active_tab === 'vector' ? 'active' : ''; ?>">
         <?php _e('向量API配置', 'content-auto-manager'); ?>
+    </a>
+    <a href="?page=content-auto-manager-api&tab=search" class="tab-button <?php echo $active_tab === 'search' ? 'active' : ''; ?>">
+        <?php _e('搜索API设置', 'content-auto-manager'); ?>
+    </a>
+    <a href="?page=content-auto-manager-api&tab=reader" class="tab-button <?php echo $active_tab === 'reader' ? 'active' : ''; ?>">
+        <?php _e('Jina Reader API', 'content-auto-manager'); ?>
     </a>
 </div>
 
@@ -677,6 +712,279 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
         </div>
     </div>
     
+    <!-- 搜索API配置表单 -->
+    <div id="search-tab" class="content-auto-tab-content <?php echo $active_tab === 'search' ? 'active' : ''; ?>">
+        <div class="content-auto-section">
+            <h2><?php _e('搜索API设置', 'content-auto-manager'); ?></h2>
+            
+            <?php 
+            $search_settings = get_option('content_auto_search_settings', []);
+            $region = isset($search_settings['region']) ? $search_settings['region'] : 'wt-wt';
+            $max_results = isset($search_settings['max_results']) ? intval($search_settings['max_results']) : 10;
+            $safesearch = isset($search_settings['safesearch']) ? $search_settings['safesearch'] : 'moderate';
+            $time = isset($search_settings['time']) ? $search_settings['time'] : '';
+            $backend = isset($search_settings['backend']) ? $search_settings['backend'] : 'html';
+            ?>
+
+            <div class="notice notice-info" style="margin: 20px 0; padding: 15px; border-left-color: #00a0d2;">
+                <h4 style="margin: 0 0 10px 0; color: #23282d;"><?php _e('🔍 搜索API配置说明', 'content-auto-manager'); ?></h4>
+                <p style="margin: 0 0 10px 0; color: #23282d;"><?php _e('此API是系统内置的搜索服务(基于DuckDuckGo)，不需要繁琐的密钥配置。', 'content-auto-manager'); ?></p>
+                <p style="margin: 0; color: #23282d;">
+                    <?php _e('您可以在此调整搜索的默认行为参数。', 'content-auto-manager'); ?>
+                </p>
+            </div>
+            
+            <?php
+            // 获取授权信息用于显示
+            $current_license = get_option('content_auto_manager_license_key', '');
+            
+            // 获取当前域名逻辑 (与类中逻辑保持一致)
+            $current_domain = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '';
+            if (empty($current_domain)) {
+                $site_url = get_site_url();
+                $parsed = parse_url($site_url);
+                $current_domain = $parsed['host'] ?? '';
+            }
+            // 提取根域名 (例如 test.58jingpai.com -> 58jingpai.com)
+            if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z\.]{2,6})$/i', $current_domain, $regs)) {
+                $current_domain = $regs['domain'];
+            }
+            ?>
+            
+             <div class="notice notice-warning" style="margin: 20px 0; padding: 15px; border-left-color: #f0ad4e;">
+                <h4 style="margin: 0 0 10px 0; color: #23282d;"><?php _e('🔑 授权信息诊断', 'content-auto-manager'); ?></h4>
+                <p style="margin: 0 0 5px 0; color: #23282d;">
+                    <strong><?php _e('当前读取到的授权码 License Key:', 'content-auto-manager'); ?></strong> 
+                    <code><?php echo !empty($current_license) ? esc_html($current_license) : __('未设置 (请在发布规则中配置)', 'content-auto-manager'); ?></code>
+                </p>
+                <p style="margin: 0; color: #23282d;">
+                    <strong><?php _e('当前识别到的域名 Domain:', 'content-auto-manager'); ?></strong> 
+                    <code><?php echo esc_html($current_domain); ?></code>
+                </p>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+                    <?php _e('* 搜索API将使用上述授权码和域名进行鉴权。如遇 401 错误，请检查您的授权码是否有效，以及域名是否与授权绑定的域名一致。', 'content-auto-manager'); ?>
+                </p>
+            </div>
+
+            <form method="post" action="">
+                <?php wp_nonce_field('content_auto_manager_search_config', 'content_auto_manager_search_nonce'); ?>
+                <!-- 用于测试连接的nonce -->
+                <?php wp_nonce_field('content_auto_manager_nonce', 'test_search_nonce_field'); ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('搜索地区 (Region)', 'content-auto-manager'); ?></th>
+                        <td>
+                            <select name="search_region">
+                                <option value="wt-wt" <?php selected($region, 'wt-wt'); ?>><?php _e('全球 (wt-wt)', 'content-auto-manager'); ?></option>
+                                <option value="cn-zh" <?php selected($region, 'cn-zh'); ?>><?php _e('中国 (cn-zh)', 'content-auto-manager'); ?></option>
+                                <option value="us-en" <?php selected($region, 'us-en'); ?>><?php _e('美国 (us-en)', 'content-auto-manager'); ?></option>
+                                <option value="jp-jp" <?php selected($region, 'jp-jp'); ?>><?php _e('日本 (jp-jp)', 'content-auto-manager'); ?></option>
+                                <option value="uk-en" <?php selected($region, 'uk-en'); ?>><?php _e('英国 (uk-en)', 'content-auto-manager'); ?></option>
+                                <option value="de-de" <?php selected($region, 'de-de'); ?>><?php _e('德国 (de-de)', 'content-auto-manager'); ?></option>
+                                <option value="fr-fr" <?php selected($region, 'fr-fr'); ?>><?php _e('法国 (fr-fr)', 'content-auto-manager'); ?></option>
+                            </select>
+                            <p class="description"><?php _e('选择搜索结果的优先地区。', 'content-auto-manager'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php _e('最大结果数 (Max Results)', 'content-auto-manager'); ?></th>
+                        <td>
+                            <input type="number" name="search_max_results" value="<?php echo esc_attr($max_results); ?>" min="1" max="50" class="small-text">
+                            <p class="description"><?php _e('返回搜索结果的最大数量 (1-50)。', 'content-auto-manager'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php _e('安全搜索 (Safe Search)', 'content-auto-manager'); ?></th>
+                        <td>
+                            <select name="search_safesearch">
+                                <option value="moderate" <?php selected($safesearch, 'moderate'); ?>><?php _e('适中 (Moderate)', 'content-auto-manager'); ?></option>
+                                <option value="off" <?php selected($safesearch, 'off'); ?>><?php _e('关闭 (Off)', 'content-auto-manager'); ?></option>
+                                <option value="strict" <?php selected($safesearch, 'strict'); ?>><?php _e('严格 (Strict)', 'content-auto-manager'); ?></option>
+                            </select>
+                        </td>
+                    </tr>
+                     <tr>
+                        <th scope="row"><?php _e('时间范围 (Time)', 'content-auto-manager'); ?></th>
+                        <td>
+                            <select name="search_time">
+                                <option value="" <?php selected($time, ''); ?>><?php _e('不限', 'content-auto-manager'); ?></option>
+                                <option value="d" <?php selected($time, 'd'); ?>><?php _e('过去一天', 'content-auto-manager'); ?></option>
+                                <option value="w" <?php selected($time, 'w'); ?>><?php _e('过去一周', 'content-auto-manager'); ?></option>
+                                <option value="m" <?php selected($time, 'm'); ?>><?php _e('过去一月', 'content-auto-manager'); ?></option>
+                                <option value="y" <?php selected($time, 'y'); ?>><?php _e('过去一年', 'content-auto-manager'); ?></option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php _e('后端引擎 (Backend)', 'content-auto-manager'); ?></th>
+                        <td>
+                            <input type="hidden" name="search_backend" value="lite">
+                            <input type="text" value="Lite (轻量级 - 速度快)" class="regular-text" disabled>
+                            <p class="description"><?php _e('系统强制使用 Lite 引擎，不允许修改。', 'content-auto-manager'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button(__('保存搜索配置', 'content-auto-manager'), 'primary', 'submit_search_api'); ?>
+            </form>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+            <h3><?php _e('公共调用方法 (Helper Function)', 'content-auto-manager'); ?></h3>
+            <div class="notice notice-success" style="margin: 10px 0; padding: 15px; border-left-color: #28a745;">
+                <p style="margin: 0 0 10px 0;"><strong><?php _e('如何在其他代码中调用搜索？', 'content-auto-manager'); ?></strong></p>
+                <p style="margin: 0;"><?php _e('系统已封装好全局辅助函数，您可以在主题或插件的任何位置直接调用，无需关心鉴权和配置。', 'content-auto-manager'); ?></p>
+            </div>
+            <p>
+                <textarea class="large-text code" rows="22" readonly style="font-family: monospace; background: #f6f7f7;">
+// 直接调用搜索，自动使用后台配置（推荐）
+$results = content_auto_search('关键词');
+
+if (!is_wp_error($results) && $results['success']) {
+    // 处理结果列表
+    foreach ($results['results'] as $item) {
+        echo $item['title'];    // 标题
+        echo $item['link'];     // 链接
+        echo $item['snippet'];  // 摘要
+        echo $item['position']; // 排名
+    }
+}
+
+/* 
+ * 返回数据结构示例:
+ * [
+ *   "success" => true,
+ *   "count" => 10,
+ *   "results" => [
+ *     [
+ *       "title" => "标题...",
+ *       "link" => "https://...",
+ *       "snippet" => "摘要内容...",
+ *       "position" => 1
+ *     ],
+ *     ...
+ *   ]
+ * ]
+ */</textarea>
+            </p>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+            
+            <h3><?php _e('搜索测试区域', 'content-auto-manager'); ?></h3>
+            <table class="form-table">
+                 <tr>
+                    <th scope="row"><?php _e('测试关键词', 'content-auto-manager'); ?></th>
+                    <td>
+                        <input type="text" id="test_search_query" class="regular-text" placeholder="输入关键词" style="width: 300px;">
+                        <button type="button" id="btn_test_search" class="button button-secondary"><?php _e('立即搜索', 'content-auto-manager'); ?></button>
+                    </td>
+                </tr>
+                 <tr>
+                    <th scope="row"><?php _e('测试结果', 'content-auto-manager'); ?></th>
+                    <td>
+                        <div id="search_test_result" style="background:#f0f6fc; padding:15px; border:1px solid #c3c4c7; max-height: 400px; overflow:auto; border-radius:4px; min-height: 100px;">
+                            <span style="color:#666;"><?php _e('结果将显示在这里...', 'content-auto-manager'); ?></span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            
+            <script>
+            jQuery(document).ready(function($) {
+                $('#btn_test_search').on('click', function() {
+                    var query = $('#test_search_query').val();
+                    var resultDiv = $('#search_test_result');
+                    
+                    if (!query) {
+                        alert('<?php _e('请输入搜索关键词', 'content-auto-manager'); ?>');
+                        return;
+                    }
+                    
+                    resultDiv.html('<?php _e('正在搜索...', 'content-auto-manager'); ?>');
+                    
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            action: 'content_auto_test_search_api',
+                            nonce: $('#test_search_nonce_field').val(),
+                            query: query
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                var data = response.data;
+                                var html = '<p><strong><?php _e('找到结果数：', 'content-auto-manager'); ?></strong> ' + data.count + '</p>';
+                                
+                                if (data.results && data.results.length > 0) {
+                                    $.each(data.results, function(index, item) {
+                                        html += '<div style="margin-bottom:15px; border-bottom:1px solid #ddd; padding-bottom:10px;">';
+                                        html += '<div style="font-weight:bold; margin-bottom:5px;">';
+                                        var pos = (item.position !== undefined) ? item.position : (index + 1);
+                                        html += '<span style="color:#666; margin-right:5px;">[' + pos + ']</span>';
+                                        html += '<a href="' + item.link + '" target="_blank" style="text-decoration:none;">' + item.title + '</a>';
+                                        html += '</div>';
+                                        html += '<div style="font-size:13px; line-height:1.5;">' + item.snippet + '</div>';
+                                        html += '<div style="font-size:12px; color:#00a32a; margin-top:3px;">' + item.link + '</div>';
+                                        html += '</div>';
+                                    });
+                                } else {
+                                    html += '<p><?php _e('未找到相关结果。', 'content-auto-manager'); ?></p>';
+                                }
+                                
+                                resultDiv.html(html);
+                            } else {
+                                resultDiv.html('<span style="color:#dc3232;"><?php _e('错误：', 'content-auto-manager'); ?> ' + (response.data.message || 'Unknown error') + '</span>');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            resultDiv.html('<span style="color:#dc3232;"><?php _e('系统错误：', 'content-auto-manager'); ?> ' + error + '</span>');
+                        }
+                    });
+                });
+            });
+            </script>
+        </div>
+    </div>
+    
+    <!-- Jina Reader API 配置表单 -->
+    <div id="reader-tab" class="content-auto-tab-content <?php echo $active_tab === 'reader' ? 'active' : ''; ?>">
+        <div class="content-auto-section">
+            <h2><?php _e('Jina Reader API 配置', 'content-auto-manager'); ?></h2>
+            
+            <div class="notice notice-info" style="margin: 20px 0; padding: 15px; border-left-color: #00a0d2;">
+                <h4 style="margin: 0 0 10px 0; color: #23282d;"><?php _e('🚀 Jina Reader API 说明', 'content-auto-manager'); ?></h4>
+                <p style="margin: 0 0 10px 0; color: #23282d;"><?php _e('Jina Reader 用于将网页内容抓取并转换为对 LLM 友好的 Markdown 格式。', 'content-auto-manager'); ?></p>
+                <p style="margin: 0 0 10px 0; color: #23282d;">
+                    <?php _e('申请地址：', 'content-auto-manager'); ?>
+                    <a href="https://jina.ai/reader/" target="_blank" style="color: #0073aa; text-decoration: none; font-weight: bold;">
+                        https://jina.ai/reader/
+                    </a>
+                </p>
+                <p style="margin: 0; color: #23282d;">
+                    <?php _e('配置说明：留空则使用免费匿名模式（20次/分钟）。填入 KEY 可解锁更高频次（500次/分钟）。', 'content-auto-manager'); ?>
+                </p>
+            </div>
+            
+            <form method="post" action="">
+                <?php wp_nonce_field('content_auto_manager_reader_config', 'content_auto_manager_reader_nonce'); ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('API Key', 'content-auto-manager'); ?></th>
+                        <td>
+                            <input type="password" name="jina_api_key" value="<?php echo esc_attr(get_option('content_auto_jina_api_key', '')); ?>" class="regular-text" placeholder="jina_..." autocomplete="off">
+                            <p class="description"><?php _e('请输入您的 Jina Reader API Key。留空则使用匿名模式。', 'content-auto-manager'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button(__('保存 Jina Reader 配置', 'content-auto-manager'), 'primary', 'submit_reader_api'); ?>
+            </form>
+        </div>
+    </div>
+
 <style>
 .content-auto-section {
     background: #fff;

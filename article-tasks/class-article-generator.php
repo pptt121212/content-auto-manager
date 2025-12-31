@@ -38,9 +38,10 @@ class ContentAuto_ArticleGenerator {
      * 如需修复发布逻辑问题，请在 article-tasks/class-article-queue-processor.php 中修改！
      * 
      * @param array $topic 主题数据
+     * @param int|null $task_id 任务ID（用于批量多样性追踪）
      * @return array 生成结果
      */
-    public function generate_article_for_topic($topic) {
+    public function generate_article_for_topic($topic, $task_id = null) {
         // 获取发布规则
         $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
         
@@ -58,8 +59,8 @@ class ContentAuto_ArticleGenerator {
             $similar_articles = $this->get_similar_published_articles($topic['title']);
         }
         
-        // 生成文章内容
-        $article_content = $this->generate_article($topic, $related_content, $publish_rules, $similar_articles);
+        // 生成文章内容（传递task_id用于批量追踪）
+        $article_content = $this->generate_article($topic, $related_content, $publish_rules, $similar_articles, $task_id);
         
         if ($article_content) {
             // 根据是否启用自动配图决定创建策略
@@ -90,12 +91,13 @@ class ContentAuto_ArticleGenerator {
         }
     }
     
-    private function generate_article($topic, $related_content, $publish_rules, $similar_articles = array()) {
+    private function generate_article($topic, $related_content, $publish_rules, $similar_articles = array(), $task_id = null) {
         // 构建基础上下文信息
         $base_context = array(
             'topic_id' => $topic['id'],
             'topic_title' => $topic['title'],
-            'rule_id' => $topic['rule_id']
+            'rule_id' => $topic['rule_id'],
+            'task_id' => $task_id
         );
         
         // 初始化日志记录器
@@ -108,6 +110,12 @@ class ContentAuto_ArticleGenerator {
         
         error_log('ContentAuto: generate_article - Publish Rules: ' . print_r($publish_rules, true));
         $xml_processor = new ContentAuto_XmlTemplateProcessor();
+        
+        // 设置任务ID用于批量多样性追踪
+        if ($task_id !== null) {
+            $xml_processor->set_task_id($task_id);
+        }
+        
         $prompt = $xml_processor->generate_prompt($topic, $publish_rules, $related_content, $similar_articles);
         
         // 记录生成的提示词（仅在调试模式下）

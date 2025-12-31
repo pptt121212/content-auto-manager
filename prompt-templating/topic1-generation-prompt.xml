@@ -35,6 +35,8 @@
     <step_7>【强制验证】检查每个主题的source_angle是否严格对应source_angles列表中的角度名称，如不符合则重新选择</step_7>
   </generation_process>
 
+  {{INTENT_INFERENCE_BLOCK}}
+
   <source_angles>
     <angle name="知识科普">概念定义、原理阐释、背景介绍、入门指南，帮助读者快速建立基础认知</angle>
     <angle name="实操指导">具体步骤、操作流程、实施方案、行动清单，强调可执行性</angle>

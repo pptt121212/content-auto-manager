@@ -491,6 +491,7 @@ $table_descriptions = array(
             'enable_brand_profile_insertion' => __('是否启用品牌资料插入功能（0关闭、1启用）', 'content-auto-manager'),
             'brand_profile_position' => __('品牌资料插入位置（before_second_paragraph或article_end）', 'content-auto-manager'),
             'enable_reference_material' => __('是否启用参考资料功能（0关闭、1启用）', 'content-auto-manager'),
+            'enable_ai_reference_select' => __('是否启用大模型精选召回（0关闭、1启用）', 'content-auto-manager'),
             'publish_language' => __('发布语言代码（如zh-CN、en-US等），影响内容生成的输出语言', 'content-auto-manager'),
             'created_at' => __('创建时间', 'content-auto-manager'),
             'updated_at' => __('更新时间', 'content-auto-manager')
@@ -877,7 +878,7 @@ $table_descriptions = array(
                                 } elseif ($table_key === 'content_auto_topics') {
                                     $new_fields = array('vector_cluster_id', 'vector_status', 'vector_error', 'vector_retry_count', 'reference_material');
                                 } elseif ($table_key === 'content_auto_publish_rules') {
-                                    $new_fields = array('max_auto_images', 'skip_first_image_placeholder', 'enable_internal_linking', 'publish_interval_minutes', 'enable_brand_profile_insertion', 'brand_profile_position', 'enable_reference_material', 'publish_language');
+                                    $new_fields = array('max_auto_images', 'skip_first_image_placeholder', 'enable_internal_linking', 'publish_interval_minutes', 'enable_brand_profile_insertion', 'brand_profile_position', 'enable_reference_material', 'enable_ai_reference_select', 'publish_language');
                                 } elseif ($table_key === 'content_auto_api_configs') {
                                     $new_fields = array('vector_api_url', 'vector_api_key', 'vector_model_name');
                                 } elseif ($table_key === 'content_auto_articles') {
@@ -910,7 +911,10 @@ $table_descriptions = array(
                         
                         // 显示表数据（前10条记录）
                         echo '<h4>' . __('数据示例（前10条记录）', 'content-auto-manager') . '</h4>';
-                        $table_data = $wpdb->get_results("SELECT * FROM `$table_full_name` ORDER BY updated_at DESC LIMIT 10");
+                        
+                        // 根据表类型选择合适的排序字段
+                        $order_by = ($table_key === 'content_auto_topics') ? 'id DESC' : 'updated_at DESC';
+                        $table_data = $wpdb->get_results("SELECT * FROM `$table_full_name` ORDER BY $order_by LIMIT 10");
                         
                         if (!empty($table_data)) {
                             // 获取字段名
