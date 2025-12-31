@@ -445,21 +445,31 @@ $rule_manager = new ContentAuto_RuleManager();
 
                                     $reference_text = !empty($topic_reference) ? $topic_reference : $rule_reference;
 
-                                    if (!empty($reference_text)):
+                                    if (!empty($reference_text)) {
                                         $display_text = mb_substr($reference_text, 0, 30);
-                                        if (mb_strlen($reference_text) > 30) {
+                                        $is_long = mb_strlen($reference_text) > 30;
+                                        if ($is_long) {
                                             $display_text .= '...';
                                         }
-                                        echo '<span class="reference-material" title="' . esc_attr($reference_text) . '">' . esc_html($display_text) . '</span>';
-                                    else:
+                                        echo '<span class="reference-material-preview" title="' . esc_attr($reference_text) . '">' . esc_html($display_text) . '</span>';
+                                        if ($is_long) {
+                                            echo ' <a href="#" class="view-reference-material" data-full-content="' . esc_attr($reference_text) . '" style="font-size: 12px; white-space: nowrap;">[' . __('查看', 'content-auto-manager') . ']</a>';
+                                        }
+                                    } else {
                                         echo '<span class="no-data">-</span>';
-                                    endif;
+                                    }
                                     ?>
                                 </td>
                                 <td>
                                     <a href="<?php echo wp_nonce_url(add_query_arg(array('action' => 'delete', 'id' => $topic['id'])), 'content_auto_manager_delete_topic', 'nonce'); ?>" class="button button-small button-link-delete" onclick="return confirm('<?php _e('确定要删除此主题吗？', 'content-auto-manager'); ?>')">
                                         <?php _e('删除', 'content-auto-manager'); ?>
                                     </a>
+                                    <button type="button" class="button button-small btn-recall-test" 
+                                            data-topic-id="<?php echo esc_attr($topic['id']); ?>"
+                                            data-topic-title="<?php echo esc_attr($topic['title']); ?>"
+                                            <?php echo empty($topic['vector_embedding']) ? 'disabled title="' . esc_attr__('主题没有向量，无法测试召回', 'content-auto-manager') . '"' : ''; ?>>
+                                        <?php _e('召回测试', 'content-auto-manager'); ?>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -724,4 +734,445 @@ $rule_manager = new ContentAuto_RuleManager();
         font-size: 14px;
     }
 }
+
+.btn-recall-test {
+    margin-left: 5px !important;
+}
+
+.btn-recall-test:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 召回测试弹窗样式 */
+.recall-test-modal {
+    display: none;
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.recall-test-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.recall-test-modal-header {
+    background: #0073aa;
+    color: #fff;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recall-test-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.recall-test-modal-close {
+    color: #fff;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.recall-test-modal-close:hover {
+    opacity: 0.8;
+}
+
+.recall-test-modal-body {
+    padding: 20px;
+    max-height: calc(85vh - 120px);
+    overflow-y: auto;
+}
+
+.recall-test-loading {
+    text-align: center;
+    padding: 40px;
+}
+
+.recall-test-loading .spinner {
+    float: none;
+    margin: 0 auto 10px;
+    display: block;
+}
+
+.recall-test-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 5px;
+    border-left: 4px solid #0073aa;
+}
+
+.recall-test-section h4 {
+    margin: 0 0 10px 0;
+    color: #23282d;
+}
+
+.recall-test-error {
+    border-left-color: #dc3232;
+    background: #fef7f7;
+}
+
+.recall-test-error h4 {
+    color: #dc3232;
+}
+
+.recall-test-success {
+    border-left-color: #46b450;
+    background: #f7fef7;
+}
+
+.recall-test-candidates-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.recall-test-candidates-table th,
+.recall-test-candidates-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.recall-test-candidates-table th {
+    background: #f1f1f1;
+    font-weight: 600;
+}
+
+.recall-test-candidates-table tr:hover {
+    background: #f5f5f5;
+}
+
+.recall-test-final-result {
+    background: #e7f7e7;
+    border: 1px solid #46b450;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.recall-test-final-result h4 {
+    color: #46b450;
+    margin: 0 0 10px 0;
+}
+
+.recall-test-description {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 10px;
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 13px;
+    line-height: 1.5;
+}
 </style>
+
+<!-- 召回测试弹窗 -->
+<div id="recall-test-modal" class="recall-test-modal">
+    <div class="recall-test-modal-content">
+        <div class="recall-test-modal-header">
+            <h3><?php _e('参考资料召回测试', 'content-auto-manager'); ?></h3>
+            <span class="recall-test-modal-close">&times;</span>
+        </div>
+        <div class="recall-test-modal-body">
+            <div id="recall-test-result"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    var recallTestNonce = '<?php echo wp_create_nonce('cam_reference_recall_test'); ?>';
+    
+    // 召回测试按钮点击
+    $('.btn-recall-test').on('click', function() {
+        var topicId = $(this).data('topic-id');
+        var topicTitle = $(this).data('topic-title');
+        
+        // 显示弹窗
+        $('#recall-test-modal').show();
+        
+        // 显示加载状态
+        $('#recall-test-result').html(
+            '<div class="recall-test-loading">' +
+            '<span class="spinner is-active"></span>' +
+            '<p><?php _e('正在执行召回测试，请稍候...', 'content-auto-manager'); ?></p>' +
+            '<p><small><?php _e('（大模型精选可能需要10-30秒）', 'content-auto-manager'); ?></small></p>' +
+            '</div>'
+        );
+        
+        // 发送AJAX请求
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'cam_test_reference_recall',
+                nonce: recallTestNonce,
+                topic_id: topicId
+            },
+            success: function(response) {
+                if (response.success) {
+                    renderRecallTestResult(response.data, topicTitle);
+                } else {
+                    $('#recall-test-result').html(
+                        '<div class="recall-test-section recall-test-error">' +
+                        '<h4><?php _e('测试失败', 'content-auto-manager'); ?></h4>' +
+                        '<p>' + (response.data.message || '<?php _e('未知错误', 'content-auto-manager'); ?>') + '</p>' +
+                        '</div>'
+                    );
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#recall-test-result').html(
+                    '<div class="recall-test-section recall-test-error">' +
+                    '<h4><?php _e('请求失败', 'content-auto-manager'); ?></h4>' +
+                    '<p>' + error + '</p>' +
+                    '</div>'
+                );
+            }
+        });
+    });
+    
+    // 关闭弹窗
+    $('.recall-test-modal-close, .recall-test-modal').on('click', function(e) {
+        if (e.target === this) {
+            $('#recall-test-modal').hide();
+        }
+    });
+    
+    // 渲染测试结果
+    function renderRecallTestResult(data, topicTitle) {
+        var html = '';
+        
+        // 主题信息
+        html += '<div class="recall-test-section">';
+        html += '<h4><?php _e('测试主题', 'content-auto-manager'); ?></h4>';
+        html += '<p><strong>ID:</strong> ' + data.topic_id + '</p>';
+        html += '<p><strong><?php _e('标题', 'content-auto-manager'); ?>:</strong> ' + escapeHtml(data.topic_title) + '</p>';
+        html += '<p><strong><?php _e('向量状态', 'content-auto-manager'); ?>:</strong> ' + (data.has_vector ? '<?php _e('已生成', 'content-auto-manager'); ?>' : '<?php _e('未生成', 'content-auto-manager'); ?>') + '</p>';
+        html += '</div>';
+        
+        // 调试信息
+        if (data.debug_info) {
+            html += '<div class="recall-test-section" style="border-left-color: #9b59b6;">';
+            html += '<h4><?php _e('调试信息', 'content-auto-manager'); ?></h4>';
+            if (data.debug_info.topic_vector_dimensions) {
+                html += '<p><strong><?php _e('主题向量维度', 'content-auto-manager'); ?>:</strong> ' + data.debug_info.topic_vector_dimensions + '</p>';
+            }
+            if (data.debug_info.total_reference_profiles !== undefined) {
+                html += '<p><strong><?php _e('参考资料总数', 'content-auto-manager'); ?>:</strong> ' + data.debug_info.total_reference_profiles + ' <?php _e('条', 'content-auto-manager'); ?></p>';
+            }
+            if (data.debug_info.suggestion) {
+                html += '<p style="color: #e67e22;"><strong><?php _e('建议', 'content-auto-manager'); ?>:</strong> ' + escapeHtml(data.debug_info.suggestion) + '</p>';
+            }
+            html += '</div>';
+        }
+        
+        // 所有参考资料相似度（调试用）
+        if (data.all_profiles_similarity && data.all_profiles_similarity.length > 0) {
+            html += '<div class="recall-test-section" style="border-left-color: #3498db;">';
+            html += '<h4><?php _e('所有参考资料相似度', 'content-auto-manager'); ?> (' + data.all_profiles_similarity.length + ' <?php _e('条', 'content-auto-manager'); ?>)</h4>';
+            html += '<p style="color: #666; font-size: 12px;"><?php _e('此表显示所有参考资料与主题的相似度，用于调试。阈值为 0.5（50%）。', 'content-auto-manager'); ?></p>';
+            html += '<table class="recall-test-candidates-table">';
+            html += '<thead><tr>';
+            html += '<th>ID</th>';
+            html += '<th><?php _e('标题', 'content-auto-manager'); ?></th>';
+            html += '<th><?php _e('相似度', 'content-auto-manager'); ?></th>';
+            html += '<th><?php _e('达到阈值', 'content-auto-manager'); ?></th>';
+            html += '</tr></thead><tbody>';
+            
+            data.all_profiles_similarity.forEach(function(profile) {
+                var similarity = profile.similarity;
+                var similarityText = similarity !== null ? (similarity * 100).toFixed(2) + '%' : '<?php _e('解码失败', 'content-auto-manager'); ?>';
+                var meetsThreshold = profile.meets_threshold;
+                var rowStyle = meetsThreshold ? 'background: #e7f7e7;' : (similarity !== null && similarity < 0.3 ? 'background: #fef7f7;' : '');
+                
+                html += '<tr style="' + rowStyle + '">';
+                html += '<td>' + profile.id + '</td>';
+                html += '<td>' + escapeHtml(profile.title) + '</td>';
+                html += '<td>' + similarityText + '</td>';
+                html += '<td>' + (profile.error ? '<span style="color: #dc3232;">' + escapeHtml(profile.error) + '</span>' : (meetsThreshold ? '<span style="color: #46b450;">✓ <?php _e('是', 'content-auto-manager'); ?></span>' : '<span style="color: #999;">✗ <?php _e('否', 'content-auto-manager'); ?></span>')) + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            html += '</div>';
+        }
+        
+        // 错误信息
+        if (data.error) {
+            html += '<div class="recall-test-section recall-test-error">';
+            html += '<h4><?php _e('召回失败', 'content-auto-manager'); ?></h4>';
+            html += '<p>' + escapeHtml(data.error) + '</p>';
+            html += '</div>';
+            $('#recall-test-result').html(html);
+            return;
+        }
+        
+        // 候选列表
+        if (data.candidates && data.candidates.length > 0) {
+            html += '<div class="recall-test-section">';
+            html += '<h4><?php _e('召回候选列表', 'content-auto-manager'); ?> (' + data.candidates.length + ' <?php _e('条', 'content-auto-manager'); ?>)</h4>';
+            html += '<table class="recall-test-candidates-table">';
+            html += '<thead><tr>';
+            html += '<th>ID</th>';
+            html += '<th><?php _e('标题', 'content-auto-manager'); ?></th>';
+            html += '<th><?php _e('相似度', 'content-auto-manager'); ?></th>';
+            html += '<th><?php _e('描述预览', 'content-auto-manager'); ?></th>';
+            html += '</tr></thead><tbody>';
+            
+            data.candidates.forEach(function(candidate) {
+                var isSelected = data.ai_selected && data.ai_selected.id == candidate.id;
+                html += '<tr style="' + (isSelected ? 'background: #e7f7e7;' : '') + '">';
+                html += '<td>' + candidate.id + (isSelected ? ' ✓' : '') + '</td>';
+                html += '<td>' + escapeHtml(candidate.title) + '</td>';
+                html += '<td>' + (candidate.similarity * 100).toFixed(2) + '%</td>';
+                html += '<td>' + escapeHtml(candidate.description_preview) + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            html += '</div>';
+        }
+        
+        // AI选择结果
+        if (data.ai_selected) {
+            html += '<div class="recall-test-section">';
+            html += '<h4><?php _e('大模型精选结果', 'content-auto-manager'); ?></h4>';
+            html += '<p><strong><?php _e('选中ID', 'content-auto-manager'); ?>:</strong> ' + data.ai_selected.id + '</p>';
+            html += '<p><strong><?php _e('选中标题', 'content-auto-manager'); ?>:</strong> ' + escapeHtml(data.ai_selected.title) + '</p>';
+            html += '<p><strong><?php _e('选择原因', 'content-auto-manager'); ?>:</strong> ' + escapeHtml(data.ai_selected.reason) + '</p>';
+            html += '</div>';
+        }
+        
+        // 最终结果
+        if (data.final_result) {
+            html += '<div class="recall-test-final-result">';
+            html += '<h4><?php _e('最终召回结果', 'content-auto-manager'); ?></h4>';
+            html += '<p><strong>ID:</strong> ' + data.final_result.id + '</p>';
+            html += '<p><strong><?php _e('标题', 'content-auto-manager'); ?>:</strong> ' + escapeHtml(data.final_result.title) + '</p>';
+            html += '<p><strong><?php _e('参考资料内容', 'content-auto-manager'); ?>:</strong></p>';
+            html += '<div class="recall-test-description">' + escapeHtml(data.final_result.description) + '</div>';
+            html += '</div>';
+        }
+        
+        $('#recall-test-result').html(html);
+    }
+    
+    // HTML转义函数
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+});
+</script>
+
+<!-- 参考资料详情弹窗 -->
+<div id="reference-material-modal" class="cam-modal" style="display:none;">
+    <div class="cam-modal-content">
+        <div class="cam-modal-header">
+            <span class="cam-modal-close" style="float:right;cursor:pointer;font-size:24px;">&times;</span>
+            <h3 style="margin:0;"><?php _e('参考资料详情', 'content-auto-manager'); ?></h3>
+        </div>
+        <div class="cam-modal-body" style="padding:15px;">
+            <textarea id="reference-material-text" readonly style="width:100%;height:300px;padding:10px;box-sizing:border-box;font-family:monospace;resize:vertical;"></textarea>
+        </div>
+        <div class="cam-modal-footer" style="padding:15px;text-align:right;border-top:1px solid #ddd;background:#f9f9f9;">
+            <button type="button" class="button" id="copy-reference-btn"><?php _e('复制内容', 'content-auto-manager'); ?></button>
+            <button type="button" class="button button-primary cam-modal-close-btn"><?php _e('关闭', 'content-auto-manager'); ?></button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cam-modal {
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.5);
+    }
+    .cam-modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        border: 1px solid #888;
+        width: 60%;
+        max-width: 800px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    }
+    .cam-modal-header {
+        padding: 15px 20px;
+        background-color: #f1f1f1;
+        border-bottom: 1px solid #ddd;
+        border-radius: 5px 5px 0 0;
+    }
+</style>
+
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    var modal = $('#reference-material-modal');
+    var textarea = $('#reference-material-text');
+    var copyBtn = $('#copy-reference-btn');
+    
+    // 打开弹窗
+    $(document).on('click', '.view-reference-material', function(e) {
+        e.preventDefault();
+        var content = $(this).data('full-content');
+        textarea.val(content);
+        modal.fadeIn(200);
+    });
+    
+    // 关闭弹窗
+    $('.cam-modal-close, .cam-modal-close-btn').on('click', function() {
+        modal.fadeOut(200);
+    });
+    
+    // 点击外部关闭
+    $(window).on('click', function(e) {
+        if ($(e.target).is(modal)) {
+            modal.fadeOut(200);
+        }
+    });
+    
+    // 复制内容
+    copyBtn.on('click', function() {
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            var originalText = copyBtn.text();
+            copyBtn.text('<?php _e('已复制!', 'content-auto-manager'); ?>');
+            setTimeout(function() {
+                copyBtn.text(originalText);
+            }, 2000);
+        } catch (err) {
+            console.error('复制失败', err);
+        }
+    });
+});
+</script>

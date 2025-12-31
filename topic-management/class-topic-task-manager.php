@@ -247,17 +247,41 @@ class ContentAuto_TopicTaskManager {
      * 保存生成的主题
      */
     private function save_generated_topics($topics, $task, $subtask_id) {
+        // --- 自动搜索物料逻辑准备 ---
+        $has_pending_search = false;
+        $enable_auto_search = false;
+        
+        // 获取发布规则配置
+        $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
+        if ($publish_rules && !empty($publish_rules['enable_reference_material']) && !empty($publish_rules['enable_auto_material_search'])) {
+            // 检查规则级参考资料
+            $rule_has_material = false;
+            if (!empty($task['rule_id'])) {
+                $rule = $this->database->get_row('content_auto_rules', array('id' => $task['rule_id']));
+                if ($rule && !empty($rule['reference_material'])) {
+                    $rule_has_material = true;
+                }
+            }
+            
+            // 只有当规则没有资料时，才启用自动搜索
+            if (!$rule_has_material) {
+                $enable_auto_search = true;
+            }
+        }
+        // -----------------------
+
         foreach ($topics as $topic) {
+            $topic_data = null;
+
             if (is_string($topic) && !empty(trim($topic))) {
                 $topic_data = [
                     'task_id' => $task['topic_task_id'],
                     'rule_id' => $task['rule_id'],
                     'rule_item_index' => $subtask_id,
                     'title' => trim($topic),
-                    'status' => CONTENT_AUTO_TOPIC_UNUSED
+                    'status' => CONTENT_AUTO_TOPIC_UNUSED,
+                    'material_search_status' => 'none' // ✅ 显式默认值
                 ];
-                $this->add_api_config_to_topic($topic_data);
-                $this->database->insert('content_auto_topics', $topic_data);
             } elseif (is_array($topic) && isset($topic['title'])) {
                 if ($this->is_complete_topic_data($topic)) {
                     $topic_data = [
@@ -270,17 +294,69 @@ class ContentAuto_TopicTaskManager {
                         'user_value' => $topic['user_value'],
                         'seo_keywords' => json_encode($topic['seo_keywords']),
                         'matched_category' => $topic['matched_category'],
-                        'priority_score' => intval($topic['priority_score'])
+                        'priority_score' => intval($topic['priority_score']),
+                        'material_search_status' => 'none' // ✅ 显式默认值
                     ];
-                    $this->add_api_config_to_topic($topic_data);
-                    $this->database->insert('content_auto_topics', $topic_data);
                 } else {
                     $error_message = '主题数据字段不完整: ' . json_encode($topic);
                     $this->logger->log_error('INCOMPLETE_TOPIC', $error_message);
                     return ['success' => false, 'error' => $error_message];
                 }
             }
+
+            if ($topic_data) {
+                $this->add_api_config_to_topic($topic_data);
+                
+                // 如果满足自动搜索条件，标记为 pending
+                if ($enable_auto_search) {
+                    $topic_data['material_search_status'] = 'pending';
+                    $has_pending_search = true;
+                }
+                
+                $this->database->insert('content_auto_topics', $topic_data);
+            }
         }
+
+        // 如果生成了待搜索任务，添加到统一队列系统
+        if ($has_pending_search) {
+            global $wpdb;
+            $topics_table = $wpdb->prefix . 'content_auto_topics';
+            
+            // 重要修复：只查询本次任务(task_id)生成的主题
+            // 避免错误地将历史旧主题（如果有pending状态）也加入队列
+            $pending_topics = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT id FROM {$topics_table} 
+                     WHERE task_id = %s 
+                     AND material_search_status = 'pending' 
+                     AND (reference_material IS NULL OR reference_material = '') 
+                     ORDER BY id ASC",
+                    $task['topic_task_id']
+                ),
+                ARRAY_A
+            );
+            
+            if (!empty($pending_topics)) {
+                // 为每个主题创建队列任务
+                foreach ($pending_topics as $topic) {
+                    $queue_data = [
+                        'job_type' => 'material_search',
+                        'job_id' => $topic['id'],  // 主题 ID
+                        'subtask_id' => null,
+                        'reference_id' => $topic['id'],  // 也存储主题 ID
+                        'priority' => 20,  // 最低优先级
+                        'retry_count' => 0,
+                        'status' => 'pending',
+                        'error_message' => '',
+                        'created_at' => current_time('mysql'),
+                        'updated_at' => current_time('mysql')
+                    ];
+                    
+                    $this->database->insert('content_auto_job_queue', $queue_data);
+                }
+            }
+        }
+
         return ['success' => true];
     }
     
@@ -332,6 +408,9 @@ class ContentAuto_TopicTaskManager {
         // 获取参考资料块
         $reference_material_block = $this->build_reference_material_block($content, $task['rule_id']);
         
+        // 获取搜索意图推断块
+        $intent_inference_block = $this->build_intent_inference_block($publish_rule);
+        
         // 替换占位符
         $replacements = array(
             '{{REFERENCE_CONTENT_BLOCK}}' => $reference_content_block,
@@ -340,7 +419,8 @@ class ContentAuto_TopicTaskManager {
             '{{SITE_CATEGORIES_BLOCK}}' => $site_categories_block,
             '{{LANGUAGE_INSTRUCTION}}' => $language_instruction,
             '{{LANGUAGE_NAME}}' => $language_ai_name,
-            '{{CURRENT_DATE}}' => date('Y年m月d日') // 添加当前日期替换
+            '{{CURRENT_DATE}}' => date('Y年m月d日'),
+            '{{INTENT_INFERENCE_BLOCK}}' => $intent_inference_block
         );
         
         $final_prompt = str_replace(array_keys($replacements), array_values($replacements), $prompt);
@@ -1003,7 +1083,7 @@ class ContentAuto_TopicTaskManager {
                 'job_id' => $task_id,
                 'subtask_id' => 'subtask_' . uniqid(),  // 使用唯一ID
                 'reference_id' => $rule_item->id,  // reference_id存储规则项目ID
-                'priority' => 5,
+                'priority' => 80, // 主题生成优先级（高于文章生成）
                 'retry_count' => 0,
                 'status' => CONTENT_AUTO_STATUS_PENDING,
                 'error_message' => '',
@@ -1067,6 +1147,44 @@ class ContentAuto_TopicTaskManager {
         $reference_material_block .= "    </reference_material>\n";
         
         return $reference_material_block;
+    }
+    
+    /**
+     * 构建搜索意图推断块
+     * 根据发布规则设置决定是否启用意图推断增强
+     */
+    private function build_intent_inference_block($publish_rule) {
+        // 检查是否启用搜索意图推断
+        $enable_intent_inference = isset($publish_rule['enable_intent_inference']) ? intval($publish_rule['enable_intent_inference']) : 0;
+        
+        if (!$enable_intent_inference) {
+            return '';
+        }
+        
+        // 返回意图推断增强提示词块
+        $intent_block = <<<'XML'
+
+  <intent_inference_enhancement>
+    <instruction>【搜索意图推断】在生成标题前，必须先完成以下意图分析：</instruction>
+    
+    <analysis_step_1>
+      基于源内容，推断用户可能的2-4个不同搜索意图方向：
+      - 信息获取型：想了解概念、原理、背景知识
+      - 问题解决型：遇到具体问题，寻求解决方案
+      - 对比决策型：在多个选项间做选择，需要比较信息
+      - 学习提升型：想掌握技能、方法、最佳实践
+      - 资源获取型：寻找工具、模板、资源推荐
+    </analysis_step_1>
+    
+    <analysis_step_2>针对每个推断出的意图方向，思考用户会在搜索引擎中输入什么样的查询词或问题</analysis_step_2>
+    
+    <analysis_step_3>基于这些真实搜索场景构思标题，确保标题使用用户可能搜索的自然语言表达</analysis_step_3>
+    
+    <requirement>生成的标题必须覆盖不同的意图方向，每个标题对应一个明确的用户搜索意图，优先使用用户可能在搜索引擎中输入的自然语言表达方式</requirement>
+  </intent_inference_enhancement>
+XML;
+        
+        return $intent_block;
     }
     
     /**

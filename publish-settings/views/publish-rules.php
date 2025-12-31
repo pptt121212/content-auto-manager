@@ -60,6 +60,8 @@ if (isset($_POST['submit_license']) && isset($_POST['content_auto_manager_licens
     }
 }
 
+
+
 // 处理发布规则表单提交
 if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
     // 验证nonce
