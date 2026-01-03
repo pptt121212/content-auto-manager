@@ -65,6 +65,7 @@ add_action('wp_ajax_cam_test_reference_recall', 'cam_test_reference_recall_handl
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/ajax-handlers.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'debug-tools/ajax-handler.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-api-settings/ajax-handler.php';
+require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/ajax-handler.php';
 
 // 引入外部访问统计功能
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/analytics/class-external-visit-tracker.php';

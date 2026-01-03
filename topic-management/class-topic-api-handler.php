@@ -95,7 +95,7 @@ class ContentAuto_TopicApiHandler {
         $predefined_api = new ContentAuto_PredefinedApi();
         
         // 构建提示，替换{N}为实际数量
-        $full_prompt = str_replace('{N}', $count, $prompt);
+        $full_prompt = str_replace(array('{N}', '{{N}}'), $count, $prompt);
         
         // 发送请求到预置API
         $response = $predefined_api->send_request($api_config['predefined_channel'], $full_prompt);
@@ -122,7 +122,7 @@ class ContentAuto_TopicApiHandler {
      */
     private function handle_custom_api_request($api_config, $prompt, $count, $rule_id, $rule_item_index, $method_start_time, $start_memory) {
         // 构建提示，替换{N}为实际数量
-        $full_prompt = str_replace('{N}', $count, $prompt);
+        $full_prompt = str_replace(array('{N}', '{{N}}'), $count, $prompt);
 
         // 构建API请求数据
         $body_data = array(

@@ -492,20 +492,34 @@ class ContentAuto_XmlTemplateProcessor {
         // 获取角色描述
         $role_description = $this->get_role_description_from_publish_rules();
 
-        // 随机选择文章模板
-        $available_templates = [
-            'article-generation-prompt.xml',
-            'article-generation-prompt1.xml',
-            'article-generation-prompt2.xml'
-        ];
-
-        $selected_template = $available_templates[array_rand($available_templates)];
-        $template_path = __DIR__ . '/' . $selected_template;
-
-        if (!file_exists($template_path)) {
-            return "模板加载失败，请检查插件文件完整性。";
+        // 尝试从数据库获取启用的文章模板
+        if (class_exists('ContentAuto_TemplateManager')) {
+            $template_manager = new ContentAuto_TemplateManager();
+            $db_template_content = $template_manager->get_active_template_content('article_generation');
+            
+            if ($db_template_content) {
+                $prompt = $db_template_content;
+                $selected_template = 'Database Template';
+            }
         }
-        $prompt = file_get_contents($template_path);
+        
+        // 如果没有数据库模板，回退到文件系统
+        if (empty($prompt)) {
+            // 随机选择文章模板
+            $available_templates = [
+                'article-generation-prompt.xml',
+                'article-generation-prompt1.xml',
+                'article-generation-prompt2.xml'
+            ];
+    
+            $selected_template = $available_templates[array_rand($available_templates)];
+            $template_path = __DIR__ . '/' . $selected_template;
+    
+            if (!file_exists($template_path)) {
+                return "模板加载失败，请检查插件文件完整性。";
+            }
+            $prompt = file_get_contents($template_path);
+        }
 
         // 记录选择的模板（仅在调试模式下）
         if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {

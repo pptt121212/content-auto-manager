@@ -38,7 +38,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
              LEFT JOIN {$article_tasks_table} at ON q.job_id = at.id
              WHERE q.job_type = 'article' 
              AND q.status = 'processing' 
-             AND TIMESTAMPDIFF(SECOND, q.updated_at, NOW()) > 120", // 超过120秒(2分钟)
+             AND TIMESTAMPDIFF(SECOND, q.updated_at, NOW()) > 300", // 超过300秒(5分钟)
             ARRAY_A
         );
         

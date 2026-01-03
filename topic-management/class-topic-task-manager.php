@@ -364,20 +364,35 @@ class ContentAuto_TopicTaskManager {
      * 格式化内容为提示
      */
     private function format_content_for_prompt($content, $task) {
-        // 随机选择模板文件
-        $template_files = [
-            'topic-generation-prompt.xml',
-            'topic1-generation-prompt.xml'
-        ];
-        $selected_template = $template_files[array_rand($template_files)];
-        $template_path = __DIR__ . '/../prompt-templating/' . $selected_template;
+        $prompt = '';
         
-        if (!file_exists($template_path)) {
-            $this->logger->log_error('TEMPLATE_MISSING', '提示词模板文件未找到: ' . $template_path);
-            return "模板加载失败，请检查插件文件完整性。";
+        // 尝试从数据库获取启用的主题生成模板
+        if (class_exists('ContentAuto_TemplateManager')) {
+            $template_manager = new ContentAuto_TemplateManager();
+            $db_template_content = $template_manager->get_active_template_content('topic_generation');
+            
+            if ($db_template_content) {
+                $prompt = $db_template_content;
+            }
         }
-        
-        $prompt = file_get_contents($template_path);
+
+        // 如果没有数据库模板，回退到文件系统
+        if (empty($prompt)) {
+            // 随机选择模板文件
+            $template_files = [
+                'topic-generation-prompt.xml',
+                'topic1-generation-prompt.xml'
+            ];
+            $selected_template = $template_files[array_rand($template_files)];
+            $template_path = __DIR__ . '/../prompt-templating/' . $selected_template;
+            
+            if (!file_exists($template_path)) {
+                $this->logger->log_error('TEMPLATE_MISSING', '提示词模板文件未找到: ' . $template_path);
+                return "模板加载失败，请检查插件文件完整性。";
+            }
+            
+            $prompt = file_get_contents($template_path);
+        }
         
         // 动态生成内容块
         $reference_content_block = $this->build_reference_content_block($content);
