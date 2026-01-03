@@ -306,6 +306,8 @@ class ContentAuto_Database {
             `enable_brand_profile_insertion` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用品牌资料插入功能\',
             `brand_profile_position` varchar(50) NOT NULL DEFAULT \'before_second_paragraph\' COMMENT \'品牌资料插入位置\',
             `enable_reference_material` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用参考资料功能\',
+            `enable_ai_reference_select` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用大模型精选召回\',
+            `enable_intent_inference` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用搜索意图推断，生成更符合用户搜索意图的主题标题\',
             `publish_language` varchar(10) NOT NULL DEFAULT \'zh-CN\' COMMENT \'发布语言，影响内容生成的输出语言\',
             `role_description` text NOT NULL COMMENT \'AI角色描述，用于文章生成的提示词模板\',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -410,6 +412,45 @@ class ContentAuto_Database {
 
         // 确保发布规则表数据完整性（为全新安装和现有用户提供统一保障）
         $this->ensure_publish_rules_data_integrity();
+
+        // 运行智能结构优化迁移
+        $this->run_structure_optimization_migration();
+
+        // 提示词模板表
+        $prompt_templates_table = $wpdb->prefix . 'content_auto_prompt_templates';
+        $sql = 'CREATE TABLE IF NOT EXISTS `' . $prompt_templates_table . '` (
+            `id` bigint(20) NOT NULL AUTO_INCREMENT,
+            `name` varchar(255) NOT NULL,
+            `template_type` varchar(50) NOT NULL COMMENT \'topic_generation or article_generation\',
+            `content` longtext NOT NULL,
+            `source_file` varchar(255) DEFAULT NULL COMMENT \'源文件名，用于防止重复导入\',
+            `is_active` tinyint(1) NOT NULL DEFAULT 1,
+            `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `template_type` (`template_type`),
+            KEY `is_active` (`is_active`),
+            UNIQUE KEY `source_file` (`source_file`)
+        ) ' . $charset_collate . ';';
+
+        $result = dbDelta($sql);
+
+        // 检查表是否创建成功
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$prompt_templates_table'") == $prompt_templates_table;
+        if (!$table_exists) {
+            $errors[] = "Failed to create table: $prompt_templates_table";
+        } else {
+            $created_tables[] = $prompt_templates_table;
+        }
+
+        // 更新数据库结构以支持自动素材搜索
+        $this->update_database_for_auto_material_search();
+
+        // 更新提示词模板表结构
+        $this->update_prompt_templates_table_structure($prompt_templates_table);
+
+        // 预置默认提示词模板
+        $this->seed_default_templates($prompt_templates_table);
 
         // 返回创建结果
         return array(
@@ -1321,8 +1362,16 @@ class ContentAuto_Database {
                 'sql' => "ALTER TABLE $table_name ADD COLUMN `enable_reference_material` tinyint(1) NOT NULL DEFAULT '0' COMMENT '启用参考资料功能' AFTER `brand_profile_position`",
                 'description' => '参考资料功能字段'
             ],
+            'enable_ai_reference_select' => [
+                'sql' => "ALTER TABLE $table_name ADD COLUMN `enable_ai_reference_select` tinyint(1) NOT NULL DEFAULT '0' COMMENT '启用大模型精选召回' AFTER `enable_reference_material`",
+                'description' => '大模型精选召回字段'
+            ],
+            'enable_intent_inference' => [
+                'sql' => "ALTER TABLE $table_name ADD COLUMN `enable_intent_inference` tinyint(1) NOT NULL DEFAULT '0' COMMENT '启用搜索意图推断' AFTER `enable_ai_reference_select`",
+                'description' => '搜索意图推断字段'
+            ],
             'publish_language' => [
-                'sql' => "ALTER TABLE $table_name ADD COLUMN `publish_language` varchar(10) NOT NULL DEFAULT 'zh-CN' COMMENT '发布语言，影响内容生成的输出语言' AFTER `enable_reference_material`",
+                'sql' => "ALTER TABLE $table_name ADD COLUMN `publish_language` varchar(10) NOT NULL DEFAULT 'zh-CN' COMMENT '发布语言，影响内容生成的输出语言' AFTER `enable_intent_inference`",
                 'description' => '发布语言字段'
             ],
             'image_prompt_template' => [
@@ -1422,6 +1471,7 @@ class ContentAuto_Database {
                 'enable_brand_profile_insertion' => 0,
                 'brand_profile_position' => 'before_second_paragraph',
                 'enable_reference_material' => 0,
+                'enable_ai_reference_select' => 0,
                 'publish_language' => 'zh-CN',
                 'image_prompt_template' => ''
             ];
@@ -1429,5 +1479,273 @@ class ContentAuto_Database {
             $wpdb->insert($table_name, $default_rule);
         }
     }
+
+    /**
+     * 运行智能结构优化数据库迁移
+     * 
+     * @return array 迁移结果
+     */
+    public function run_structure_optimization_migration() {
+        // 加载迁移类
+        require_once dirname(__FILE__) . '/class-structure-optimization-migration.php';
+        
+        $migration = new ContentAuto_StructureOptimizationMigration();
+        return $migration->run();
+    }
+
+    /**
+     * 验证智能结构优化数据库迁移状态
+     * 
+     * @return array 验证结果
+     */
+    public function verify_structure_optimization_migration() {
+        // 加载迁移类
+        require_once dirname(__FILE__) . '/class-structure-optimization-migration.php';
+        
+        $migration = new ContentAuto_StructureOptimizationMigration();
+        return $migration->verify();
+    }
+
+    /**
+     * 获取智能结构优化迁移状态摘要
+     * 
+     * @return string 状态摘要
+     */
+    public function get_structure_optimization_migration_status() {
+        // 加载迁移类
+        require_once dirname(__FILE__) . '/class-structure-optimization-migration.php';
+        
+        $migration = new ContentAuto_StructureOptimizationMigration();
+        return $migration->get_status_summary();
+    }
+
+    /**
+     * 更新数据库结构以支持自动素材搜索
+     */
+    public function update_database_for_auto_material_search() {
+        global $wpdb;
+        
+        // 1. 更新发布规则表，添加 `enable_auto_material_search`
+        $publish_rules_table = $wpdb->prefix . 'content_auto_publish_rules';
+        // 检查表是否存在
+        if ($wpdb->get_var("SHOW TABLES LIKE '$publish_rules_table'") != $publish_rules_table) {
+            return;
+        }
+        
+        $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $publish_rules_table LIKE 'enable_auto_material_search'");
+        if (!$column_exists) {
+            $wpdb->query("ALTER TABLE $publish_rules_table ADD COLUMN `enable_auto_material_search` tinyint(1) NOT NULL DEFAULT '0' COMMENT '启用自动素材搜索功能' AFTER `enable_ai_reference_select`");
+        }
+        
+        // 2. 更新主题表，添加 `material_search_status` 和 `material_search_error`
+        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        // 检查表是否存在
+        if ($wpdb->get_var("SHOW TABLES LIKE '$topics_table'") != $topics_table) {
+            return;
+        }
+        
+        $status_column_exists = $wpdb->get_var("SHOW COLUMNS FROM $topics_table LIKE 'material_search_status'");
+        if (!$status_column_exists) {
+            $wpdb->query("ALTER TABLE $topics_table ADD COLUMN `material_search_status` varchar(20) NOT NULL DEFAULT 'none' COMMENT '自动素材搜索状态' AFTER `status`");
+        } else {
+            // 确保默认值为 none (修复可能存在的旧 schema)
+            $wpdb->query("ALTER TABLE $topics_table MODIFY COLUMN `material_search_status` varchar(20) NOT NULL DEFAULT 'none' COMMENT '自动素材搜索状态'");
+        }
+        
+        $error_column_exists = $wpdb->get_var("SHOW COLUMNS FROM $topics_table LIKE 'material_search_error'");
+        if (!$error_column_exists) {
+            $wpdb->query("ALTER TABLE $topics_table ADD COLUMN `material_search_error` text DEFAULT NULL COMMENT '自动素材搜索错误信息' AFTER `material_search_status`");
+        }
+    }
+
+    /**
+     * 更新提示词模板表结构，添加 source_file 字段
+     */
+    private function update_prompt_templates_table_structure($table_name) {
+        global $wpdb;
+
+        // 检查表是否存在
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
+        if (!$table_exists) {
+            return;
+        }
+
+        // 检查并添加 source_file 字段
+        $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $table_name LIKE 'source_file'");
+        if (!$column_exists) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN `source_file` varchar(255) DEFAULT NULL COMMENT '源文件名，用于防止重复导入' AFTER `content`");
+            
+            // 为现有模板数据填充 source_file 值（根据名称推断）
+            $this->populate_source_file_for_existing_templates($table_name);
+        }
+    }
+
+    /**
+     * 为现有模板填充 source_file 值
+     */
+    private function populate_source_file_for_existing_templates($table_name) {
+        global $wpdb;
+
+        // 名称到文件名的映射（兼容新旧名称）
+        $name_to_file_mapping = [
+            // 旧英文名称
+            'Article Generation - Optimized V12' => 'article-generation-prompt-optimized-v12.xml',
+            'Article Generation - Default' => 'article-generation-prompt.xml',
+            'Article Generation - Variant 1 (Exhaustive)' => 'article-generation-prompt1.xml',
+            'Article Generation - Variant 2 (Concise)' => 'article-generation-prompt2.xml',
+            'Topic Generation - Default' => 'topic-generation-prompt.xml',
+            'Topic Generation - Variant 1 (Creative)' => 'topic1-generation-prompt.xml',
+            // 新中文名称
+            '文章生成 - V12优化版（反AI检测+E-E-A-T优化）' => 'article-generation-prompt-optimized-v12.xml',
+            '文章生成 - 默认版（基础通用）' => 'article-generation-prompt.xml',
+            '文章生成 - 变体1（详尽版）' => 'article-generation-prompt1.xml',
+            '文章生成 - 变体2（精简版）' => 'article-generation-prompt2.xml',
+            '文章生成 - 技术文档风格（专业改写、术语准确）' => 'article-generation-prompt-technical.xml',
+            '文章生成 - 学术论文风格（降AI率、专家讲解感）' => 'article-generation-prompt-academic.xml',
+            '文章生成 - 朴素对话风格（朋友聊天、真诚分享）' => 'article-generation-prompt-casual.xml',
+            '文章生成 - 小红书风格（种草测评、互动感强）' => 'article-generation-prompt-xiaohongshu.xml',
+            '文章生成 - 高级反AI检测（嵌入分散控制）' => 'article-generation-prompt-anti-ai.xml',
+            '文章生成 - 人性化润色风格（通俗易懂、温度感强）' => 'article-generation-prompt-humanized.xml',
+            '文章生成 - 产品实用指南（直接实用、结构清晰）' => 'article-generation-prompt-product-guide.xml',
+            '主题生成 - 默认版（标准生成）' => 'topic-generation-prompt.xml',
+            '主题生成 - 变体1（创意发散）' => 'topic1-generation-prompt.xml',
+            '主题生成 - 术语实体型（百科词条式）' => 'topic-generation-prompt-entity.xml',
+        ];
+
+        foreach ($name_to_file_mapping as $name => $filename) {
+            $wpdb->update(
+                $table_name,
+                array('source_file' => $filename),
+                array('name' => $name, 'source_file' => null),
+                array('%s'),
+                array('%s', '%s')
+            );
+        }
+    }
+
+    /**
+     * 预置默认提示词模板
+     */
+    private function seed_default_templates($table_name) {
+        global $wpdb;
+
+        // 定义要导入的模板文件及其名称和类型
+        $templates_to_seed = [
+            // 文章生成模板 - 核心版本（默认启用）
+            'article-generation-prompt-optimized-v12.xml' => [
+                'name' => '文章生成 - V12优化版（反AI检测+E-E-A-T优化）',
+                'type' => 'article_generation',
+                'is_active' => true
+            ],
+            'article-generation-prompt.xml' => [
+                'name' => '文章生成 - 默认版（基础通用）',
+                'type' => 'article_generation',
+                'is_active' => true
+            ],
+            'article-generation-prompt1.xml' => [
+                'name' => '文章生成 - 变体1（详尽版）',
+                'type' => 'article_generation',
+                'is_active' => true
+            ],
+            'article-generation-prompt2.xml' => [
+                'name' => '文章生成 - 变体2（精简版）',
+                'type' => 'article_generation',
+                'is_active' => true
+            ],
+            // 文章生成模板 - 风格专用版本（默认禁用，需手动启用）
+            'article-generation-prompt-technical.xml' => [
+                'name' => '文章生成 - 技术文档风格（专业改写、术语准确）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
+            'article-generation-prompt-academic.xml' => [
+                'name' => '文章生成 - 学术论文风格（降AI率、专家讲解感）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
+            'article-generation-prompt-casual.xml' => [
+                'name' => '文章生成 - 朴素对话风格（朋友聊天、真诚分享）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
+            'article-generation-prompt-xiaohongshu.xml' => [
+                'name' => '文章生成 - 小红书风格（种草测评、互动感强）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
+            'article-generation-prompt-anti-ai.xml' => [
+                'name' => '文章生成 - 高级反AI检测（嵌入分散控制）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
+            'article-generation-prompt-humanized.xml' => [
+                'name' => '文章生成 - 人性化润色风格（通俗易懂、温度感强）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
+            'article-generation-prompt-product-guide.xml' => [
+                'name' => '文章生成 - 产品实用指南（直接实用、结构清晰）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
+            // 主题生成模板（默认启用）
+            'topic-generation-prompt.xml' => [
+                'name' => '主题生成 - 默认版（标准生成）',
+                'type' => 'topic_generation',
+                'is_active' => true
+            ],
+            'topic1-generation-prompt.xml' => [
+                'name' => '主题生成 - 变体1（创意发散）',
+                'type' => 'topic_generation',
+                'is_active' => true
+            ],
+            'topic-generation-prompt-entity.xml' => [
+                'name' => '主题生成 - 术语实体型（百科词条式）',
+                'type' => 'topic_generation',
+                'is_active' => false
+            ]
+        ];
+
+        $templates_dir = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/';
+
+        foreach ($templates_to_seed as $filename => $info) {
+            $file_path = $templates_dir . $filename;
+            
+            // 检查文件是否存在
+            if (!file_exists($file_path)) {
+                continue;
+            }
+
+            // 按源文件名检查是否已导入（即使用户修改了模板名称也不会重复导入）
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_name WHERE source_file = %s",
+                $filename
+            ));
+
+            if ($exists > 0) {
+                continue; // 该文件已导入，跳过
+            }
+
+            // 读取文件内容
+            $content = file_get_contents($file_path);
+            if ($content === false) {
+                continue;
+            }
+
+            // 插入数据库（使用模板配置的is_active值，记录源文件名）
+            $wpdb->insert(
+                $table_name,
+                array(
+                    'name' => $info['name'],
+                    'template_type' => $info['type'],
+                    'content' => $content,
+                    'source_file' => $filename,
+                    'is_active' => $info['is_active'] ? 1 : 0,
+                    'created_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql')
+                ),
+                array('%s', '%s', '%s', '%s', '%d', '%s', '%s')
+            );
+        }
+    }
 }
-?>

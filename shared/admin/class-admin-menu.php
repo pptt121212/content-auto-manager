@@ -34,6 +34,15 @@ class ContentAuto_AdminMenu {
             $article_structures_page = new ContentAuto_ArticleStructureAdminPage();
         }
 
+        // 注册智能结构优化页面的AJAX处理器
+        if (!class_exists('ContentAuto_SmartOptimizationAdminPage')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-structures/class-smart-optimization-admin-page.php';
+        }
+        static $smart_optimization_page = null;
+        if ($smart_optimization_page === null) {
+            $smart_optimization_page = new ContentAuto_SmartOptimizationAdminPage();
+        }
+
         // 如果需要，也可以在这里注册向量聚类的AJAX处理器
         // 目前向量聚类页面主要使用表单提交，不需要额外的AJAX处理器
 
@@ -160,6 +169,16 @@ class ContentAuto_AdminMenu {
             array($this, 'render_vector_clustering_page')
         );
 
+        // 提示词模板页面 (原变量说明)
+        add_submenu_page(
+            'content-auto-manager',
+            __('提示词模板', 'content-auto-manager'),
+            __('提示词模板', 'content-auto-manager'),
+            'manage_options',
+            'content-auto-manager-variable-guide',
+            array($this, 'render_variable_guide_page')
+        );
+
         // 文章结构页面
         add_submenu_page(
             'content-auto-manager',
@@ -168,6 +187,26 @@ class ContentAuto_AdminMenu {
             'manage_options',
             'content-auto-manager-article-structures',
             array($this, 'render_article_structures_page')
+        );
+
+        // 搜索物料页面（调整顺序到文章结构下面）
+        add_submenu_page(
+            'content-auto-manager',
+            '搜索物料',
+            '搜索物料',
+            'manage_options',
+            'content-auto-search-materials',
+            array($this, 'render_search_materials_page')
+        );
+
+        // 智能结构优化页面（隐藏菜单，通过文章结构页面的标签访问）
+        add_submenu_page(
+            null, // 设置为 null 隐藏菜单项
+            __('智能优化', 'content-auto-manager'),
+            __('智能优化', 'content-auto-manager'),
+            'manage_options',
+            'content-auto-manager-smart-optimization',
+            array($this, 'render_smart_optimization_page')
         );
 
         // 品牌资料页面
@@ -190,15 +229,7 @@ class ContentAuto_AdminMenu {
             array($this, 'render_debug_tools_page')
         );
 
-        // 变量说明页面
-        add_submenu_page(
-            'content-auto-manager',
-            __('变量说明', 'content-auto-manager'),
-            __('变量说明', 'content-auto-manager'),
-            'manage_options',
-            'content-auto-manager-variable-guide',
-            array($this, 'render_variable_guide_page')
-        );
+
 
         $this->override_menu_titles();
 
@@ -331,6 +362,19 @@ class ContentAuto_AdminMenu {
         // 获取已经实例化的页面对象
         $article_structures_page = new ContentAuto_ArticleStructureAdminPage();
         $article_structures_page->render_page();
+    }
+
+    /**
+     * 渲染智能结构优化页面
+     */
+    public function render_smart_optimization_page() {
+        // 检查类是否存在，如果不存在则先加载
+        if (!class_exists('ContentAuto_SmartOptimizationAdminPage')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-structures/class-smart-optimization-admin-page.php';
+        }
+
+        $smart_optimization_page = new ContentAuto_SmartOptimizationAdminPage();
+        $smart_optimization_page->render_page();
     }
 
     /**
@@ -495,11 +539,20 @@ class ContentAuto_AdminMenu {
     }
 
     /**
+     * 渲染搜索物料页面
+     */
+    public function render_search_materials_page() {
+        if (!class_exists('ContentAuto_SearchMaterialsAdminPage')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'search-materials/class-search-materials-admin-page.php';
+        }
+        $page = new ContentAuto_SearchMaterialsAdminPage();
+        $page->render_page();
+    }
+
+    /**
      * 渲染变量说明页面
      */
     public function render_variable_guide_page() {
         require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'variable-guide/views/variable-guide.php';
     }
-    
-
-  }
+}

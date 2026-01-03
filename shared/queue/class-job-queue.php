@@ -229,6 +229,10 @@ class ContentAuto_JobQueue {
                             // 使用向量生成器处理向量生成任务
                             $result = $this->vector_generator->process_vector_generation($job);
                             break;
+                        case 'material_search':
+                            // 处理素材搜索任务
+                            $result = $this->process_material_search($job);
+                            break;
                     }
 
                     // 更新任务状态
@@ -605,6 +609,88 @@ class ContentAuto_JobQueue {
         }
         
         return $fixed_issues;
+    }
+    
+    /**
+     * 处理素材搜索任务
+     */
+    private function process_material_search($job) {
+        global $wpdb;
+        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topic_id = $job['job_id'];
+        
+        // 1. 再次验证开关状态（双重检查）
+        $db = new ContentAuto_Database();
+        $publish_rules = $db->get_row('content_auto_publish_rules', array('id' => 1));
+        
+        if (empty($publish_rules['enable_reference_material']) || 
+            empty($publish_rules['enable_auto_material_search'])) {
+            // 开关已关闭，跳过执行
+            return ['success' => false, 'message' => '素材搜索功能已关闭'];
+        }
+        
+        // 2. 验证主题状态
+        $topic = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$topics_table} WHERE id = %d",
+            $topic_id
+        ), ARRAY_A);
+        
+        if (!$topic) {
+            return ['success' => false, 'message' => '主题不存在'];
+        }
+        
+        // 如果主题已有参考资料，跳过（可能手动添加了）
+        if (!empty($topic['reference_material'])) {
+            // 更新状态为 completed，避免重复处理
+            $wpdb->update($topics_table, [
+                'material_search_status' => 'completed'
+            ], ['id' => $topic_id]);
+            
+            return ['success' => true, 'message' => '主题已有参考资料'];
+        }
+        
+        // 3. 标记为处理中
+        $wpdb->update($topics_table, [
+            'material_search_status' => 'processing'
+        ], ['id' => $topic_id]);
+        
+        // 4. 执行搜索
+        if (!class_exists('ContentAuto_SearchMaterialsService')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
+        }
+        
+        $service = new ContentAuto_SearchMaterialsService();
+        $result = $service->execute_full_auto_search($topic_id);
+        
+        // 5. 更新结果状态
+        if (is_wp_error($result)) {
+            $wpdb->update($topics_table, [
+                'material_search_status' => 'failed',
+                'material_search_error' => $result->get_error_message()
+            ], ['id' => $topic_id]);
+            
+            return ['success' => false, 'message' => $result->get_error_message()];
+        } else {
+            // ✅ 双重验证：确保资料真的保存进去了
+            $verify_topic = $wpdb->get_row($wpdb->prepare("SELECT reference_material FROM {$topics_table} WHERE id = %d", $topic_id), ARRAY_A);
+            
+            if (empty($verify_topic['reference_material'])) {
+                // 严重错误：虽然返回成功，但数据库为空
+                $wpdb->update($topics_table, [
+                    'material_search_status' => 'failed',
+                    'material_search_error' => '未知错误：搜索流程返回成功，但数据库中未检测到参考资料'
+                ], ['id' => $topic_id]);
+                
+                return ['success' => false, 'message' => '资料保存验证失败'];
+            }
+            
+            $wpdb->update($topics_table, [
+                'material_search_status' => 'completed',
+                'material_search_error' => ''
+            ], ['id' => $topic_id]);
+            
+            return ['success' => true];
+        }
     }
     
     /**

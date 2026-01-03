@@ -448,3 +448,72 @@ function content_auto_find_similar_titles($topic_id, $num_results = 5, $clusters
 
     return array_slice($results, 0, $num_results);
 }
+
+/**
+ * 通用搜索函数 - 封装了搜索API的调用
+ * 
+ * @param string $query 搜索关键词
+ * @param array $options 可选参数覆盖 ['region', 'time', 'safesearch', 'max_results']
+ * @return array|WP_Error 成功返回解码后的JSON数据，失败返回WP_Error
+ */
+function content_auto_search($query) {
+    // 1. 获取后台全局配置
+    $settings = get_option('content_auto_search_settings', []);
+    
+    // 获取当前站点域名
+    $domain = parse_url(get_site_url(), PHP_URL_HOST);
+    
+    // 提取根域名 (例如 test.58jingpai.com -> 58jingpai.com)
+    // 这是为了解决测试环境子域名鉴权问题，确保与授权绑定的根域名一致
+    if (preg_match('/(?P<domain>[a-z0-9][a-z0-9\-]{1,63}\.[a-z\.]{2,6})$/i', $domain, $regs)) {
+        $domain = $regs['domain'];
+    }
+    
+    // 2. 准备参数 (严格按照保存搜索配置时的配置，不允许调整)
+    $params = [
+        'q'           => $query,
+        'license_key' => get_option('content_auto_manager_license_key'),
+        'domain'      => $domain,
+        'region'      => $settings['region'] ?? 'wt-wt',
+        'time'        => $settings['time'] ?? '',
+        'safesearch'  => $settings['safesearch'] ?? 'moderate',
+        'max_results' => $settings['max_results'] ?? 10,
+        // 强制锁定 backend 为 lite
+        'backend'     => 'lite'
+    ];
+    
+    // 3. 构建API URL
+    // 使用公开对外的API Endpoint (参考 key/search/README.md)
+    $api_url = 'http://key.kdjingpai.com/search/php/SearchAPI.php';
+    
+    // 4. 发起 HTTP GET 请求
+    $response = wp_remote_get($api_url . '?' . http_build_query($params), [
+        'timeout' => 30, // 增加超时时间以防止搜索超时
+        'sslverify' => false // 防止本地测试证书问题
+    ]);
+    
+    // 5. 处理响应错误
+    if (is_wp_error($response)) {
+        return $response;
+    }
+    
+    // 6. 验证 HTTP 状态码
+    $response_code = wp_remote_retrieve_response_code($response);
+    if ($response_code !== 200) {
+        return new WP_Error(
+            'search_api_error', 
+            'Search API returned status code: ' . $response_code, 
+            ['response' => wp_remote_retrieve_body($response)]
+        );
+    }
+    
+    // 7. 解析 JSON 结果
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        return new WP_Error('json_parse_error', 'Failed to parse Search API response: ' . json_last_error_msg());
+    }
+    
+    return $data;
+}

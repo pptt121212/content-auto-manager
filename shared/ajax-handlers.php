@@ -1786,16 +1786,23 @@ function content_auto_fetch_url_content_handler() {
         error_log('原始URL: ' . $url);
         error_log('Jina AI API URL: ' . $api_url);
 
-        // 设置请求参数，使用您提供的Jina AI配置
+        // 设置请求参数
+        $headers = array(
+            'Accept' => 'text/plain;charset=utf-8',
+            'X-Retain-Images' => 'none',
+            'X-Return-Format' => 'text'
+        );
+
+        // 动态获取 API Key
+        $jina_key = get_option('content_auto_jina_api_key', '');
+        if (!empty($jina_key)) {
+            $headers['Authorization'] = 'Bearer ' . $jina_key;
+        }
+
         $args = array(
             'timeout' => 30,
             'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'headers' => array(
-                'Accept' => 'text/plain;charset=utf-8',
-                'Authorization' => 'Bearer jina_bdf2708507344b419f4eefb0099fd166q_HKr_8Nw-kwJKRvMIiTfHKpnhY4',
-                'X-Retain-Images' => 'none',
-                'X-Return-Format' => 'text'
-            )
+            'headers' => $headers
         );
 
         // 发送HTTP请求
@@ -1968,3 +1975,93 @@ function content_auto_clear_task_queue() {
     }
 }
 add_action('wp_ajax_content_auto_clear_task_queue', 'content_auto_clear_task_queue');
+
+/**
+ * 测试参考资料召回
+ */
+function cam_test_reference_recall_handler() {
+    // 验证nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_reference_recall_test')) {
+        wp_send_json_error(array('message' => __('安全验证失败。', 'content-auto-manager')));
+        return;
+    }
+    
+    // 检查权限
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('权限不足。', 'content-auto-manager')));
+        return;
+    }
+    
+    $topic_id = isset($_POST['topic_id']) ? intval($_POST['topic_id']) : 0;
+    if ($topic_id <= 0) {
+        wp_send_json_error(array('message' => __('无效的主题ID。', 'content-auto-manager')));
+        return;
+    }
+    
+    // 获取主题数据
+    global $wpdb;
+    $topics_table = $wpdb->prefix . 'content_auto_topics';
+    $topic = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$topics_table} WHERE id = %d",
+        $topic_id
+    ), ARRAY_A);
+    
+    if (!$topic) {
+        wp_send_json_error(array('message' => __('主题不存在。', 'content-auto-manager')));
+        return;
+    }
+    
+    // 加载参考资料服务类
+    if (!class_exists('ContentAuto_ReferenceMaterialService')) {
+        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-reference-material-service.php';
+    }
+    
+    // 执行召回测试
+    $service = new ContentAuto_ReferenceMaterialService();
+    $result = $service->test_brand_profile_recall($topic);
+    
+    wp_send_json_success($result);
+}
+
+/**
+ * 测试搜索API
+ */
+function content_auto_test_search_api() {
+    // 验证nonce
+    if (!check_ajax_referer('content_auto_manager_nonce', 'nonce', false)) {
+        wp_send_json_error(array('message' => __('安全验证失败。', 'content-auto-manager')));
+        return;
+    }
+    
+    // 检查权限
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => __('权限不足。', 'content-auto-manager')));
+        return;
+    }
+
+    $query = isset($_POST['query']) ? sanitize_text_field($_POST['query']) : '';
+    if (empty($query)) {
+        wp_send_json_error(array('message' => __('搜索关键词不能为空。', 'content-auto-manager')));
+        return;
+    }
+    
+    // 使用公共搜索函数执行搜索
+    // 该函数会自动读取全局配置（Region, Time, SafeSearch等）并强制使用Lite后端
+    $result = content_auto_search($query);
+    
+    if (is_wp_error($result)) {
+        wp_send_json_error(array('message' => __('请求失败: ', 'content-auto-manager') . $result->get_error_message()));
+        return;
+    }
+    
+    if (isset($result['success']) && $result['success']) {
+        wp_send_json_success($result);
+    } else {
+        $error_msg = isset($result['error']) ? $result['error'] : __('搜索未知错误', 'content-auto-manager');
+        if (isset($result['message'])) {
+             $error_msg .= ' (' . $result['message'] . ')';
+        }
+        wp_send_json_error(array('message' => $error_msg));
+    }
+}
+add_action('wp_ajax_content_auto_test_search_api', 'content_auto_test_search_api');

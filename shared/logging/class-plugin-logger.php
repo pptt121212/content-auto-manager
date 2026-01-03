@@ -76,6 +76,28 @@ class ContentAuto_PluginLogger {
     }
     
     /**
+     * 记录成功信息
+     * 兼容其他模块的 log_success 调用
+     * 
+     * @param string $code 操作代码
+     * @param string $message 日志消息
+     * @param array $context 上下文信息
+     * @param array|null $performance_data 性能数据（可选）
+     */
+    public function log_success($code, $message, $context = array(), $performance_data = null) {
+        $full_context = array_merge(
+            array('code' => $code),
+            is_array($context) ? $context : array()
+        );
+        
+        if ($performance_data !== null) {
+            $full_context['performance'] = $performance_data;
+        }
+        
+        $this->log("[SUCCESS] {$code}: {$message}", 'INFO', $full_context);
+    }
+    
+    /**
      * 清空日志 - 删除所有日志文件
      */
     public function clear_log() {
