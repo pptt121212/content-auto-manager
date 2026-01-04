@@ -46,7 +46,7 @@ if (isset($_POST['submit_license']) && isset($_POST['content_auto_manager_licens
             ContentAuto_License_Manager::activate_license($license_key);
             
             // 检查验证结果
-            $license_data = get_option('content_auto_manager_license', array());
+            $license_data = get_option(ContentAuto_License_Manager::LICENSE_OPTION, array());
             if (isset($license_data['status']) && $license_data['status'] === 'valid') {
                 // 验证成功，保持新授权码
                 add_settings_error('content_auto_manager_license', 'license_success', '授权码验证成功！', 'success');
