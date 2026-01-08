@@ -150,7 +150,7 @@ class ContentAuto_OfficialChannel {
     public function debug_license_info() {
         // 从WordPress选项获取授权码信息
         $license_key = get_option('content_auto_manager_license_key', '');
-        $license_data = get_option('content_auto_manager_license', array());
+        $license_data = get_option('content_auto_manager_license_data', array());
         
         $debug_info = array();
         $debug_info['storage_location'] = 'wp_options表';

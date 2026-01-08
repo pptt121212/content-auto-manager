@@ -87,6 +87,11 @@ class ContentAuto_RuleHandler {
             $rule_conditions['categories'] = isset($_POST['categories']) ? array_map('intval', $_POST['categories']) : array();
         }
 
+        // 处理所有规则类型通用的目标分类字段
+        if (isset($_POST['target_category']) && $_POST['target_category'] !== '') {
+            $rule_conditions['target_category'] = intval($_POST['target_category']);
+        }
+
         // 准备数据数组
         $data = array(
             'rule_name' => $rule_name,
@@ -97,6 +102,7 @@ class ContentAuto_RuleHandler {
             'reference_material' => $reference_material,
             'updated_at' => current_time('mysql'),
         );
+
         
         // 如果是新规则，添加创建时间和任务ID
         if (!$is_edit_mode) {

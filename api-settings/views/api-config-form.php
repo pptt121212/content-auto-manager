@@ -19,6 +19,11 @@ if (isset($_POST['submit_reader_api'])) {
     }
     $jina_api_key = sanitize_text_field($_POST['jina_api_key']);
     update_option('content_auto_jina_api_key', $jina_api_key);
+
+    // 保存搜索黑名单
+    $blacklist_raw = isset($_POST['material_search_blacklist']) ? $_POST['material_search_blacklist'] : '';
+    $blacklist_arr = array_filter(array_map('trim', explode("\n", $blacklist_raw)));
+    update_option('content_auto_material_search_blacklist', array_values($blacklist_arr));
     echo '<div class="notice notice-success"><p>' . __('Jina Reader API 配置已保存。', 'content-auto-manager') . '</p></div>';
 }
 
@@ -976,6 +981,17 @@ if (!is_wp_error($results) && $results['success']) {
                         <td>
                             <input type="password" name="jina_api_key" value="<?php echo esc_attr(get_option('content_auto_jina_api_key', '')); ?>" class="regular-text" placeholder="jina_..." autocomplete="off">
                             <p class="description"><?php _e('请输入您的 Jina Reader API Key。留空则使用匿名模式。', 'content-auto-manager'); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php _e('搜索结果过滤黑名单', 'content-auto-manager'); ?></th>
+                        <td>
+                            <?php 
+                            $blacklist = get_option('content_auto_material_search_blacklist', ['csdn.net', 'zhihu.com']);
+                            $blacklist_str = is_array($blacklist) ? implode("\n", $blacklist) : $blacklist;
+                            ?>
+                            <textarea name="material_search_blacklist" rows="6" class="large-text code" placeholder="csdn.net&#10;zhihu.com"><?php echo esc_textarea($blacklist_str); ?></textarea>
+                            <p class="description"><?php _e('在此处管理需要在“搜索物料”阶段自动剔除的域名或关键词。每行一个。<br>默认建议过滤 <code>csdn.net</code> 和 <code>zhihu.com</code> 等 UGC 内容平台以保证素材专业度。', 'content-auto-manager'); ?></p>
                         </td>
                     </tr>
                 </table>

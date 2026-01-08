@@ -333,6 +333,29 @@ if ($is_edit_mode && isset($_GET['id'])) {
                 </td>
             </tr>
 
+            <!-- 目标分类选择 (所有规则通用) -->
+            <tr class="form-field">
+                <th scope="row"><label for="target_category">目标分类 (可选)</label></th>
+                <td>
+                    <select name="target_category" id="target_category">
+                        <option value="">智能自动匹配 (默认)</option>
+                        <?php
+                        $categories = get_categories(array('hide_empty' => false));
+                        $rule_conditions = ($rule) ? maybe_unserialize($rule->rule_conditions) : array();
+                        $current_target = isset($rule_conditions['target_category']) ? $rule_conditions['target_category'] : '';
+                        
+                        foreach ($categories as $category) {
+                            echo '<option value="' . esc_attr($category->term_id) . '" ' . selected($current_target, $category->term_id, false) . '>' . esc_html($category->name) . '</option>';
+                        }
+                        ?>
+                    </select>
+                    <p class="description">
+                        如果不选择，AI 将根据内容智能匹配最合适的分类。<br>
+                        如果选择了具体分类，则生成的所有主题都将<b>强制归类</b>到该分类下，忽略 AI 的分类建议。
+                    </p>
+                </td>
+            </tr>
+
             <!-- 规则循环次数 -->
             <tr class="form-field">
                 <th scope="row"><label for="item_count">规则循环次数</label></th>

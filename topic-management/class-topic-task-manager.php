@@ -270,6 +270,18 @@ class ContentAuto_TopicTaskManager {
         }
         // -----------------------
 
+        // 获取目标分类（如果有）
+        $target_cat_name = null;
+        if (!empty($task['rule_id'])) {
+            $rule = $this->database->get_row('content_auto_rules', array('id' => $task['rule_id']));
+            if ($rule) {
+                $conditions = maybe_unserialize($rule['rule_conditions']);
+                if (!empty($conditions['target_category'])) {
+                    $target_cat_name = get_cat_name($conditions['target_category']);
+                }
+            }
+        }
+
         foreach ($topics as $topic) {
             $topic_data = null;
 
@@ -302,6 +314,11 @@ class ContentAuto_TopicTaskManager {
                     $this->logger->log_error('INCOMPLETE_TOPIC', $error_message);
                     return ['success' => false, 'error' => $error_message];
                 }
+            }
+
+            // 如果存在目标分类，强制覆盖
+            if ($topic_data && $target_cat_name) {
+                $topic_data['matched_category'] = $target_cat_name;
             }
 
             if ($topic_data) {

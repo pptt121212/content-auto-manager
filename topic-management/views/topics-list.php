@@ -22,6 +22,16 @@ if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
     // 获取表单数据
     $titles = sanitize_textarea_field($_POST['titles']);
     $reference_material = isset($_POST['reference_material']) ? sanitize_textarea_field($_POST['reference_material']) : '';
+    $target_category_id = isset($_POST['target_category_id']) ? intval($_POST['target_category_id']) : 0;
+    
+    // Resolve category name if ID is provided
+    $matched_category = '';
+    if ($target_category_id > 0) {
+        $category_name = get_cat_name($target_category_id);
+        if ($category_name) {
+            $matched_category = $category_name;
+        }
+    }
 
     // 验证参考资料长度（最多800字符）
     if (mb_strlen($reference_material) > 800) {
@@ -49,7 +59,7 @@ if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
                     'source_angle' => '',
                     'user_value' => '',
                     'seo_keywords' => '',
-                    'matched_category' => '',
+                    'matched_category' => $matched_category,
                     'priority_score' => 3,
                     'status' => CONTENT_AUTO_TOPIC_UNUSED,
                     'reference_material' => $reference_material // 添加参考资料字段
@@ -212,6 +222,21 @@ $rule_manager = new ContentAuto_RuleManager();
                         <p class="description">
                             <?php _e('参考资料将帮助AI生成更准确、更有深度的内容。所有手工添加的主题将使用相同的参考资料。最多800字符。', 'content-auto-manager'); ?>
                         </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php _e('目标分类', 'content-auto-manager'); ?></th>
+                    <td>
+                        <select name="target_category_id" id="target_category_id">
+                            <option value=""><?php _e('AI 智能自动匹配', 'content-auto-manager'); ?></option>
+                            <?php
+                            $categories = get_categories(array('hide_empty' => false));
+                            foreach ($categories as $category) {
+                                echo '<option value="' . esc_attr($category->term_id) . '">' . esc_html($category->name) . '</option>';
+                            }
+                            ?>
+                        </select>
+                        <p class="description"><?php _e('指定主题所属的分类。如果选择“AI 智能自动匹配”，系统将自动根据内容匹配最合适的分类。', 'content-auto-manager'); ?></p>
                     </td>
                 </tr>
             </table>
