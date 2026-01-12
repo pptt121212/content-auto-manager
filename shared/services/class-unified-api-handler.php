@@ -120,7 +120,10 @@ class ContentAuto_UnifiedApiHandler {
                 'Authorization' => 'Bearer ' . $api_config['api_key']
             ),
             'body' => json_encode($body_data),
-            'timeout' => 120
+            // 允许通过 additional_params 覆盖默认超时时间
+            'timeout' => isset($additional_params['timeout']) ? (int)$additional_params['timeout'] : 180,
+            'httpversion' => '1.1', // 强制使用 HTTP 1.1 避免部分服务器的 HTTP2 兼容性问题导致 Reset
+            'sslverify' => true, 
         );
         
         // 记录完整的API请求参数（仅在调试模式下）
@@ -135,7 +138,13 @@ class ContentAuto_UnifiedApiHandler {
         $response = wp_remote_post($api_config['api_url'], $args);
         
         if (is_wp_error($response)) {
-            $error_message = $response->get_error_message();
+            $error_message = $response->get_error_message(); // 这里捕获的通常就是 cURL error 56
+            
+            // 针对 SSL Connection Reset 的特殊重试提示逻辑
+            if (strpos($error_message, 'cURL error 56') !== false) {
+                 $error_message .= " (建议：检查请求内容是否过长或尝试切换代理/VPN)";
+            }
+
             $this->last_api_error = "WordPress请求错误: " . $error_message;
             $this->log_error('API_REQUEST_ERROR', '自定义API请求失败: ' . $error_message, $context);
 
@@ -211,6 +220,9 @@ class ContentAuto_UnifiedApiHandler {
                 'response_length' => strlen($actual_content)
             )));
             
+            // ✅ 移除 AI 思考标签
+            $actual_content = $this->strip_think_tags($actual_content);
+            
             return $actual_content;
         } else {
             $error_msg = $response['message'];
@@ -260,6 +272,9 @@ class ContentAuto_UnifiedApiHandler {
             }
 
             if ($extracted_content !== null) {
+                // ✅ 移除 AI 思考标签
+                $extracted_content = $this->strip_think_tags($extracted_content);
+                
                 // 记录提取的结构化内容（仅在调试模式下）
                 if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
                     $this->log_debug('STRUCTURE_CONTENT_EXTRACTED', '结构化内容提取成功', array_merge($context, array(
@@ -301,6 +316,9 @@ class ContentAuto_UnifiedApiHandler {
         // 处理API响应内容
         if (isset($response_data['choices'][0]['message']['content'])) {
             $final_content = $response_data['choices'][0]['message']['content'];
+            
+            // ✅ 移除 AI 思考标签
+            $final_content = $this->strip_think_tags($final_content);
             
             // 记录最终提取的内容（仅在调试模式下）
             if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
@@ -381,6 +399,31 @@ class ContentAuto_UnifiedApiHandler {
      */
     public function get_last_api_error() {
         return $this->last_api_error;
+    }
+    
+    /**
+     * 移除 AI 思考标签
+     * 某些 AI 模型会在响应中输出 <think>...</think> 标签包裹的思考过程
+     * 这些内容应该被过滤掉，不应该返回给业务逻辑
+     * 
+     * @param string $content 原始内容
+     * @return string 移除思考标签后的内容
+     */
+    private function strip_think_tags($content) {
+        if (empty($content) || !is_string($content)) {
+            return $content;
+        }
+        
+        // 移除 <think>...</think> 标签及其内容
+        // 使用 s 修饰符使 . 能匹配换行符
+        // 使用 i 修饰符忽略大小写
+        $cleaned = preg_replace('/<think\b[^>]*>.*?<\/think>/is', '', $content);
+        
+        // 清理可能留下的多余空白行
+        $cleaned = preg_replace('/^\s*\n/m', '', $cleaned);
+        $cleaned = preg_replace('/\n{3,}/', "\n\n", $cleaned);
+        
+        return trim($cleaned);
     }
     
     /**

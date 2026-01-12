@@ -198,19 +198,32 @@ class ContentAuto_VectorApiHandler {
         $api_type = isset($api_config['vector_api_type']) ? $api_config['vector_api_type'] : 'openai';
 
         if ($api_type === 'jina') {
-            // Jina Embeddings v4 格式
-            $input_texts = [];
-            foreach ($texts as $text) {
-                $input_texts[] = ['text' => $text];
-            }
-
-            return [
+            // Jina Embeddings 格式处理
+            // 基础请求参数 (适用于所有版本)
+            $request_body = [
                 'model' => $model,
-                'input' => $input_texts,
-                'task' => 'text-matching',
-                'dimensions' => 1024,
-                'embedding_type' => 'base64',
+                'input' => $texts,
+                // 注意：硅基流动的 Jina 接口严格禁止 encoding_format 参数 (HTTP 422)
+                // 我们已在响应解析阶段实现了自动 Float 转 Base64 的逻辑，因此这里可以安全移除
             ];
+
+            // 高级参数支持 (仅适用于 v3 和 v4 及更高版本)
+            // 通过检测模型名称中是否明确包含 v3, v4 等标识
+            // 或者是 siliconflow 托管的 jina 模型 (通常是最新的)
+            if (preg_match('/v[3-9]/i', $model) || preg_match('/jina-embeddings/i', $model)) {
+                // v3/v4 引入了 Task LoRA 适配器，指定 task 有助于提升效果
+                // 使用 text-matching 作为通用的对称检索任务
+                $request_body['task'] = 'text-matching';
+                
+                // Matryoshka 嵌入支持：将向量维度截断为 1024
+                // 这在保持高性能的同时显著减少存储空间 (v3 默认 1024, v4 可能更高)
+                // 仅对明确支持的新模型应用此参数
+                if (preg_match('/v[3-9]/i', $model)) {
+                    $request_body['dimensions'] = 1024;
+                }
+            }
+            
+            return $request_body;
         } else {
             // OpenAI Embeddings 格式（默认）
             return [
@@ -353,13 +366,67 @@ class ContentAuto_VectorApiHandler {
     private function parse_response($response, $api_config) {
         $api_type = isset($api_config['vector_api_type']) ? $api_config['vector_api_type'] : 'openai';
         
-        if ($api_type === 'jina') {
-            // Jina API响应格式: {embeddings: [{...}], model: "...", usage: {...}}
-            return $this->parse_jina_response($response, $api_config);
-        } else {
-            // OpenAI API响应格式: {data: [{...}], model: "...", usage: {...}}
+        // 首先检查是否是 send_http_request 返回的内部错误结构 (非200状态码)
+        if (isset($response['error']) && $response['error'] === true && isset($response['body'])) {
+            $error_body = json_decode($response['body'], true);
+            $error_msg = 'HTTP ' . ($response['code'] ?? 'Unknown');
+            
+            if ($error_body) {
+                // 尝试从 API 错误响应中提取有用信息
+                if (isset($error_body['error']['message'])) {
+                    $error_msg .= ': ' . $error_body['error']['message'];
+                } elseif (isset($error_body['message'])) {
+                    $error_msg .= ': ' . $error_body['message'];
+                } elseif (isset($error_body['detail'])) {
+                    $details = is_array($error_body['detail']) ? json_encode($error_body['detail'], JSON_UNESCAPED_UNICODE) : $error_body['detail'];
+                    $error_msg .= ': ' . $details;
+                } else {
+                    $error_msg .= ': ' . $response['body'];
+                }
+            } else {
+                $error_msg .= ': ' . $response['body'];
+            }
+            
+            $this->last_error = $error_msg;
+            $this->log_error('HTTP_ERROR_RESPONSE', $this->last_error, ['response' => $response]);
+            return false;
+        }
+
+        // 其次检查API响应体本身是否包含常规错误信息 (200 OK 但业务逻辑错误)
+        if (isset($response['error']) || isset($response['detail']) || isset($response['message'])) {
+            $error_msg = '';
+            if (isset($response['error'])) {
+                $error_msg = is_array($response['error']) ? ($response['error']['message'] ?? json_encode($response['error'])) : $response['error'];
+            } elseif (isset($response['detail'])) {
+                $error_msg = is_array($response['detail']) ? json_encode($response['detail']) : $response['detail'];
+            } else {
+                $error_msg = $response['message'];
+            }
+            
+            $this->last_error = 'API返回错误: ' . $error_msg;
+            $this->log_error('API_ERROR_RESPONSE', $this->last_error, ['response' => $response]);
+            return false;
+        }
+
+        // 智能识别响应格式
+        // 优先检查标准 OpenAI 格式字段 'data'
+        if (isset($response['data']) && is_array($response['data'])) {
             return $this->parse_openai_response($response, $api_config);
         }
+        
+        // 其次检查 Jina 特有格式字段 'embeddings'
+        if (isset($response['embeddings']) && is_array($response['embeddings'])) {
+            return $this->parse_jina_response($response, $api_config);
+        }
+
+        // 如果都无法识别，记录详细的调试信息以便排查
+        $this->last_error = '无法识别的响应格式: 既无data也无embeddings字段';
+        $this->log_error('UNKNOWN_RESPONSE_FORMAT', $this->last_error, [
+            'response_keys' => array_keys($response), // 记录返回了哪些字段
+            'api_type' => $api_type
+        ]);
+
+        return false;
     }
     
     /**
@@ -375,12 +442,24 @@ class ContentAuto_VectorApiHandler {
         // 提取向量数据
         $embeddings = [];
         foreach ($response['data'] as $item) {
-            // 同时检查 embedding 字段是字符串(base64)还是数组(float)
-            if (isset($item['embedding']) && (is_string($item['embedding']) || is_array($item['embedding']))) {
-                $embeddings[] = [
-                    'embedding' => $item['embedding'],
-                    'index' => $item['index'] ?? 0,
-                ];
+            if (isset($item['embedding'])) {
+                $embedding_val = $item['embedding'];
+                
+                // 自动转换逻辑：如果API返回的是float数组，将其转换为Base64字符串
+                // 以确保满足数据库存储需求，即使API忽略了encoding_format参数
+                if (is_array($embedding_val)) {
+                    // 使用 pack 将浮点数数组打包为二进制数据
+                    // 注意：这里使用 splat operator (...) 传递数组元素
+                    $binary_data = pack('f*', ...$embedding_val);
+                    $embedding_val = base64_encode($binary_data);
+                }
+
+                if (is_string($embedding_val)) {
+                    $embeddings[] = [
+                        'embedding' => $embedding_val,
+                        'index' => $item['index'] ?? 0,
+                    ];
+                }
             }
         }
     
