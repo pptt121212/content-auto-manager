@@ -507,7 +507,8 @@ class ContentAuto_StructureOptimizationScheduler {
         );
         
         $cleaned = 0;
-        $cutoff_time = strtotime('-30 days');
+        // 使用 current_time('timestamp') 保持与写入时间的一致性
+        $cutoff_time = current_time('timestamp') - (30 * DAY_IN_SECONDS);
         
         foreach ($options as $option) {
             $history = maybe_unserialize($option['option_value']);

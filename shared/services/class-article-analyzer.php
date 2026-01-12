@@ -560,7 +560,8 @@ class ContentAuto_ArticleAnalyzer {
         );
         
         // 只保留最近30天的记录
-        $cutoff_time = strtotime('-30 days');
+        // 使用 current_time('timestamp') 保持与写入时间的一致性
+        $cutoff_time = current_time('timestamp') - (30 * DAY_IN_SECONDS);
         $history = array_filter($history, function($item) use ($cutoff_time) {
             return strtotime($item['timestamp']) > $cutoff_time;
         });

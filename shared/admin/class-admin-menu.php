@@ -67,8 +67,8 @@ class ContentAuto_AdminMenu {
     public function add_admin_menus() {
         // 主菜单
         add_menu_page(
-            __('Content Automation', 'content-auto-manager'),
-            __('Content Automation', 'content-auto-manager'),
+            __('AI SEO 内容管家', 'content-auto-manager'),
+            __('AI SEO 内容管家', 'content-auto-manager'),
             'manage_options',
             'content-auto-manager',
             array($this, 'render_dashboard_page'),
@@ -247,7 +247,7 @@ class ContentAuto_AdminMenu {
         // 改写主菜单标题
         foreach ($menu as $key => $item) {
             if ($item[2] == 'content-auto-manager') {
-                $menu[$key][0] = __('内容自动生成', 'content-auto-manager');
+                $menu[$key][0] = __('AI SEO 内容管家', 'content-auto-manager');
                 break;
             }
         }

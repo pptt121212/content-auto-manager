@@ -208,10 +208,22 @@ class ContentAuto_JobQueue {
                 }
 
                 try {
-                    // 更新任务状态为处理中
+                    // 记录当前处理的任务信息，用于shutdown时恢复
+                    $current_processing_job = array(
+                        'job_id' => $job['id'],
+                        'table_name' => $table_name,
+                        'job_type' => $job['job_type'],
+                        'task_id' => $job['job_id']
+                    );
+                    update_option('content_auto_current_processing_job', $current_processing_job, false);
+                    
+                    // 更新任务状态为处理中，同时记录开始处理时间
                     $wpdb->update(
                         $table_name,
-                        array('status' => CONTENT_AUTO_STATUS_PROCESSING),
+                        array(
+                            'status' => CONTENT_AUTO_STATUS_PROCESSING,
+                            'updated_at' => current_time('mysql')  // 记录开始处理时间
+                        ),
                         array('id' => $job['id'])
                     );
 
@@ -234,6 +246,9 @@ class ContentAuto_JobQueue {
                             $result = $this->process_material_search($job);
                             break;
                     }
+
+                    // 清除当前处理任务标记
+                    delete_option('content_auto_current_processing_job');
 
                     // 更新任务状态
                     $is_success = is_array($result) ? $result['success'] : $result;
@@ -267,6 +282,8 @@ class ContentAuto_JobQueue {
                 } finally {
                     // 释放全局子任务锁
                     $this->release_global_subtask_lock();
+                    // 确保清除当前处理任务标记
+                    delete_option('content_auto_current_processing_job');
                 }
 
                 $processed_count++;
@@ -340,27 +357,59 @@ class ContentAuto_JobQueue {
         global $wpdb;
 
         $table_name = $wpdb->prefix . 'content_auto_job_queue';
+        // 按任务类型和状态分组统计
         $results = $wpdb->get_results(
-            "SELECT status, COUNT(*) as count FROM $table_name GROUP BY status",
+            "SELECT job_type, status, COUNT(*) as count FROM $table_name GROUP BY job_type, status",
             ARRAY_A
         );
 
-        $status = array(
+        $base_status = array(
             CONTENT_AUTO_STATUS_PENDING => 0,
             CONTENT_AUTO_STATUS_PROCESSING => 0,
             CONTENT_AUTO_STATUS_COMPLETED => 0,
-            CONTENT_AUTO_STATUS_FAILED => 0
+            CONTENT_AUTO_STATUS_FAILED => 0,
+            'pending' => 0,
+            'processing' => 0,
+            'completed' => 0,
+            'failed' => 0,
+            'total' => 0
         );
 
+        $status = $base_status;
+        $status['by_type'] = array();
+
         foreach ($results as $row) {
-            $status[$row['status']] = $row['count'];
+            $type = $row['job_type'];
+            $st = $row['status'];
+            $count = intval($row['count']);
+
+            // 初始化类型统计
+            if (!isset($status['by_type'][$type])) {
+                $status['by_type'][$type] = $base_status;
+                // 清除by_type递归，避免无限循环（虽然这里是纯数组，不需要）
+                unset($status['by_type'][$type]['by_type']);
+            }
+
+            // 更新类型统计
+            // 注意：$st 通常就是 'pending', 'processing' 等字符串，与数组键名一致
+            // 所以只需要更新一次，不需要再额外判断常量
+            if (isset($status['by_type'][$type][$st])) {
+                $status['by_type'][$type][$st] += $count;
+            }
+            
+            $status['by_type'][$type]['total'] += $count;
+
+            // 更新全局统计
+            if (isset($status[$st])) {
+                $status[$st] += $count;
+            }
         }
 
-        // 为了兼容性，同时返回字符串键和总数
-        $status['pending'] = $status[CONTENT_AUTO_STATUS_PENDING];
-        $status['processing'] = $status[CONTENT_AUTO_STATUS_PROCESSING];
-        $status['completed'] = $status[CONTENT_AUTO_STATUS_COMPLETED];
-        $status['failed'] = $status[CONTENT_AUTO_STATUS_FAILED];
+        // 更新全局字符串键
+        $status['pending'] = isset($status[CONTENT_AUTO_STATUS_PENDING]) ? $status[CONTENT_AUTO_STATUS_PENDING] : 0;
+        $status['processing'] = isset($status[CONTENT_AUTO_STATUS_PROCESSING]) ? $status[CONTENT_AUTO_STATUS_PROCESSING] : 0;
+        $status['completed'] = isset($status[CONTENT_AUTO_STATUS_COMPLETED]) ? $status[CONTENT_AUTO_STATUS_COMPLETED] : 0;
+        $status['failed'] = isset($status[CONTENT_AUTO_STATUS_FAILED]) ? $status[CONTENT_AUTO_STATUS_FAILED] : 0;
         $status['total'] = $status['pending'] + $status['processing'] + $status['completed'] + $status['failed'];
 
         return $status;
@@ -617,14 +666,16 @@ class ContentAuto_JobQueue {
     private function process_material_search($job) {
         global $wpdb;
         $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $topic_id = $job['job_id'];
+        
+        // 统一语义：reference_id 存储主题 ID
+        // 向后兼容：如果 reference_id 为空，尝试使用 job_id（旧数据）
+        $topic_id = !empty($job['reference_id']) ? $job['reference_id'] : $job['job_id'];
         
         // 1. 再次验证开关状态（双重检查）
         $db = new ContentAuto_Database();
         $publish_rules = $db->get_row('content_auto_publish_rules', array('id' => 1));
         
-        if (empty($publish_rules['enable_reference_material']) || 
-            empty($publish_rules['enable_auto_material_search'])) {
+        if (empty($publish_rules['enable_reference_material'])) {
             // 开关已关闭，跳过执行
             return ['success' => false, 'message' => '素材搜索功能已关闭'];
         }
