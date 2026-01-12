@@ -3,7 +3,7 @@
  * Plugin Name: 内容自动生成管家
  * Plugin URI: https://github.com/pptt121212/content-auto-manager
  * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Your Name
  * Author URI: https://github.com/pptt121212/content-auto-manager
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // 定义插件常量
-define('CONTENT_AUTO_MANAGER_VERSION', '1.0.5');
+define('CONTENT_AUTO_MANAGER_VERSION', '1.0.6');
 define('CONTENT_AUTO_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CONTENT_AUTO_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -66,6 +66,8 @@ require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/ajax-handlers.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'debug-tools/ajax-handler.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-api-settings/ajax-handler.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/ajax-handler.php';
+require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/ajax-filter-handler.php';
+require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/ajax-manual-add-handler.php';
 
 // 引入外部访问统计功能
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/analytics/class-external-visit-tracker.php';
@@ -401,6 +403,93 @@ function content_auto_manager_start_queue_processor() {
     }
     
     add_action('content_auto_manager_handle_article_timeouts', 'content_auto_manager_handle_article_timeouts');
+    
+    // 注册shutdown函数处理致命错误
+    register_shutdown_function('content_auto_manager_handle_fatal_error');
+}
+
+/**
+ * 处理PHP致命错误
+ * 当PHP脚本因致命错误终止时，自动将正在处理的任务标记为失败
+ */
+function content_auto_manager_handle_fatal_error() {
+    $error = error_get_last();
+    
+    // 只处理致命错误
+    if ($error !== null && in_array($error['type'], array(E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE))) {
+        // 获取当前正在处理的任务信息
+        $current_job = get_option('content_auto_current_processing_job');
+        
+        if ($current_job && !empty($current_job['job_id'])) {
+            global $wpdb;
+            
+            $table_name = $current_job['table_name'];
+            $error_message = sprintf(
+                'PHP致命错误导致任务中断: %s in %s on line %d',
+                $error['message'],
+                basename($error['file']),
+                $error['line']
+            );
+            
+            // 更新任务状态为失败
+            $wpdb->update(
+                $table_name,
+                array(
+                    'status' => CONTENT_AUTO_STATUS_FAILED,
+                    'error_message' => $error_message,
+                    'updated_at' => current_time('mysql')
+                ),
+                array('id' => $current_job['job_id'])
+            );
+            
+            // 如果是文章任务，更新父任务状态
+            if ($current_job['job_type'] === 'article' && !empty($current_job['task_id'])) {
+                $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+                
+                // 获取子任务统计
+                $stats = $wpdb->get_row($wpdb->prepare(
+                    "SELECT 
+                        COUNT(*) as total,
+                        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                        SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed
+                    FROM {$job_queue_table}
+                    WHERE job_type = 'article' AND job_id = %d",
+                    $current_job['task_id']
+                ));
+                
+                if ($stats) {
+                    $processed_count = intval($stats->completed) + intval($stats->failed);
+                    $task = $wpdb->get_row($wpdb->prepare(
+                        "SELECT total_topics FROM {$article_tasks_table} WHERE id = %d",
+                        $current_job['task_id']
+                    ));
+                    
+                    if ($task && $processed_count >= intval($task->total_topics)) {
+                        $final_status = ($stats->failed > 0) ? 'failed' : 'completed';
+                        $wpdb->update(
+                            $article_tasks_table,
+                            array(
+                                'status' => $final_status,
+                                'completed_topics' => $stats->completed,
+                                'failed_topics' => $stats->failed,
+                                'updated_at' => current_time('mysql')
+                            ),
+                            array('id' => $current_job['task_id'])
+                        );
+                    }
+                }
+            }
+            
+            // 清除锁和当前任务标记
+            delete_transient('content_auto_global_task_lock');
+            delete_transient('content_auto_global_subtask_lock');
+            delete_option('content_auto_current_processing_job');
+            
+            // 记录错误日志
+            error_log('[ContentAutoManager] Fatal error handled: ' . $error_message);
+        }
+    }
 }
 
 // 添加自定义时间间隔

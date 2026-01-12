@@ -1,0 +1,232 @@
+/**
+ * 手工添加主题弹窗样式 (WordPress Native Style)
+ */
+
+/* 弹窗遮罩层 */
+.cam-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100005;
+    /* 大于 WP Admin Bar (99999) */
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.cam-modal-overlay.active {
+    display: block;
+    /* 使用 block 配合 absolute positioning */
+    animation: cam-fade-in 0.2s ease-out;
+}
+
+/* 弹窗容器 */
+.cam-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* 绝对居中核心代码 */
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    /* 清除可能继承的 margin */
+}
+
+@keyframes cam-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* 弹窗头部 */
+.cam-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    height: 50px;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+.cam-modal-header h3 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.cam-modal-close {
+    background: none;
+    border: none;
+    color: #787c82;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.1s ease-in-out;
+}
+
+.cam-modal-close:hover {
+    color: #d63638;
+}
+
+.cam-modal-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #2271b1;
+}
+
+/* 弹窗内容 */
+.cam-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* 表单样式 */
+.cam-form-group {
+    margin-bottom: 15px;
+}
+
+.cam-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #1d2327;
+}
+
+.cam-form-group .description {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #646970;
+    font-style: italic;
+}
+
+/* 输入控件复用 WP 样式 */
+.cam-form-control {
+    width: 100%;
+    padding: 6px 8px;
+    /* Standard WP padding */
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #2c3338;
+}
+
+.cam-form-control:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: 2px solid transparent;
+}
+
+textarea.cam-form-control {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* 字符计数器 */
+.char-counter {
+    text-align: right;
+    font-size: 12px;
+    color: #646970;
+    margin-top: 4px;
+}
+
+.char-counter.warning {
+    color: #d63638;
+}
+
+/* 弹窗底部 */
+.cam-modal-footer {
+    padding: 16px;
+    background: #f6f7f7;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* 按钮样式复用 */
+.cam-btn {
+    display: inline-block;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 2.15384615;
+    min-height: 30px;
+    margin: 0;
+    padding: 0 10px;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    -webkit-appearance: none;
+    border-radius: 3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* 次级按钮 (默认 .button) */
+.cam-btn-secondary {
+    color: #2271b1;
+    border-color: #2271b1;
+    background: #f6f7f7;
+}
+
+.cam-btn-secondary:hover {
+    background: #f0f0f1;
+    border-color: #0a4b78;
+    color: #0a4b78;
+}
+
+/* 主按钮 (默认 .button-primary) */
+.cam-btn-primary {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+    text-shadow: none;
+}
+
+.cam-btn-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+.cam-btn-primary:disabled {
+    background: #a7aaad !important;
+    border-color: #dcdcde !important;
+    color: #fff !important;
+    text-shadow: none !important;
+    cursor: default;
+    transform: none !important;
+}
+
+/* 响应式 */
+@media screen and (max-width: 782px) {
+    .cam-modal {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .cam-modal-body {
+        padding: 12px;
+    }
+}

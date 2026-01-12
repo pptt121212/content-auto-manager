@@ -12,65 +12,7 @@ if (!current_user_can('manage_options')) {
     wp_die(__('抱歉，您没有权限访问此页面。'));
 }
 
-// 处理表单提交（手工添加主题）
-if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
-    // 验证nonce
-    if (!wp_verify_nonce($_POST['content_auto_manager_nonce'], 'content_auto_manager_topics')) {
-        wp_die(__('安全验证失败。'));
-    }
-    
-    // 获取表单数据
-    $titles = sanitize_textarea_field($_POST['titles']);
-    $reference_material = isset($_POST['reference_material']) ? sanitize_textarea_field($_POST['reference_material']) : '';
-    $target_category_id = isset($_POST['target_category_id']) ? intval($_POST['target_category_id']) : 0;
-    
-    // Resolve category name if ID is provided
-    $matched_category = '';
-    if ($target_category_id > 0) {
-        $category_name = get_cat_name($target_category_id);
-        if ($category_name) {
-            $matched_category = $category_name;
-        }
-    }
-
-    // 验证参考资料长度（最多800字符）
-    if (mb_strlen($reference_material) > 800) {
-        $reference_material = mb_substr($reference_material, 0, 800);
-        echo '<div class="notice notice-warning"><p>' . __('参考资料已截断至800字符。', 'content-auto-manager') . '</p></div>';
-    }
-
-    // 验证数据
-    if (empty($titles)) {
-        echo '<div class="notice notice-error"><p>' . __('请填写主题标题。', 'content-auto-manager') . '</p></div>';
-    } else {
-        // 分割主题标题
-        $title_array = explode("\n", $titles);
-        $database = new ContentAuto_Database();
-
-        foreach ($title_array as $title) {
-            $title = trim($title);
-            if (!empty($title)) {
-                // 插入主题数据
-                $data = array(
-                    'task_id' => '', // 手工添加的主题task_id为空字符串
-                    'rule_id' => 0, // 手工添加的主题rule_id为0
-                    'rule_item_index' => 0, // 手工添加的主题rule_item_index为0
-                    'title' => $title,
-                    'source_angle' => '',
-                    'user_value' => '',
-                    'seo_keywords' => '',
-                    'matched_category' => $matched_category,
-                    'priority_score' => 3,
-                    'status' => CONTENT_AUTO_TOPIC_UNUSED,
-                    'reference_material' => $reference_material // 添加参考资料字段
-                );
-                $database->insert('content_auto_topics', $data);
-            }
-        }
-        
-        echo '<div class="notice notice-success"><p>' . __('主题已添加。', 'content-auto-manager') . '</p></div>';
-    }
-}
+// 处理删除操作
 
 // 处理删除操作
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
@@ -114,31 +56,79 @@ if (isset($_POST['generate_articles']) && isset($_POST['topic_ids'])) {
 // 获取筛选参数
 $task_id = isset($_GET['task_id']) ? sanitize_text_field($_GET['task_id']) : '';
 $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : CONTENT_AUTO_TOPIC_UNUSED;
+$title_keyword = isset($_GET['title_keyword']) ? sanitize_text_field($_GET['title_keyword']) : '';
+$matched_category = isset($_GET['matched_category']) ? sanitize_text_field($_GET['matched_category']) : '';
+$priority_score = isset($_GET['priority_score']) ? sanitize_text_field($_GET['priority_score']) : '';
+$has_vector = isset($_GET['has_vector']) ? sanitize_text_field($_GET['has_vector']) : '';
+$has_reference = isset($_GET['has_reference']) ? sanitize_text_field($_GET['has_reference']) : '';
 
 // 获取分页参数
 $current_page = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
 $per_page = 20;
 $offset = ($current_page - 1) * $per_page;
 
-// 构建查询条件
-$where = array('status' => $status);
-if (!empty($task_id)) {
-    $where['task_id'] = $task_id;
-}
-
 // 获取主题，按最后更新时间排序，支持分页
 global $wpdb;
 $topics_table = $wpdb->prefix . 'content_auto_topics';
-$where_clause = '';
+$where_clauses = array();
 $where_values = array();
 
-if (!empty($where)) {
-    $where_parts = array();
-    foreach ($where as $key => $value) {
-        $where_parts[] = "$key = %s";
-        $where_values[] = $value;
+// 状态筛选
+if (!empty($status)) {
+    $where_clauses[] = 'status = %s';
+    $where_values[] = $status;
+}
+
+// 任务ID筛选
+if (!empty($task_id)) {
+    $where_clauses[] = 'task_id = %s';
+    $where_values[] = $task_id;
+}
+
+// 标题关键字搜索
+if (!empty($title_keyword)) {
+    $where_clauses[] = 'title LIKE %s';
+    $where_values[] = '%' . $wpdb->esc_like($title_keyword) . '%';
+}
+
+// 推荐分类筛选
+if (!empty($matched_category)) {
+    if ($matched_category === '__empty__') {
+        $where_clauses[] = "(matched_category IS NULL OR matched_category = '')";
+    } else {
+        $where_clauses[] = 'matched_category = %s';
+        $where_values[] = $matched_category;
     }
-    $where_clause = 'WHERE ' . implode(' AND ', $where_parts);
+}
+
+// 优先级筛选
+if (!empty($priority_score)) {
+    $where_clauses[] = 'priority_score = %d';
+    $where_values[] = intval($priority_score);
+}
+
+// 生成向量状态筛选
+if ($has_vector !== '') {
+    if ($has_vector === '1') {
+        $where_clauses[] = "(vector_embedding IS NOT NULL AND vector_embedding != '')";
+    } elseif ($has_vector === '0') {
+        $where_clauses[] = "(vector_embedding IS NULL OR vector_embedding = '')";
+    }
+}
+
+// 参考资料筛选
+if ($has_reference !== '') {
+    if ($has_reference === '1') {
+        $where_clauses[] = "(reference_material IS NOT NULL AND reference_material != '')";
+    } elseif ($has_reference === '0') {
+        $where_clauses[] = "(reference_material IS NULL OR reference_material = '')";
+    }
+}
+
+// 构建WHERE子句
+$where_clause = '';
+if (!empty($where_clauses)) {
+    $where_clause = 'WHERE ' . implode(' AND ', $where_clauses);
 }
 
 // 获取总记录数
@@ -165,86 +155,163 @@ $rule_manager = new ContentAuto_RuleManager();
 ?>
 
 <div class="wrap">
-    <h1><?php _e('主题管理', 'content-auto-manager'); ?></h1>
+    <h1>
+        <?php _e('主题管理', 'content-auto-manager'); ?>
+        <a href="#" id="open-manual-add-modal" class="page-title-action">
+            <?php _e('手工添加主题', 'content-auto-manager'); ?>
+        </a>
+    </h1>
     
-    <!-- 筛选器 -->
+    <!-- 高级筛选器 -->
     <div class="content-auto-section">
-        <h2><?php _e('筛选主题', 'content-auto-manager'); ?></h2>
+        <h2><?php _e('高级筛选', 'content-auto-manager'); ?></h2>
         
-        <form method="get" action="">
+        <form method="get" action="" id="advanced-filter-form">
             <input type="hidden" name="page" value="content-auto-manager-topics">
-            <input type="hidden" name="paged" value="<?php echo esc_attr($current_page); ?>">
+            <input type="hidden" name="paged" value="1">
             
-            <table class="form-table">
-                <tr>
-                    <th scope="row"><?php _e('任务ID', 'content-auto-manager'); ?></th>
-                    <td>
-                        <input type="text" name="task_id" value="<?php echo esc_attr($task_id); ?>" class="regular-text">
-                        <p class="description"><?php _e('输入任务ID或留空显示所有任务的主题', 'content-auto-manager'); ?></p>
-                    </td>
-                </tr>
-                <tr>
-                <th scope="row"><?php _e('状态', 'content-auto-manager'); ?></th>
-                <td>
-                    <select name="status">
-                        <option value="unused" <?php selected($status, 'unused'); ?>><?php _e('未使用', 'content-auto-manager'); ?></option>
-                        <option value="queued" <?php selected($status, 'queued'); ?>><?php _e('队列中', 'content-auto-manager'); ?></option>
-                        <option value="used" <?php selected($status, 'used'); ?>><?php _e('已使用', 'content-auto-manager'); ?></option>
-                    </select>
-                </td>
-            </tr>
-            </table>
-            
-            <?php submit_button(__('筛选', 'content-auto-manager'), 'secondary'); ?>
-        </form>
-    </div>
-    
-    <!-- 手工添加主题 -->
-    <div class="content-auto-section">
-        <h2><?php _e('手工添加主题', 'content-auto-manager'); ?></h2>
-        
-        <form method="post" action="">
-            <?php wp_nonce_field('content_auto_manager_topics', 'content_auto_manager_nonce'); ?>
-            
-            <table class="form-table">
-                <tr>
-                    <th scope="row"><?php _e('主题标题', 'content-auto-manager'); ?></th>
-                    <td>
-                        <textarea name="titles" rows="5" cols="50" class="large-text" placeholder="<?php _e('每行一个主题标题', 'content-auto-manager'); ?>"></textarea>
-                        <p class="description"><?php _e('每行输入一个主题标题，可以批量添加多个主题。', 'content-auto-manager'); ?></p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><?php _e('参考资料', 'content-auto-manager'); ?></th>
-                    <td>
-                        <textarea name="reference_material" rows="4" cols="50" class="large-text"
-                                  placeholder="<?php _e('可选：输入这些主题的参考资料，用于指导文章生成', 'content-auto-manager'); ?>"></textarea>
-                        <p class="description">
-                            <?php _e('参考资料将帮助AI生成更准确、更有深度的内容。所有手工添加的主题将使用相同的参考资料。最多800字符。', 'content-auto-manager'); ?>
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><?php _e('目标分类', 'content-auto-manager'); ?></th>
-                    <td>
-                        <select name="target_category_id" id="target_category_id">
-                            <option value=""><?php _e('AI 智能自动匹配', 'content-auto-manager'); ?></option>
+            <div class="filter-grid">
+                <!-- 第一行筛选条件 -->
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label for="filter-title"><?php _e('标题关键字', 'content-auto-manager'); ?></label>
+                        <input type="text" id="filter-title" name="title_keyword" 
+                               value="<?php echo esc_attr(isset($_GET['title_keyword']) ? $_GET['title_keyword'] : ''); ?>" 
+                               class="regular-text" placeholder="<?php _e('输入关键字搜索标题...', 'content-auto-manager'); ?>">
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label for="filter-status"><?php _e('状态', 'content-auto-manager'); ?></label>
+                        <select id="filter-status" name="status">
+                            <option value="unused" <?php selected($status, 'unused'); ?>><?php _e('未使用', 'content-auto-manager'); ?></option>
+                            <option value="queued" <?php selected($status, 'queued'); ?>><?php _e('队列中', 'content-auto-manager'); ?></option>
+                            <option value="used" <?php selected($status, 'used'); ?>><?php _e('已使用', 'content-auto-manager'); ?></option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label for="filter-category"><?php _e('推荐分类', 'content-auto-manager'); ?></label>
+                        <select id="filter-category" name="matched_category">
+                            <option value=""><?php _e('全部分类', 'content-auto-manager'); ?></option>
+                            <option value="__empty__" <?php selected(isset($_GET['matched_category']) ? $_GET['matched_category'] : '', '__empty__'); ?>><?php _e('无分类', 'content-auto-manager'); ?></option>
                             <?php
-                            $categories = get_categories(array('hide_empty' => false));
-                            foreach ($categories as $category) {
-                                echo '<option value="' . esc_attr($category->term_id) . '">' . esc_html($category->name) . '</option>';
+                            // 获取现有分类
+                            global $wpdb;
+                            $topics_table = $wpdb->prefix . 'content_auto_topics';
+                            $existing_categories = $wpdb->get_col("
+                                SELECT DISTINCT matched_category 
+                                FROM {$topics_table} 
+                                WHERE matched_category IS NOT NULL AND matched_category != ''
+                                ORDER BY matched_category ASC
+                            ");
+                            foreach ($existing_categories as $cat) {
+                                $selected = (isset($_GET['matched_category']) && $_GET['matched_category'] === $cat) ? 'selected' : '';
+                                echo '<option value="' . esc_attr($cat) . '" ' . $selected . '>' . esc_html($cat) . '</option>';
                             }
                             ?>
                         </select>
-                        <p class="description"><?php _e('指定主题所属的分类。如果选择“AI 智能自动匹配”，系统将自动根据内容匹配最合适的分类。', 'content-auto-manager'); ?></p>
-                    </td>
-                </tr>
-            </table>
-            
-            <?php submit_button(__('添加主题', 'content-auto-manager')); ?>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label for="filter-priority"><?php _e('优先级', 'content-auto-manager'); ?></label>
+                        <select id="filter-priority" name="priority_score">
+                            <option value=""><?php _e('全部', 'content-auto-manager'); ?></option>
+                            <?php for ($i = 5; $i >= 1; $i--): ?>
+                                <option value="<?php echo $i; ?>" <?php selected(isset($_GET['priority_score']) ? $_GET['priority_score'] : '', $i); ?>>
+                                    <?php echo str_repeat('★', $i); ?> (<?php echo $i; ?>/5)
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 第二行筛选条件 -->
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label for="filter-vector"><?php _e('生成向量', 'content-auto-manager'); ?></label>
+                        <select id="filter-vector" name="has_vector">
+                            <option value=""><?php _e('全部', 'content-auto-manager'); ?></option>
+                            <option value="1" <?php selected(isset($_GET['has_vector']) ? $_GET['has_vector'] : '', '1'); ?>><?php _e('已生成', 'content-auto-manager'); ?></option>
+                            <option value="0" <?php selected(isset($_GET['has_vector']) ? $_GET['has_vector'] : '', '0'); ?>><?php _e('未生成', 'content-auto-manager'); ?></option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label for="filter-reference"><?php _e('参考资料', 'content-auto-manager'); ?></label>
+                        <select id="filter-reference" name="has_reference">
+                            <option value=""><?php _e('全部', 'content-auto-manager'); ?></option>
+                            <option value="1" <?php selected(isset($_GET['has_reference']) ? $_GET['has_reference'] : '', '1'); ?>><?php _e('有参考资料', 'content-auto-manager'); ?></option>
+                            <option value="0" <?php selected(isset($_GET['has_reference']) ? $_GET['has_reference'] : '', '0'); ?>><?php _e('无参考资料', 'content-auto-manager'); ?></option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label for="filter-task-id"><?php _e('任务ID', 'content-auto-manager'); ?></label>
+                        <input type="text" id="filter-task-id" name="task_id" 
+                               value="<?php echo esc_attr($task_id); ?>" 
+                               class="regular-text" placeholder="<?php _e('留空显示全部', 'content-auto-manager'); ?>">
+                    </div>
+                    
+                    <div class="filter-item filter-buttons">
+                        <label>&nbsp;</label>
+                        <div class="button-group">
+                            <?php submit_button(__('筛选', 'content-auto-manager'), 'primary', 'submit', false); ?>
+                            <button type="button" class="button" id="reset-filters"><?php _e('重置', 'content-auto-manager'); ?></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </form>
+        
+        <!-- 重复标题检测区域 -->
+        <div class="duplicate-detection-section">
+            <h3><?php _e('重复标题检测', 'content-auto-manager'); ?></h3>
+            <p class="description"><?php _e('检测完全相同的标题或向量相似度高于设定阈值的主题，支持一键删除重复项（保留最早创建的）', 'content-auto-manager'); ?></p>
+            
+            <div class="duplicate-actions">
+                <div class="threshold-input-group" style="display:inline-block; margin-right:10px;">
+                    <label for="duplicate-threshold"><?php _e('相似度阈值:', 'content-auto-manager'); ?></label>
+                    <input type="number" id="duplicate-threshold" value="90" min="10" max="100" step="1" style="width: 60px;">%
+                </div>
+                <button type="button" class="button" id="detect-duplicates">
+                    <span class="dashicons dashicons-search" style="vertical-align: middle;"></span>
+                    <?php _e('检测重复标题', 'content-auto-manager'); ?>
+                </button>
+                <button type="button" class="button button-link-delete" id="delete-all-duplicates" style="display:none;">
+                    <span class="dashicons dashicons-trash" style="vertical-align: middle;"></span>
+                    <?php _e('一键删除所有重复', 'content-auto-manager'); ?>
+                </button>
+                <span id="duplicate-status" class="duplicate-status"></span>
+            </div>
+            
+            <div id="duplicate-results" style="display:none;"></div>
+        </div>
     </div>
     
+    <!-- 批量操作区域 -->
+    <div class="content-auto-section bulk-actions-section" id="bulk-actions-section" style="display:none;">
+        <h3><?php _e('批量操作', 'content-auto-manager'); ?></h3>
+        <div class="bulk-action-buttons">
+            <span id="selected-count">0</span> <?php _e('个主题已选中', 'content-auto-manager'); ?>
+            <button type="button" class="button button-link-delete" id="bulk-delete-selected">
+                <span class="dashicons dashicons-trash" style="vertical-align: middle;"></span>
+                <?php _e('删除选中', 'content-auto-manager'); ?>
+            </button>
+            <span class="bulk-separator">|</span>
+            <button type="button" class="button button-link-delete" id="bulk-delete-all-filtered">
+                <span class="dashicons dashicons-trash" style="vertical-align: middle;"></span>
+                <?php _e('删除所有符合条件的主题', 'content-auto-manager'); ?> 
+                (<span id="filtered-total-count"><?php echo intval($total_items); ?></span> <?php _e('条', 'content-auto-manager'); ?>)
+            </button>
+        </div>
+        <p class="bulk-action-warning" style="margin-top: 10px; color: #856404; font-size: 12px;">
+            <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
+            <?php _e('提示：只能删除"未使用"状态的主题，队列中和已使用的主题不会被删除。', 'content-auto-manager'); ?>
+        </p>
+    </div>
+    
+    <!-- 手工添加主题弹窗触发器 -->
+
     <!-- 生成文章表单 -->
     <form method="post" action="">
         <?php wp_nonce_field('content_auto_manager_generate_articles', 'content_auto_manager_nonce'); ?>
@@ -1115,53 +1182,124 @@ jQuery(document).ready(function($) {
 </script>
 
 <!-- 参考资料详情弹窗 -->
-<div id="reference-material-modal" class="cam-modal" style="display:none;">
-    <div class="cam-modal-content">
-        <div class="cam-modal-header">
-            <span class="cam-modal-close" style="float:right;cursor:pointer;font-size:24px;">&times;</span>
+<div id="reference-material-modal" class="cam-ref-modal" style="display:none;">
+    <div class="cam-ref-modal-content">
+        <div class="cam-ref-modal-header">
             <h3 style="margin:0;"><?php _e('参考资料详情', 'content-auto-manager'); ?></h3>
+            <span class="cam-ref-modal-close">&times;</span>
         </div>
-        <div class="cam-modal-body" style="padding:15px;">
-            <textarea id="reference-material-text" readonly style="width:100%;height:300px;padding:10px;box-sizing:border-box;font-family:monospace;resize:vertical;"></textarea>
+        <div class="cam-ref-modal-body">
+            <textarea id="reference-material-text" readonly></textarea>
         </div>
-        <div class="cam-modal-footer" style="padding:15px;text-align:right;border-top:1px solid #ddd;background:#f9f9f9;">
+        <div class="cam-ref-modal-footer">
             <button type="button" class="button" id="copy-reference-btn"><?php _e('复制内容', 'content-auto-manager'); ?></button>
-            <button type="button" class="button button-primary cam-modal-close-btn"><?php _e('关闭', 'content-auto-manager'); ?></button>
+            <button type="button" class="button button-primary cam-ref-modal-close-btn"><?php _e('关闭', 'content-auto-manager'); ?></button>
         </div>
     </div>
 </div>
 
 <style>
-    .cam-modal {
+    /* 参考资料弹窗样式 - 独立命名空间 */
+    .cam-ref-modal {
         position: fixed;
-        z-index: 10000;
+        z-index: 100000;
         left: 0;
         top: 0;
+        right: 0;
+        bottom: 0;
         width: 100%;
         height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.5);
+        overflow: hidden;
+        background-color: rgba(0,0,0,0.6);
+        padding: 0;
+        margin: 0;
+        border: none;
     }
-    .cam-modal-content {
-        background-color: #fefefe;
-        margin: 5% auto;
-        border: 1px solid #888;
+    .cam-ref-modal-content {
+        background-color: #fff;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
         width: 60%;
         max-width: 800px;
-        border-radius: 5px;
-        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+        max-height: 60vh;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
-    .cam-modal-header {
-        padding: 15px 20px;
-        background-color: #f1f1f1;
-        border-bottom: 1px solid #ddd;
-        border-radius: 5px 5px 0 0;
+    .cam-ref-modal-header {
+        padding: 16px 20px;
+        background-color: #fff;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    .cam-ref-modal-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1d2327;
+    }
+    .cam-ref-modal-close {
+        cursor: pointer;
+        font-size: 24px;
+        color: #999;
+        line-height: 1;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+    .cam-ref-modal-close:hover {
+        color: #d63638;
+    }
+    .cam-ref-modal-body {
+        padding: 20px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 200px;
+    }
+    .cam-ref-modal-body textarea {
+        width: 100%;
+        height: 100%;
+        min-height: 250px;
+        padding: 15px;
+        box-sizing: border-box;
+        font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #f9f9f9;
+        resize: none;
+        outline: none;
+    }
+    .cam-ref-modal-footer {
+        padding: 12px 20px;
+        border-top: 1px solid #e5e5e5;
+        background: #f7f7f7;
+        text-align: right;
+        flex-shrink: 0;
+    }
+    .cam-ref-modal-footer .button {
+        margin-left: 8px;
     }
 </style>
 
 <script type="text/javascript">
 jQuery(document).ready(function($) {
     var modal = $('#reference-material-modal');
+    
+    // 关键修正：将弹窗移动到 body 直接子级，防止被其他容器样式干扰（解决"白色背景"和层级问题）
+    if (modal.parent().not('body').length) {
+        modal.appendTo('body');
+    }
+    
     var textarea = $('#reference-material-text');
     var copyBtn = $('#copy-reference-btn');
     
@@ -1174,7 +1312,7 @@ jQuery(document).ready(function($) {
     });
     
     // 关闭弹窗
-    $('.cam-modal-close, .cam-modal-close-btn').on('click', function() {
+    $(document).on('click', '.cam-ref-modal-close, .cam-ref-modal-close-btn', function() {
         modal.fadeOut(200);
     });
     
@@ -1201,3 +1339,116 @@ jQuery(document).ready(function($) {
     });
 });
 </script>
+
+<!-- 加载高级筛选样式和脚本 -->
+<?php
+// 加载高级筛选CSS
+$filter_css_url = plugins_url('assets/css/topic-filter.css', dirname(__FILE__));
+echo '<link rel="stylesheet" href="' . esc_url($filter_css_url) . '?ver=' . CONTENT_AUTO_MANAGER_VERSION . '">';
+
+// 加载高级筛选JS
+$filter_js_url = plugins_url('assets/js/topic-filter.js', dirname(__FILE__));
+?>
+
+<!-- 高级筛选配置 -->
+<input type="hidden" id="cam-filter-nonce" value="<?php echo wp_create_nonce('cam_topic_filter'); ?>">
+<script type="text/javascript">
+// 国际化文本
+window.camTopicFilterI18n = {
+    detecting: '<?php _e('正在检测重复标题...', 'content-auto-manager'); ?>',
+    detected: '<?php _e('检测完成，发现', 'content-auto-manager'); ?>',
+    duplicateTopics: '<?php _e('个重复主题', 'content-auto-manager'); ?>',
+    noDuplicates: '<?php _e('未发现重复标题', 'content-auto-manager'); ?>',
+    detectFailed: '<?php _e('检测失败', 'content-auto-manager'); ?>',
+    requestFailed: '<?php _e('请求失败', 'content-auto-manager'); ?>',
+    summary: '<?php _e('检测结果汇总', 'content-auto-manager'); ?>',
+    exactGroups: '<?php _e('完全相同标题组', 'content-auto-manager'); ?>',
+    exactTopics: '<?php _e('完全重复主题数', 'content-auto-manager'); ?>',
+    similarGroups: '<?php _e('向量相似组', 'content-auto-manager'); ?>',
+    similarTopics: '<?php _e('相似重复主题数', 'content-auto-manager'); ?>',
+    exactLabel: '<?php _e('完全相同', 'content-auto-manager'); ?>',
+    exactTitle: '<?php _e('完全相同的标题', 'content-auto-manager'); ?>',
+    similarLabel: '<?php _e('向量相似', 'content-auto-manager'); ?>',
+    similarTitle: '<?php _e('向量相似的标题', 'content-auto-manager'); ?>',
+    groups: '<?php _e('组', 'content-auto-manager'); ?>',
+    topics: '<?php _e('个主题', 'content-auto-manager'); ?>',
+    createdAt: '<?php _e('创建时间', 'content-auto-manager'); ?>',
+    category: '<?php _e('分类', 'content-auto-manager'); ?>',
+    keep: '<?php _e('保留', 'content-auto-manager'); ?>',
+    willDelete: '<?php _e('将删除', 'content-auto-manager'); ?>',
+    similarity: '<?php _e('相似度', 'content-auto-manager'); ?>',
+    noResults: '<?php _e('未发现重复标题', 'content-auto-manager'); ?>',
+    detectFirst: '<?php _e('请先检测重复标题', 'content-auto-manager'); ?>',
+    noDuplicatesToDelete: '<?php _e('没有需要删除的重复主题', 'content-auto-manager'); ?>',
+    confirmDeleteAll: '<?php _e('确定要删除所有重复主题吗？将保留每组中最早创建的主题。', 'content-auto-manager'); ?>',
+    deleting: '<?php _e('正在删除重复主题...', 'content-auto-manager'); ?>',
+    deleteFailed: '<?php _e('删除失败', 'content-auto-manager'); ?>',
+    selectTopics: '<?php _e('请选择要删除的主题', 'content-auto-manager'); ?>',
+    confirmDeleteSelected: '<?php _e('确定要删除选中的', 'content-auto-manager'); ?>',
+    topicsConfirm: '<?php _e('个主题吗？此操作不可撤销。', 'content-auto-manager'); ?>',
+    deletingText: '<?php _e('删除中...', 'content-auto-manager'); ?>',
+    deleteSelected: '<?php _e('删除选中', 'content-auto-manager'); ?>'
+};
+</script>
+<script src="<?php echo esc_url($filter_js_url); ?>?ver=<?php echo CONTENT_AUTO_MANAGER_VERSION; ?>"></script>
+
+<!-- 手工添加主题弹窗 -->
+<div class="cam-modal-overlay" id="manual-add-modal-overlay">
+    <div class="cam-modal">
+        <div class="cam-modal-header">
+            <h3><?php _e('手工添加主题', 'content-auto-manager'); ?></h3>
+            <button type="button" class="cam-modal-close" id="manual-add-modal-close">&times;</button>
+        </div>
+        <div class="cam-modal-body">
+            <div class="cam-form-group">
+                <label for="manual-titles"><?php _e('主题标题', 'content-auto-manager'); ?> <span style="color:#d63638;">*</span></label>
+                <textarea id="manual-titles" class="cam-form-control" rows="5" placeholder="<?php _e('每行输入一个主题标题，可批量添加多个主题', 'content-auto-manager'); ?>"></textarea>
+                <p class="description"><?php _e('支持批量添加，每行一个标题', 'content-auto-manager'); ?></p>
+            </div>
+            
+            <div class="cam-form-group">
+                <label for="manual-reference"><?php _e('参考资料', 'content-auto-manager'); ?> <span style="color:#888;">(<?php _e('可选', 'content-auto-manager'); ?>)</span></label>
+                <textarea id="manual-reference" class="cam-form-control" rows="4" placeholder="<?php _e('输入参考资料，用于指导AI生成文章内容', 'content-auto-manager'); ?>"></textarea>
+                <div class="char-counter" id="reference-char-counter">0 / 800</div>
+                <p class="description"><?php _e('参考资料将帮助AI生成更准确、有深度的内容。所有主题共享同一参考资料。', 'content-auto-manager'); ?></p>
+            </div>
+            
+            <div class="cam-form-group">
+                <label for="manual-category"><?php _e('目标分类', 'content-auto-manager'); ?></label>
+                <select id="manual-category" class="cam-form-control">
+                    <option value=""><?php _e('AI 智能自动匹配', 'content-auto-manager'); ?></option>
+                    <?php
+                    $all_categories = get_categories(array('hide_empty' => false));
+                    foreach ($all_categories as $cat) {
+                        echo '<option value="' . esc_attr($cat->term_id) . '">' . esc_html($cat->name) . '</option>';
+                    }
+                    ?>
+                </select>
+                <p class="description"><?php _e('指定分类或让AI根据内容自动匹配', 'content-auto-manager'); ?></p>
+            </div>
+        </div>
+        <div class="cam-modal-footer">
+            <button type="button" class="cam-btn cam-btn-secondary" id="manual-add-cancel"><?php _e('取消', 'content-auto-manager'); ?></button>
+            <button type="button" class="cam-btn cam-btn-primary" id="manual-add-submit"><?php _e('添加主题', 'content-auto-manager'); ?></button>
+        </div>
+    </div>
+</div>
+
+<!-- 加载手工添加主题弹窗资源 -->
+<?php
+// 注意：当前文件在 views 目录，资源在 assets 目录，需要向上退一级
+$modal_css_url = plugins_url('../assets/css/manual-add-modal.css', __FILE__);
+$modal_js_url = plugins_url('../assets/js/manual-add-modal.js', __FILE__);
+echo '<link rel="stylesheet" href="' . esc_url($modal_css_url) . '?ver=' . CONTENT_AUTO_MANAGER_VERSION . '">';
+?>
+<input type="hidden" id="cam-manual-add-nonce" value="<?php echo wp_create_nonce('cam_manual_add_topics'); ?>">
+<script type="text/javascript">
+window.camManualAddI18n = {
+    adding: '<?php _e('正在添加...', 'content-auto-manager'); ?>',
+    addSuccess: '<?php _e('添加成功', 'content-auto-manager'); ?>',
+    addFailed: '<?php _e('添加失败', 'content-auto-manager'); ?>',
+    requestFailed: '<?php _e('请求失败', 'content-auto-manager'); ?>',
+    pleaseEnterTitle: '<?php _e('请至少输入一个主题标题', 'content-auto-manager'); ?>'
+};
+</script>
+<script src="<?php echo esc_url($modal_js_url); ?>?ver=<?php echo CONTENT_AUTO_MANAGER_VERSION; ?>"></script>

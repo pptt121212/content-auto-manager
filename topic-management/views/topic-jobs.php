@@ -75,12 +75,39 @@ $tasks = $wpdb->get_results($query, ARRAY_A);
 function get_topic_task_failure_reason($task_id) {
     global $wpdb;
     
-    // 从任务表中直接获取错误信息
     $tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
-    $task = $wpdb->get_row($wpdb->prepare("SELECT error_message, rule_id FROM {$tasks_table} WHERE id = %d", $task_id));
     
+    // 支持两种ID格式：数字ID或topic_task_id字符串
+    if (is_numeric($task_id)) {
+        $task = $wpdb->get_row($wpdb->prepare("SELECT error_message, rule_id FROM {$tasks_table} WHERE id = %d", $task_id));
+    } else {
+        $task = $wpdb->get_row($wpdb->prepare("SELECT error_message, rule_id FROM {$tasks_table} WHERE topic_task_id = %s", $task_id));
+    }
+    
+    // 如果有明确的错误信息，美化显示
     if ($task && !empty($task->error_message)) {
-        return $task->error_message;
+        $error_msg = $task->error_message;
+        
+        // 美化常见错误信息，使其更易理解
+        if (strpos($error_msg, '主题数据字段不完整') !== false) {
+            return __('AI返回数据格式不完整，建议重试', 'content-auto-manager');
+        }
+        if (strpos($error_msg, 'JSON') !== false || strpos($error_msg, 'json') !== false) {
+            return __('AI返回数据解析失败，建议重试', 'content-auto-manager');
+        }
+        if (strpos($error_msg, 'timeout') !== false || strpos($error_msg, '超时') !== false) {
+            return __('API请求超时，建议重试', 'content-auto-manager');
+        }
+        if (strpos($error_msg, 'rate limit') !== false || strpos($error_msg, '限流') !== false) {
+            return __('API请求限流，请稍后重试', 'content-auto-manager');
+        }
+        
+        // 如果错误信息太长，截断显示
+        if (mb_strlen($error_msg) > 50) {
+            return mb_substr($error_msg, 0, 47) . '...';
+        }
+        
+        return $error_msg;
     }
     
     // 检查API配置
@@ -104,10 +131,10 @@ function get_topic_task_failure_reason($task_id) {
             return __('关联的规则不存在', 'content-auto-manager');
         }
     } else {
-        return __('任务信息不完整', 'content-auto-manager');
+        return __('无法获取任务详情', 'content-auto-manager');
     }
     
-    return __('处理过程中出现未知错误', 'content-auto-manager');
+    return __('处理过程中出现未知错误，可尝试重试', 'content-auto-manager');
 }
 
 /**

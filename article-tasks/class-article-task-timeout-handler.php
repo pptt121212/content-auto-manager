@@ -29,33 +29,52 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         $queue_table = $wpdb->prefix . 'content_auto_job_queue';
         $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
         
-        // 获取处理中超过2分钟的文章任务子项
-        // 通过直接计算时间差来判断是否超时，避免时区问题
+        // 定义超时阈值
+        $normal_timeout = 180;    // 常规超时: 3分钟
+        $absolute_timeout = 600;  // 绝对超时: 10分钟（无论如何都标记为超时）
+        
+        // 获取当前WordPress时间，确保与updated_at（使用current_time('mysql')保存）时区一致
+        $current_wp_time = current_time('mysql');
+        
+        // 获取处理中超过常规超时时间的文章任务子项
         $hanging_subtasks = $wpdb->get_results(
-            "SELECT q.*, at.article_task_id, at.name as task_name,
-             TIMESTAMPDIFF(SECOND, q.updated_at, NOW()) as processing_seconds
-             FROM {$queue_table} q
-             LEFT JOIN {$article_tasks_table} at ON q.job_id = at.id
-             WHERE q.job_type = 'article' 
-             AND q.status = 'processing' 
-             AND TIMESTAMPDIFF(SECOND, q.updated_at, NOW()) > 300", // 超过300秒(5分钟)
+            $wpdb->prepare(
+                "SELECT q.*, at.article_task_id, at.name as task_name,
+                 TIMESTAMPDIFF(SECOND, q.updated_at, %s) as processing_seconds
+                 FROM {$queue_table} q
+                 LEFT JOIN {$article_tasks_table} at ON q.job_id = at.id
+                 WHERE q.job_type = 'article' 
+                 AND q.status = 'processing' 
+                 AND TIMESTAMPDIFF(SECOND, q.updated_at, %s) > %d",
+                $current_wp_time,
+                $current_wp_time,
+                $normal_timeout
+            ),
             ARRAY_A
         );
         
-        // 过滤掉可能正在进行API重试的任务
+        // 过滤掉可能正在进行API重试的任务（但绝对超时的任务不跳过）
         $filtered_subtasks = array();
         foreach ($hanging_subtasks as $subtask) {
-            // 检查是否为API相关的任务，且retry_count > 0
-            // 如果retry_count > 0，说明可能正在进行API重试，不标记为超时
+            $processing_seconds = intval($subtask['processing_seconds']);
+            
+            // 绝对超时：超过10分钟，无论如何都标记为超时
+            if ($processing_seconds >= $absolute_timeout) {
+                $this->logger->info("任务超过绝对超时时间，强制标记为失败: subtask_id={$subtask['subtask_id']}, processing_seconds={$processing_seconds}");
+                $filtered_subtasks[] = $subtask;
+                continue;
+            }
+            
+            // 检查是否为API相关的任务
             $business_node = $this->analyze_business_node($subtask);
             $is_api_related = in_array($business_node['node'], ['API请求阶段', '预定义API请求阶段', '自定义API请求阶段']);
             
-            // 如果是API相关任务且重试次数小于最大重试次数，跳过超时检测
-            $max_retries = get_option('content_auto_max_retries', 2) + 1; // +1 因为初始尝试也算一次
-            if ($is_api_related && $subtask['retry_count'] < $max_retries) {
-                $this->logger->info("跳过API重试任务超时检测: subtask_id={$subtask['subtask_id']}, retry_count={$subtask['retry_count']}, max_retries={$max_retries}");
-                continue;
-            }
+            // 移除特定API任务的跳过逻辑，因为如果updated_at长时间未更新，说明进程已死
+            // 正常的API重试会在每次尝试前更新updated_at
+            // if ($is_api_related && $subtask['retry_count'] < $max_retries) {
+            //    $this->logger->info("跳过API重试任务超时检测: subtask_id={$subtask['subtask_id']}, retry_count={$subtask['retry_count']}, max_retries={$max_retries}");
+            //    continue;
+            // }
             
             $filtered_subtasks[] = $subtask;
         }
@@ -89,11 +108,87 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             }
         }
         
+        // 额外检查：修复卡住的父任务
+        $fixed_parent_tasks = $this->fix_stuck_parent_tasks();
+        
         return array(
             'processed' => $processed_count,
             'failed' => $failed_count,
-            'total_found' => count($hanging_subtasks)
+            'total_found' => count($hanging_subtasks),
+            'fixed_parent_tasks' => $fixed_parent_tasks
         );
+    }
+    
+    /**
+     * 修复卡在"处理中"状态的父任务
+     * 检查父任务的所有子任务是否都已完成，如果是则更新父任务状态
+     * 
+     * @return int 修复的父任务数量
+     */
+    private function fix_stuck_parent_tasks() {
+        global $wpdb;
+        
+        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        
+        // 获取所有处于"处理中"状态的父任务
+        $stuck_tasks = $wpdb->get_results(
+            "SELECT * FROM {$article_tasks_table} WHERE status = 'processing'",
+            ARRAY_A
+        );
+        
+        $fixed_count = 0;
+        
+        foreach ($stuck_tasks as $task) {
+            // 统计子任务状态
+            $stats = $wpdb->get_row($wpdb->prepare(
+                "SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                    SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
+                    SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
+                FROM {$queue_table}
+                WHERE job_type = 'article' AND job_id = %d",
+                $task['id']
+            ));
+            
+            if (!$stats) {
+                continue;
+            }
+            
+            $processed_count = intval($stats->completed) + intval($stats->failed);
+            $total_topics = intval($task['total_topics']);
+            
+            // 如果所有子任务都已完成（没有processing和pending状态）
+            if ($processed_count >= $total_topics && intval($stats->processing) == 0) {
+                $final_status = ($stats->failed > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
+                
+                $update_result = $wpdb->update(
+                    $article_tasks_table,
+                    array(
+                        'status' => $final_status,
+                        'completed_topics' => $stats->completed,
+                        'failed_topics' => $stats->failed,
+                        'updated_at' => current_time('mysql')
+                    ),
+                    array('id' => $task['id'])
+                );
+                
+                if ($update_result !== false) {
+                    $fixed_count++;
+                    $this->logger->info("自动修复卡住的父任务", array(
+                        'task_id' => $task['id'],
+                        'task_name' => $task['name'],
+                        'final_status' => $final_status,
+                        'completed' => $stats->completed,
+                        'failed' => $stats->failed
+                    ));
+                }
+            }
+        }
+        
+        return $fixed_count;
     }
     
     /**
@@ -744,26 +839,48 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             return;
         }
         
-        // 使用 >= 是为了防止在某些边缘情况下计数不精确
-        $processed_count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$queue_table} WHERE job_type = 'article' AND job_id = %d AND status IN ('completed', 'failed')",
+        // 获取完整的子任务统计信息
+        $stats = $wpdb->get_row($wpdb->prepare(
+            "SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
+                SUM(CASE WHEN status = 'processing' THEN 1 ELSE 0 END) as processing,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
+            FROM {$queue_table} 
+            WHERE job_type = 'article' AND job_id = %d",
             $task_id
         ));
         
-        if ($processed_count >= $task['total_topics']) {
-            $failed_count = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM {$queue_table} WHERE job_type = 'article' AND job_id = %d AND status = 'failed'",
-                $task_id
-            ));
-            
+        if (!$stats) {
+            return;
+        }
+        
+        $processed_count = intval($stats->completed) + intval($stats->failed);
+        $total_topics = intval($task['total_topics']);
+        
+        // 如果所有子任务都已处理完毕（completed或failed）
+        if ($processed_count >= $total_topics) {
             // 如果有任何失败的子任务，则整个任务失败；否则，任务完成
-            $final_status = ($failed_count > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
+            $final_status = ($stats->failed > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
             
             $wpdb->update(
                 $article_tasks_table,
-                array('status' => $final_status),
+                array(
+                    'status' => $final_status,
+                    'completed_topics' => $stats->completed,
+                    'failed_topics' => $stats->failed,
+                    'updated_at' => current_time('mysql')
+                ),
                 array('id' => $task_id)
             );
+            
+            $this->logger->info("任务最终状态已更新", array(
+                'task_id' => $task_id,
+                'final_status' => $final_status,
+                'completed' => $stats->completed,
+                'failed' => $stats->failed
+            ));
         }
     }
     

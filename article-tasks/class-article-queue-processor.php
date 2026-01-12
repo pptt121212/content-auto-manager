@@ -203,7 +203,8 @@ class ContentAuto_ArticleQueueProcessor {
             $update_data,
             array('job_type' => 'article', 'job_id' => $task_id, 'subtask_id' => $subtask_id)
         );
-    }    
+    }   
+  
    
  /**
      * 插入品牌资料到文章内容中

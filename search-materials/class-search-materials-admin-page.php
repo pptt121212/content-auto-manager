@@ -72,7 +72,10 @@ class ContentAuto_SearchMaterialsAdminPage {
                     $logDiv.scrollTop($logDiv[0].scrollHeight); // Auto scroll
                 }
 
-                function doStep(topicId, step) {
+                function doStep(topicId, step, retryCount) {
+                    retryCount = retryCount || 0;
+                    var maxRetries = 3;
+
                     $.ajax({
                         url: ajaxurl,
                         type: 'POST',
@@ -83,11 +86,11 @@ class ContentAuto_SearchMaterialsAdminPage {
                             step: step,
                             nonce: '<?php echo wp_create_nonce('content_auto_material_nonce'); ?>'
                         },
+                        timeout: 180000, 
                         success: function(res) {
                             if (res.success) {
                                 appendLog(res.data.log);
                                 
-                                // 处理汇总结果
                                 if (res.data.data && res.data.data.summary) {
                                     currentSummary = res.data.data.summary;
                                     $('#hidden_summary_data').val(currentSummary);
@@ -105,15 +108,15 @@ class ContentAuto_SearchMaterialsAdminPage {
                                 }
 
                                 if (res.data.next_step && res.data.next_step !== 'done') {
-                                    // 继续下一步
-                                    doStep(topicId, res.data.next_step);
+                                    // 成功，重置重试计数，继续下一步
+                                    doStep(topicId, res.data.next_step, 0);
                                 } else {
-                                    // 完成
                                     $('#material_spinner').removeClass('is-active');
                                     $('#btn_start_material').prop('disabled', false).text('重新开始');
                                     appendLog(['<strong>====== 流程全部结束 ======</strong>']);
                                 }
                             } else {
+                                // 业务逻辑错误（如参数不对），不重试
                                 var msg = res.data ? res.data.message : (res.message || 'Unknown Error');
                                 appendLog(res.data && res.data.log ? res.data.log : []);
                                 appendLog(['<span style="color:red; font-weight:bold;">错误中断: ' + msg + '</span>']);
@@ -122,9 +125,28 @@ class ContentAuto_SearchMaterialsAdminPage {
                             }
                         },
                         error: function(xhr, status, error) {
+                            //如果是网络错误或超时，尝试重试
+                            if (retryCount < maxRetries) {
+                                var nextRetry = retryCount + 1;
+                                appendLog(['<span style="color:#d63638;">请求失败 (' + status + ')，2秒后自动重试 (' + nextRetry + '/' + maxRetries + ')...</span>']);
+                                setTimeout(function() {
+                                    doStep(topicId, step, nextRetry);
+                                }, 2000);
+                                return;
+                            }
+
+                            // 重试耗尽，显示错误
                             $('#material_spinner').removeClass('is-active');
                             $('#btn_start_material').prop('disabled', false);
-                            appendLog(['<span style="color:red;">网络请求错误: ' + error + '</span>']);
+                            var errorMsg = error;
+                            if (status === 'timeout') {
+                                errorMsg = '请求超时 (超过180秒)。任务可能仍在后台运行，请刷新页面查看进度或重试。';
+                            } else if (xhr.responseText) {
+                                var match = xhr.responseText.match(/<b>Fatal error<\/b>:(.*?)<br/);
+                                if (match) errorMsg = 'PHP错误: ' + match[1];
+                            }
+                            appendLog(['<span style="color:red;">❌ 网络请求最终失败: ' + errorMsg + '</span>']);
+                            console.error('Task failed:', status, error, xhr.responseText);
                         }
                     });
                 }

@@ -111,6 +111,9 @@ class ContentAuto_TopicApiHandler {
                 $actual_content = $response['data'];
             }
             
+            // ✅ 移除 AI 思考标签
+            $actual_content = $this->strip_think_tags($actual_content);
+            
             return $this->parse_api_content($actual_content, $count, $rule_id, $rule_item_index);
         } else {
             return array('error' => array('stage' => 'WordPress请求错误', 'message' => $response['message']));
@@ -219,6 +222,10 @@ class ContentAuto_TopicApiHandler {
         // 处理API响应内容
         if (isset($response_data['choices'][0]['message']['content'])) {
             $content = $response_data['choices'][0]['message']['content'];
+            
+            // ✅ 移除 AI 思考标签
+            $content = $this->strip_think_tags($content);
+            
             return $this->parse_api_content($content, $count, $rule_id, $rule_item_index);
         }
         
@@ -273,6 +280,28 @@ class ContentAuto_TopicApiHandler {
      */
     public function get_last_api_error() {
         return $this->last_api_error;
+    }
+    
+    /**
+     * 移除 AI 思考标签
+     * 某些 AI 模型会在响应中输出 <think>...</think> 标签包裹的思考过程
+     * 
+     * @param string $content 原始内容
+     * @return string 移除思考标签后的内容
+     */
+    private function strip_think_tags($content) {
+        if (empty($content) || !is_string($content)) {
+            return $content;
+        }
+        
+        // 移除 <think>...</think> 标签及其内容
+        $cleaned = preg_replace('/<think\b[^>]*>.*?<\/think>/is', '', $content);
+        
+        // 清理可能留下的多余空白行
+        $cleaned = preg_replace('/^\s*\n/m', '', $cleaned);
+        $cleaned = preg_replace('/\n{3,}/', "\n\n", $cleaned);
+        
+        return trim($cleaned);
     }
     
     /**

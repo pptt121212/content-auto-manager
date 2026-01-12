@@ -205,7 +205,7 @@ class ContentAuto_SearchMaterialsService {
         $prompt .= "```\n";
         $prompt .= "严禁返回对象数组（如 `[{\"search_queries\":...}]`），严禁包含 Markdown 标记之外的任何解释性文字。";
         
-        $response = $this->unified_api->generate_content($prompt, 'search_intent'); // 可以复用 'material_filtering' 或新增一个 key
+        $response = $this->unified_api->generate_content($prompt, 'search_intent');
         
         // 解析
         $queries = [];
@@ -263,10 +263,29 @@ class ContentAuto_SearchMaterialsService {
         $blacklisted_urls = isset($data['blacklisted_urls']) ? $data['blacklisted_urls'] : [];
         $valid_results = [];
         
+        // 需要排除的文件扩展名（Jina Reader 无法有效解析）
+        $excluded_extensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar'];
+        
         foreach ($data['search_results'] as $item) {
-            if (!in_array($item['link'], $blacklisted_urls)) {
-                $valid_results[] = $item;
+            // 跳过黑名单 URL
+            if (in_array($item['link'], $blacklisted_urls)) {
+                continue;
             }
+            
+            // 跳过文档类文件（解析效果差）
+            $url_lower = strtolower($item['link']);
+            $is_document = false;
+            foreach ($excluded_extensions as $ext) {
+                if (strpos($url_lower, $ext) !== false) {
+                    $is_document = true;
+                    break;
+                }
+            }
+            if ($is_document) {
+                continue;
+            }
+            
+            $valid_results[] = $item;
         }
         
         if (empty($valid_results)) {
@@ -325,11 +344,10 @@ class ContentAuto_SearchMaterialsService {
         
         $response = $this->unified_api->generate_content($prompt, 'material_filtering');
         
-        // ✅ 修复：正确处理错误情况
+        // ✅ 修复：API 调用失败时抛出明确异常，而不是静默返回空数组
         if (is_array($response) && isset($response['error'])) {
-            // API 调用失败
             error_log("ContentAuto Material Search: AI 筛选 API 错误 - " . $response['error']);
-            return [];
+            throw new Exception("AI筛选API请求失败: " . $response['error']);
         }
         
         // 使用更健壮的提取逻辑
@@ -530,8 +548,8 @@ class ContentAuto_SearchMaterialsService {
 
         if ($code !== 200) return false;
         
-        // ✅ 增加截断长度至 10000 字，以保留更多深度内容
-        return mb_substr(wp_remote_retrieve_body($response), 0, 10000); 
+        // ✅ 抓取内容长度限制（平衡信息量与API负载）
+        return mb_substr(wp_remote_retrieve_body($response), 0, 2000); 
     }
 
     private function summarize_with_ai($topic, $contents) {
@@ -545,18 +563,24 @@ class ContentAuto_SearchMaterialsService {
         $prompt .= "4. **格式规范**：使用标准 Markdown 格式，层级清晰。\n\n";
         
         $prompt .= "特别指令：请尽力从素材中挖掘有价值的信息。**只要素材中包含任何与主题相关的数据、观点、案例或步骤（哪怕是碎片化的），都请予以整理保留。**\n";
-        $prompt .= "仅在以下极端情况下（且所有素材均如此时），才返回 **NO_VALID_CONTENT**：\n";
-        $prompt .= "- 抓取到的全是乱码、404错误页、验证码拦截页，或者完全与主题无关的广告。\n\n";
+        $prompt .= "在以下情况下，返回 **NO_VALID_CONTENT**：\n";
+        $prompt .= "- 素材内容与主题核心对象不相关（如讨论的是完全不同的产品/概念）；\n";
+        $prompt .= "- 素材全是乱码、404错误页、验证码拦截页或纯广告；\n";
+        $prompt .= "- 无法从素材中提取任何对撰写文章有实际价值的信息。\n\n";
         
         $prompt .= "输出控制：请**直接输出**整理后的资料库正文，**不要包含**任何前言、后记或“本资料库基于...”等废话。\n\n";
         $prompt .= "素材内容如下：\n\n";
         foreach ($contents as $i => $content) {
             $prompt .= "--- 素材 " . ($i + 1) . " ---\n" . $content . "\n\n";
         }
-        $response = $this->unified_api->generate_content($prompt, 'material_summary');
+        
+        // 增加超时时间到 300秒 (5分钟)，防止汇总长文时超时
+        $response = $this->unified_api->generate_content($prompt, 'material_summary', ['timeout' => 300]);
+        
         if (is_array($response) && isset($response['error'])) {
             throw new Exception("AI汇总失败: " . $response['error']);
         }
+        
         return $response;
     }
 
@@ -644,12 +668,30 @@ class ContentAuto_SearchMaterialsService {
                     $search_results_cache = array_slice(array_values($all_results), 0, 20);
                 }
 
-                // Step 2: 过滤 (排除黑名单)
+                // Step 2: 过滤 (排除黑名单和文档类文件)
                 $valid_results = [];
+                $excluded_extensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar'];
+                
                 foreach ($search_results_cache as $item) {
-                    if (!in_array($item['link'], $blacklisted_urls)) {
-                        $valid_results[] = $item;
+                    // 跳过黑名单 URL
+                    if (in_array($item['link'], $blacklisted_urls)) {
+                        continue;
                     }
+                    
+                    // 跳过文档类文件
+                    $url_lower = strtolower($item['link']);
+                    $is_document = false;
+                    foreach ($excluded_extensions as $ext) {
+                        if (strpos($url_lower, $ext) !== false) {
+                            $is_document = true;
+                            break;
+                        }
+                    }
+                    if ($is_document) {
+                        continue;
+                    }
+                    
+                    $valid_results[] = $item;
                 }
                 
                 if (empty($valid_results)) {
