@@ -368,6 +368,52 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    // 批量生成参考资料
+    $('#bulk-generate-reference').on('click', function () {
+        var selectedIds = [];
+        $('.topic-checkbox:checked:not(:disabled)').each(function () {
+            selectedIds.push($(this).val());
+        });
+
+        if (selectedIds.length === 0) {
+            alert(i18n.selectTopics || '请选择主题');
+            return;
+        }
+
+        if (!confirm((i18n.confirmGenerateReference || '确定要为选中的') + ' ' + selectedIds.length + ' ' + (i18n.topicsConfirm || '个主题生成参考资料吗？'))) {
+            return;
+        }
+
+        var $btn = $(this);
+        var originalText = $btn.html();
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update" style="vertical-align: middle;"></span> ' + (i18n.processing || '处理中...'));
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'cam_bulk_generate_references',
+                nonce: filterNonce,
+                topic_ids: selectedIds
+            },
+            success: function (response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    // location.reload(); // 不强制刷新，因为是后台任务
+                    // 恢复按钮状态但保持选中，方便继续操作
+                    $btn.prop('disabled', false).html(originalText);
+                } else {
+                    alert(response.data.message || (i18n.requestFailed || '请求失败'));
+                    $btn.prop('disabled', false).html(originalText);
+                }
+            },
+            error: function (xhr, status, error) {
+                alert((i18n.requestFailed || '请求失败') + ': ' + error);
+                $btn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+
     // 删除所有符合筛选条件的主题
     $('#bulk-delete-all-filtered').on('click', function () {
         var totalCount = parseInt($('#filtered-total-count').text()) || 0;

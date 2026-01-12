@@ -245,3 +245,114 @@ function cam_ajax_delete_all_filtered_topics() {
         wp_send_json_error($result);
     }
 }
+
+add_action('wp_ajax_cam_bulk_generate_references', 'cam_ajax_bulk_generate_references');
+
+/**
+ * 批量生成参考资料
+ * 
+ * 重要：此功能通过更新 topics 表的 material_search_status 字段来触发后台任务，
+ * 与 ContentAuto_MaterialSearchManager 的自动触发机制保持一致。
+ */
+function cam_ajax_bulk_generate_references() {
+    // 验证权限
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(array('message' => '权限不足'));
+    }
+    
+    // 验证nonce
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+        wp_send_json_error(array('message' => '安全验证失败'));
+    }
+    
+    $topic_ids = isset($_POST['topic_ids']) ? array_map('intval', (array)$_POST['topic_ids']) : array();
+    
+    if (empty($topic_ids)) {
+        wp_send_json_error(array('message' => '请选择要生成参考资料的主题'));
+    }
+    
+    global $wpdb;
+    $topics_table = $wpdb->prefix . 'content_auto_topics';
+    $queued_count = 0;
+    $skipped_existing = 0;      // 已有参考资料
+    $skipped_in_progress = 0;   // 正在处理中或已在队列
+    
+    foreach ($topic_ids as $topic_id) {
+        if ($topic_id <= 0) continue;
+        
+        // 获取主题当前状态
+        $topic = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, material_search_status, reference_material FROM $topics_table WHERE id = %d",
+            $topic_id
+        ), ARRAY_A);
+        
+        if (!$topic) {
+            continue; // 主题不存在，跳过
+        }
+        
+        // 检查是否已有参考资料
+        if (!empty($topic['reference_material'])) {
+            $skipped_existing++;
+            continue;
+        }
+        
+        // 检查是否已在队列中（pending）或正在处理（processing）
+        $status = $topic['material_search_status'];
+        if ($status === 'pending' || $status === 'processing') {
+            $skipped_in_progress++;
+            continue;
+        }
+        
+        // 将状态设置为 pending，加入队列
+        $updated = $wpdb->update(
+            $topics_table,
+            array(
+                'material_search_status' => 'pending',
+                'material_search_error' => '' // 清除之前的错误信息
+            ),
+            array('id' => $topic_id),
+            array('%s', '%s'),
+            array('%d')
+        );
+        
+        if ($updated !== false) {
+            $queued_count++;
+        }
+    }
+    
+    // 如果有任务被加入队列，触发调度器
+    if ($queued_count > 0) {
+        // 加载并触发调度器
+        if (file_exists(CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php';
+            $manager = new ContentAuto_MaterialSearchManager();
+            $manager->schedule_process();
+        }
+    }
+    
+    // 构建详细的返回消息
+    $message_parts = array();
+    if ($queued_count > 0) {
+        $message_parts[] = sprintf('成功加入队列 %d 个主题', $queued_count);
+    }
+    if ($skipped_existing > 0) {
+        $message_parts[] = sprintf('跳过 %d 个已有参考资料的主题', $skipped_existing);
+    }
+    if ($skipped_in_progress > 0) {
+        $message_parts[] = sprintf('跳过 %d 个正在处理中的主题', $skipped_in_progress);
+    }
+    
+    if (empty($message_parts)) {
+        wp_send_json_error(array('message' => '没有符合条件的主题可以处理'));
+    }
+    
+    $message = '操作完成：' . implode('，', $message_parts) . '。';
+    
+    wp_send_json_success(array(
+        'message' => $message,
+        'queued_count' => $queued_count,
+        'skipped_existing' => $skipped_existing,
+        'skipped_in_progress' => $skipped_in_progress
+    ));
+}
+

@@ -200,7 +200,7 @@ class ContentAuto_License_Manager {
             if ($screen && strpos($screen->id, 'content-auto-manager') !== false) {
                 $license_data = get_option(self::LICENSE_OPTION);
                 $message = isset($license_data['message']) ? $license_data['message'] : '未激活或已失效';
-                echo '<div class="notice notice-error"><p><strong>内容自动生成管家：</strong>授权无效或未激活，发布规则功能受限。免费申请域名授权和最新版插件，请添加微信号：qn006699（免费插件不提供技术指导）</p></div>';
+                echo '<div class="notice notice-error"><p><strong>AI SEO 全能内容创作管家：</strong>授权无效或未激活，发布规则功能受限。免费申请域名授权和最新版插件，请添加微信号：qn006699（免费插件不提供技术指导）</p></div>';
             }
         }
     }

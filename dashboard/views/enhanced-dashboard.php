@@ -91,7 +91,7 @@ wp_enqueue_style('content-auto-enhanced-dashboard',
 <div class="wrap">
     <!-- 仪表盘头部 -->
     <div class="dashboard-header">
-        <h1><?php _e('内容自动生成管家', 'content-auto-manager'); ?></h1>
+        <h1><?php _e('AI SEO 全能内容创作管家', 'content-auto-manager'); ?></h1>
         <div class="subtitle">
             <?php
             printf(__('智能内容生产系统 | 最后活动: %s | 成功率: %s%% | 日均输出: %s 篇', 'content-auto-manager'),
@@ -161,6 +161,58 @@ wp_enqueue_style('content-auto-enhanced-dashboard',
                         <span class="label">已完成</span>
                     </div>
                 </div>
+
+                <!-- 任务类型详情 -->
+                <?php if (!empty($queue_status['by_type'])): ?>
+                <div class="task-type-breakdown" style="margin-top: 15px; border-top: 1px solid #f0f0f1; padding-top: 12px;">
+                    <table class="wp-list-table widefat fixed striped table-view-list" style="border: none; box-shadow: none;">
+                        <thead>
+                            <tr>
+                                <th style="padding-left: 0; color: #646970;">任务类型</th>
+                                <th style="color: #2271b1;">处理中</th>
+                                <th style="color: #d63638;">待处理</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php 
+                        $type_names = [
+                            'topic_task' => '主题生成',
+                            'article' => '文章生成',
+                            'material_search' => '素材搜索',
+                            'vector' => '向量处理',
+                            'image_generation' => '图片生成'
+                        ];
+                        
+                        foreach ($queue_status['by_type'] as $type => $stats): 
+                            // 只有当有任务（待处理或处理中）时才显示，或者您可以删掉这行以显示所有
+                            if ($stats['pending'] == 0 && $stats['processing'] == 0) continue;
+                            
+                            $label = isset($type_names[$type]) ? $type_names[$type] : ucfirst($type);
+                        ?>
+                        <tr>
+                            <td style="padding-left: 0;"><strong><?php echo $label; ?></strong></td>
+                            <td>
+                                <?php if($stats['processing'] > 0): ?>
+                                    <span class="dashicons dashicons-update" style="font-size: 16px; width: 16px; height: 16px; line-height: 16px; color: #2271b1; vertical-align: text-bottom;"></span> 
+                                    <strong style="color: #2271b1;"><?php echo $stats['processing']; ?></strong>
+                                <?php else: ?>
+                                    <span style="color: #ccc;">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if($stats['pending'] > 0): ?>
+                                    <span class="dashicons dashicons-clock" style="font-size: 16px; width: 16px; height: 16px; line-height: 16px; color: #d63638; vertical-align: text-bottom;"></span> 
+                                    <strong><?php echo $stats['pending']; ?></strong>
+                                <?php else: ?>
+                                    <span style="color: #ccc;">-</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 

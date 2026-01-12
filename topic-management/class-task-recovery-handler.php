@@ -191,6 +191,9 @@ class ContentAuto_TaskRecoveryHandler {
                 $task_table = $wpdb->prefix . 'content_auto_article_tasks';
                 $job_type = 'article';
                 break;
+            case 'material_search':
+                // material_search 没有独立的任务表，使用专用处理逻辑
+                return $this->recover_hanging_material_search_tasks();
             case 'topic_task':
             default:
                 $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
@@ -200,7 +203,8 @@ class ContentAuto_TaskRecoveryHandler {
         $queue_table = $wpdb->prefix . 'content_auto_job_queue';
         
         // 获取挂起的任务（处理状态超过阈值时间）
-        $threshold_time = date('Y-m-d H:i:s', strtotime('-30 minutes')); // 30分钟阈值
+        // 使用 current_time('timestamp') 保持与 updated_at 字段写入的一致性
+        $threshold_time = date('Y-m-d H:i:s', current_time('timestamp') - (30 * MINUTE_IN_SECONDS)); // 30分钟阈值
         
         $hanging_tasks = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$task_table} 
@@ -240,6 +244,111 @@ class ContentAuto_TaskRecoveryHandler {
             'recovered' => $recovered_count,
             'failed' => $failed_count,
             'orphaned_cleaned' => count($orphaned_queues)
+        );
+    }
+    
+    /**
+     * 恢复挂起的素材搜索任务
+     * 
+     * material_search 任务没有独立的任务表，状态存储在：
+     * 1. Queue 表 (wp_content_auto_job_queue)
+     * 2. Topics 表 (wp_content_auto_topics.material_search_status)
+     * 
+     * 恢复逻辑：将超时的 processing 状态重置为 pending，让队列重新处理
+     */
+    private function recover_hanging_material_search_tasks() {
+        global $wpdb;
+        
+        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        
+        // 超时阈值：15分钟（素材搜索任务通常不会超过这个时间）
+        $threshold_time = date('Y-m-d H:i:s', current_time('timestamp') - (15 * MINUTE_IN_SECONDS));
+        
+        // 1. 查找 Queue 表中卡死的 material_search 任务
+        $hanging_queue_tasks = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$queue_table} 
+            WHERE job_type = 'material_search' 
+            AND status = 'processing' 
+            AND updated_at < %s",
+            $threshold_time
+        ), ARRAY_A);
+        
+        $recovered_count = 0;
+        $failed_count = 0;
+        $max_retries = 3; // 最大重试次数
+        
+        foreach ($hanging_queue_tasks as $task) {
+            // 统一语义：reference_id 存储主题 ID
+            // 向后兼容：如果 reference_id 为空，尝试使用 job_id（旧数据）
+            $topic_id = !empty($task['reference_id']) ? $task['reference_id'] : $task['job_id'];
+            $current_retry = isset($task['retry_count']) ? intval($task['retry_count']) : 0;
+            
+            // 检查主题是否还存在
+            $topic_exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$topics_table} WHERE id = %d",
+                $topic_id
+            ));
+            
+            if (!$topic_exists) {
+                // 主题已删除，将任务标记为 failed
+                $wpdb->update($queue_table, [
+                    'status' => 'failed',
+                    'error_message' => '恢复失败：主题已被删除',
+                    'updated_at' => current_time('mysql')
+                ], ['id' => $task['id']]);
+                $failed_count++;
+                continue;
+            }
+            
+            if ($current_retry >= $max_retries) {
+                // 已达到最大重试次数，标记为 failed
+                $wpdb->update($queue_table, [
+                    'status' => 'failed',
+                    'error_message' => '超时恢复失败：已达最大重试次数 (' . $max_retries . ')',
+                    'updated_at' => current_time('mysql')
+                ], ['id' => $task['id']]);
+                
+                // 同时更新 Topics 表状态
+                $wpdb->update($topics_table, [
+                    'material_search_status' => 'failed',
+                    'material_search_error' => '任务超时，已达最大重试次数'
+                ], ['id' => $topic_id]);
+                
+                $failed_count++;
+            } else {
+                // 未达到最大重试次数，重置为 pending 让队列重新处理
+                $wpdb->update($queue_table, [
+                    'status' => 'pending',
+                    'retry_count' => $current_retry + 1,
+                    'error_message' => '',
+                    'updated_at' => current_time('mysql')
+                ], ['id' => $task['id']]);
+                
+                // 同时重置 Topics 表状态
+                $wpdb->update($topics_table, [
+                    'material_search_status' => 'pending',
+                    'material_search_error' => ''
+                ], ['id' => $topic_id]);
+                
+                $recovered_count++;
+            }
+        }
+        
+        // 记录日志
+        if ($recovered_count > 0 || $failed_count > 0) {
+            $logger = new ContentAuto_PluginLogger();
+            $logger->info("素材搜索任务超时恢复", [
+                'recovered' => $recovered_count,
+                'failed' => $failed_count,
+                'threshold_minutes' => 15
+            ]);
+        }
+        
+        return array(
+            'recovered' => $recovered_count,
+            'failed' => $failed_count,
+            'orphaned_cleaned' => 0
         );
     }
     
