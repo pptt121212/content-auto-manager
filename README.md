@@ -4,6 +4,11 @@
 [![WordPress](https://img.shields.io/badge/WordPress-5.0+-green.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4+-purple.svg)](https://php.net/)
 
+<img width="1891" height="797" alt="主仪表盘" src="https://github.com/user-attachments/assets/56166a53-0936-48c4-a546-a46c092bd7c7" />
+
+<img width="1739" height="824" alt="浏览器插件知识库" src="https://github.com/user-attachments/assets/d5931bc5-dd33-4c42-8843-66de6ed6eace" />
+
+
 ## 项目概述
 
 **AI SEO 内容自动生成管家**是一个功能强大的WordPress插件，基于AI大语言模型技术，为内容创作者、SEO优化人员、网站运营团队提供全自动化的内容生产解决方案。插件通过规则化配置、任务队列调度、向量智能匹配等技术，实现从主题生成到文章发布的全流程自动化，大幅提升内容生产效率，降低运营成本。
