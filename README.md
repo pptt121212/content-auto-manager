@@ -8,7 +8,7 @@
 AI SEO 内容管家插件主界面
 
 <img width="1739" height="824" alt="浏览器插件知识库" src="https://github.com/user-attachments/assets/d5931bc5-dd33-4c42-8843-66de6ed6eace" />
-AI SEO 内容管家 配套的浏览器插件知识库
+AI SEO 内容管家 配套的浏览器插件知识库。主要用于给文章主题从本地知识库中匹配参考资料。配置较差的笔记本电脑基本可以流畅上传100份2M的文档，同时兼容EXCEL/PDF等等类型文档。
 
 ## 项目概述
 
