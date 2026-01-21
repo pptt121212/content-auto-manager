@@ -5,9 +5,10 @@
 [![PHP](https://img.shields.io/badge/PHP-7.4+-purple.svg)](https://php.net/)
 
 <img width="1891" height="797" alt="主仪表盘" src="https://github.com/user-attachments/assets/56166a53-0936-48c4-a546-a46c092bd7c7" />
+AI SEO 内容管家插件主界面
 
 <img width="1739" height="824" alt="浏览器插件知识库" src="https://github.com/user-attachments/assets/d5931bc5-dd33-4c42-8843-66de6ed6eace" />
-
+AI SEO 内容管家 配套的浏览器插件知识库
 
 ## 项目概述
 
