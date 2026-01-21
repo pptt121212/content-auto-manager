@@ -91,6 +91,125 @@ class ContentAuto_JobQueue {
         // 引入向量生成器
         require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-generator.php';
         $this->vector_generator = new ContentAuto_VectorGenerator();
+        
+        // 监听插件任务完成事件
+        add_action('cam_extension_task_completed', array($this, 'handle_extension_task_completion'), 10, 2);
+    }
+    
+    /**
+     * 处理插件任务完成回调
+     */
+    public function handle_extension_task_completion($task_id, $result) {
+        global $wpdb;
+        $topics_table = $wpdb->prefix . 'content_auto_topics';
+
+        // 检查任务是否为测试任务
+        $queue = get_option('cam_extension_task_queue', array());
+        if (isset($queue[$task_id]['payload']['is_test']) && $queue[$task_id]['payload']['is_test']) {
+            return; // 测试任务不更新数据库
+        }
+        
+        // 获取 topic_id：优先从结果中获取，否则从原始任务队列获取
+        $topic_id = null;
+        if (is_array($result) && !empty($result['topic_id'])) {
+            $topic_id = intval($result['topic_id']);
+        } else {
+            // 从原始任务队列中获取
+            $queue = get_option('cam_extension_task_queue', array());
+            if (!empty($queue[$task_id]['payload']['topic_id'])) {
+                $topic_id = intval($queue[$task_id]['payload']['topic_id']);
+            }
+        }
+        
+        if (empty($topic_id)) {
+            // 无法确定主题ID，记录日志并返回
+            error_log('[ContentAuto] Extension task completed but no topic_id found: ' . $task_id);
+            return;
+        }
+        
+        // 检查是否有错误
+        if (is_array($result) && !empty($result['error'])) {
+            $wpdb->update($topics_table, [
+                'material_search_status' => 'failed',
+                'material_search_error' => sanitize_text_field($result['error'])
+            ], ['id' => $topic_id]);
+            return;
+        }
+        
+        // 格式化结果
+        $material_content = '';
+        if (is_string($result)) {
+            $material_content = $result;
+        } elseif (is_array($result)) {
+            // 优先获取 'answer' 字段
+            $material_content = isset($result['answer']) ? $result['answer'] : json_encode($result, JSON_UNESCAPED_UNICODE);
+        }
+
+        // 处理无答案标识：视为该资料搜索任务失败
+        if ($material_content === 'NO_CONTEXT_ANSWER' || strpos($material_content, 'NO_CONTEXT_ANSWER') !== false) {
+             $wpdb->update($topics_table, [
+                'material_search_status' => 'failed',
+                'material_search_error' => '没有找到相关参考资料 (No Context Found)'
+            ], ['id' => $topic_id]);
+            
+            // 重要修正：即使没有答案，也必须继续向下执行以关闭 Job Queue 中的任务，防止队列阻塞
+            $result = array('error' => '未找到相关内容 (No Context)');
+        }
+        
+        // 检查是否有错误（合并处理）
+        if (is_array($result) && !empty($result['error'])) {
+            $wpdb->update($topics_table, [
+                'material_search_status' => 'failed',
+                'material_search_error' => sanitize_text_field($result['error'])
+            ], ['id' => $topic_id]);
+            
+            // 同样需要关闭 Job Queue
+            $this->close_job_if_needed($task_id, 'failed', sanitize_text_field($result['error']));
+            return;
+        }
+        
+        // 格式化正常结果
+        $material_content = '';
+        if (is_string($result)) {
+            $material_content = $result;
+        } elseif (is_array($result)) {
+            $material_content = isset($result['answer']) ? $result['answer'] : json_encode($result, JSON_UNESCAPED_UNICODE);
+        }
+        
+        if (empty($material_content)) {
+            $wpdb->update($topics_table, [
+                'material_search_status' => 'failed',
+                'material_search_error' => '插件返回结果为空'
+            ], ['id' => $topic_id]);
+            $this->close_job_if_needed($task_id, 'failed', '插件返回结果为空');
+            return;
+        }
+
+        $wpdb->update($topics_table, [
+            'reference_material' => $material_content,
+            'material_search_status' => 'completed',
+            'material_search_error' => ''
+        ], ['id' => $topic_id]);
+
+        // 更新 Job Queue 状态
+        $this->close_job_if_needed($task_id, 'completed');
+    }
+
+    /**
+     * 辅助方法：关闭 Job Queue 中的任务
+     */
+    private function close_job_if_needed($task_id, $status, $error = '') {
+        global $wpdb;
+        $queue = get_option('cam_extension_task_queue', array());
+        if (!empty($queue[$task_id]['payload']['job_id'])) {
+            $job_id = intval($queue[$task_id]['payload']['job_id']);
+            $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+            $wpdb->update($job_queue_table, [
+                'status' => $status,
+                'updated_at' => current_time('mysql'),
+                'error_message' => $error
+            ], ['id' => $job_id]);
+        }
     }
     
     /**
@@ -182,8 +301,70 @@ class ContentAuto_JobQueue {
         }
 
         try {
+            $table_name = $wpdb->prefix . 'content_auto_job_queue';
+
+            // === [核心加固] 定点超时检查与全局串行锁定 ===
+            
+            // 1. 查找当前处理中的任务
+            $processing_jobs = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, job_type, job_id, reference_id, updated_at FROM $table_name WHERE status = %s",
+                CONTENT_AUTO_STATUS_PROCESSING
+            ), ARRAY_A);
+
+            if (!empty($processing_jobs)) {
+                $current_time = current_time('timestamp');
+                
+                foreach ($processing_jobs as $pij) {
+                    // 【修正】仅针对知识库/素材搜索任务执行 3 分钟强行超时收割
+                    // 其他任务（文章生成等）拥有独立的超时处理器，此处不做干预
+                    if ($pij['job_type'] === 'material_search') {
+                        $last_update = strtotime($pij['updated_at']);
+                        
+                        // 【语义加固】辨别搜集模式：插件异步 vs 网页同步
+                        // 插件模式在 topics 表的状态为 'waiting_for_extension'
+                        // 修正：优先使用 reference_id 获取 topic_id，因为对于 material_search 任务 job_id 通常为 0
+                        $topic_id = !empty($pij['reference_id']) ? $pij['reference_id'] : $pij['job_id'];
+                        
+                        $m_status = $wpdb->get_var($wpdb->prepare(
+                            "SELECT material_search_status FROM {$wpdb->prefix}content_auto_topics WHERE id = %d",
+                            $topic_id
+                        ));
+
+                        // 策略：统一调整为 5 分钟 (300s) 超时。
+                        // 无论是插件模式还是网页模式，超过 5 分钟未响应均视为卡死
+                        $timeout_limit = 300;
+
+                        if (($current_time - $last_update) > $timeout_limit) { 
+                            $wpdb->update($table_name, [
+                                'status' => CONTENT_AUTO_STATUS_FAILED,
+                                'error_message' => sprintf('任务响应超时 (超过%d秒)，手动标记为失败以释放队列', $timeout_limit),
+                                'updated_at' => current_time('mysql')
+                            ], ['id' => $pij['id']]);
+                            
+                            // 更新主题表状态
+                            $wpdb->update($wpdb->prefix . 'content_auto_topics', [
+                                'material_search_status' => 'failed',
+                                'material_search_error' => '任务响应超时'
+                            ], ['id' => $topic_id]);
+                        }
+                    }
+                }
+                
+                // 再次检查是否仍有活跃的任务在处理中 (包含所有类型)
+                $active_count = $wpdb->get_var($wpdb->prepare(
+                    "SELECT COUNT(*) FROM $table_name WHERE status = %s",
+                    CONTENT_AUTO_STATUS_PROCESSING
+                ));
+                
+                if ($active_count > 0) {
+                    // 全局串行原则：只要池子里有一个工作没干完，就不拉起下一个
+                    return false;
+                }
+            }
+
             $processed_count = 0;
-            $max_jobs_per_run = defined('CONTENT_AUTO_MAX_JOBS_PER_RUN') ? CONTENT_AUTO_MAX_JOBS_PER_RUN : 5;
+            // 严格串行：单次 Cron 触发只处理一个 pending 任务即可，确保排队有序
+            $max_jobs_per_run = 1; 
 
             while ($processed_count < $max_jobs_per_run) {
                 // 获取下一个待处理的任务
@@ -253,7 +434,11 @@ class ContentAuto_JobQueue {
                     // 更新任务状态
                     $is_success = is_array($result) ? $result['success'] : $result;
 
-                    if ($is_success) {
+                    if (is_array($result) && isset($result['status']) && $result['status'] === 'waiting') {
+                        // 任务处于异步等待状态（如浏览器插件搜索），保持 processing 状态
+                        // 不更新数据库状态，等待回调函数处理
+                        // 防止任务被标记为完成而导致下游任务抢跑
+                    } elseif ($is_success) {
                         $wpdb->update(
                             $table_name,
                             array(
@@ -668,15 +853,13 @@ class ContentAuto_JobQueue {
         $topics_table = $wpdb->prefix . 'content_auto_topics';
         
         // 统一语义：reference_id 存储主题 ID
-        // 向后兼容：如果 reference_id 为空，尝试使用 job_id（旧数据）
         $topic_id = !empty($job['reference_id']) ? $job['reference_id'] : $job['job_id'];
         
-        // 1. 再次验证开关状态（双重检查）
+        // 1. 再次验证开关状态
         $db = new ContentAuto_Database();
         $publish_rules = $db->get_row('content_auto_publish_rules', array('id' => 1));
         
         if (empty($publish_rules['enable_reference_material'])) {
-            // 开关已关闭，跳过执行
             return ['success' => false, 'message' => '素材搜索功能已关闭'];
         }
         
@@ -690,9 +873,8 @@ class ContentAuto_JobQueue {
             return ['success' => false, 'message' => '主题不存在'];
         }
         
-        // 如果主题已有参考资料，跳过（可能手动添加了）
+        // 如果主题已有参考资料，直接完成
         if (!empty($topic['reference_material'])) {
-            // 更新状态为 completed，避免重复处理
             $wpdb->update($topics_table, [
                 'material_search_status' => 'completed'
             ], ['id' => $topic_id]);
@@ -700,47 +882,132 @@ class ContentAuto_JobQueue {
             return ['success' => true, 'message' => '主题已有参考资料'];
         }
         
-        // 3. 标记为处理中
+        // 3. 获取搜集模式（从数据库字段读取）
+        $mode = !empty($publish_rules['material_collection_mode']) ? $publish_rules['material_collection_mode'] : 'none';
+        // 迁移逻辑：如果字段尚未存在但旧开关开启，默认为 search_engine
+        if ($mode === 'none' && !empty($publish_rules['enable_auto_material_search'])) {
+             $mode = 'search_engine';
+        }
+        
+        // 添加日志：记录实际使用的搜索模式
+        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+        $logger = new ContentAuto_LoggingSystem();
+        $logger->log_success('MATERIAL_SEARCH_EXECUTE', '素材搜索任务执行', array(
+            'topic_id' => $topic_id,
+            'job_id' => $job['id'],
+            'material_collection_mode_raw' => $publish_rules['material_collection_mode'] ?? 'null',
+            'enable_auto_material_search' => $publish_rules['enable_auto_material_search'] ?? 'null',
+            'final_mode' => $mode
+        ));
+
+        if ($mode === 'none') {
+             $logger->log_warning('MATERIAL_SEARCH_SKIP', '自动收集已关闭');
+             return ['success' => true, 'message' => '自动收集已关闭'];
+        }
+
+        // 4. 标记为处理中
         $wpdb->update($topics_table, [
             'material_search_status' => 'processing'
         ], ['id' => $topic_id]);
         
-        // 4. 执行搜索
-        if (!class_exists('ContentAuto_SearchMaterialsService')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
-        }
-        
-        $service = new ContentAuto_SearchMaterialsService();
-        $result = $service->execute_full_auto_search($topic_id);
-        
-        // 5. 更新结果状态
-        if (is_wp_error($result)) {
-            $wpdb->update($topics_table, [
-                'material_search_status' => 'failed',
-                'material_search_error' => $result->get_error_message()
-            ], ['id' => $topic_id]);
-            
-            return ['success' => false, 'message' => $result->get_error_message()];
+        $logger->log_success('MATERIAL_SEARCH_MODE', "开始使用 {$mode} 模式搜索素材", array(
+            'topic_id' => $topic_id,
+            'topic_title' => $topic['title']
+        ));
+        // 5. 分发任务
+        if ($mode === 'extension_rag') {
+             // --- 插件收集模式 ---
+             // --- 插件收集模式 ---
+             // [Fix] Removed Task_Controller require to avoid crash. Direct Database Write only.
+
+             
+             $query = $topic['title'];
+             // 可选：如果主题有提取好的关键词，也可以拼接到 query
+             
+             $payload = array(
+                 'topic_id' => $topic_id,
+                 'job_id' => $job['id'], // 传入 Job ID 以便回调时闭环
+                 'query' => $query,
+                 'action' => 'knowledge_search' 
+             );
+             
+             //$task_controller = new \ContentAutoManager\RestApi\Controllers\Task_Controller('content-auto-manager/v1');
+             //$task_controller->add_task('knowledge_search', $payload);
+             
+             // [CRITICAL FIX] Bypass Controller, Write Directly to DB
+             $queue_key = 'cam_extension_task_queue';
+             $queue = get_option($queue_key, array());
+             $tid = wp_generate_uuid4();
+             
+             // 清理旧任务（防止膨胀）
+             if (count($queue) > 50) {
+                 $queue = array_slice($queue, -20, null, true);
+             }
+             
+             $queue[$tid] = array(
+                 'id' => $tid,
+                 'type' => 'knowledge_search',
+                 'payload' => $payload,
+                 'status' => 'pending',
+                 'created_at' => time()
+             );
+             
+             $saved = update_option($queue_key, $queue);
+             
+             // 强制记日志
+             if ($this->logger) {
+                 $this->logger->log_info('EXTENSION_QUEUE_DIRECT__V2', "已强制写入插件队列(直连模式)", array(
+                     'task_id' => $tid,
+                     'queue_size' => count($queue),
+                     'save_success' => $saved ? 'YES' : 'NO'
+                 ));
+             }
+             
+             // 更新主题状态为等待插件
+             $wpdb->update($topics_table, [
+                'material_search_status' => 'waiting_for_extension'
+             ], ['id' => $topic_id]);
+             
+             // 返回 waiting 状态，让队列保持 processing，直到回调触发
+             return ['success' => true, 'status' => 'waiting', 'message' => '已分发至插件队列，等待异步回调'];
+             
         } else {
-            // ✅ 双重验证：确保资料真的保存进去了
-            $verify_topic = $wpdb->get_row($wpdb->prepare("SELECT reference_material FROM {$topics_table} WHERE id = %d", $topic_id), ARRAY_A);
-            
-            if (empty($verify_topic['reference_material'])) {
-                // 严重错误：虽然返回成功，但数据库为空
-                $wpdb->update($topics_table, [
-                    'material_search_status' => 'failed',
-                    'material_search_error' => '未知错误：搜索流程返回成功，但数据库中未检测到参考资料'
-                ], ['id' => $topic_id]);
-                
-                return ['success' => false, 'message' => '资料保存验证失败'];
+            // --- 搜索引擎模式 (原逻辑) ---
+            if (!class_exists('ContentAuto_SearchMaterialsService')) {
+                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
             }
             
-            $wpdb->update($topics_table, [
-                'material_search_status' => 'completed',
-                'material_search_error' => ''
-            ], ['id' => $topic_id]);
+            $service = new ContentAuto_SearchMaterialsService();
+            $result = $service->execute_full_auto_search($topic_id);
             
-            return ['success' => true];
+            // 5. 更新结果状态
+            if (is_wp_error($result)) {
+                $wpdb->update($topics_table, [
+                    'material_search_status' => 'failed',
+                    'material_search_error' => $result->get_error_message()
+                ], ['id' => $topic_id]);
+                
+                return ['success' => false, 'message' => $result->get_error_message()];
+            } else {
+                // 双重验证
+                $verify_topic = $wpdb->get_row($wpdb->prepare("SELECT reference_material FROM {$topics_table} WHERE id = %d", $topic_id), ARRAY_A);
+                
+                if (empty($verify_topic['reference_material'])) {
+                    $wpdb->update($topics_table, [
+                        'material_search_status' => 'failed',
+                        'material_search_error' => '未知错误：搜索流程返回成功，但数据库中未检测到参考资料'
+                    ], ['id' => $topic_id]);
+                    
+                    return ['success' => false, 'message' => '资料保存验证失败'];
+                }
+                
+                $wpdb->update($topics_table, [
+                    'material_search_status' => 'completed',
+                    'material_search_error' => ''
+                ], ['id' => $topic_id]);
+                
+                return ['success' => true];
+            }
         }
     }
     

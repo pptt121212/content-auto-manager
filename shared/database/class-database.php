@@ -413,6 +413,9 @@ class ContentAuto_Database {
         // 确保发布规则表数据完整性（为全新安装和现有用户提供统一保障）
         $this->ensure_publish_rules_data_integrity();
 
+        // 更新发布规则表，添加素材收集模式字段
+        $this->update_database_for_material_collection_mode();
+
         // 运行智能结构优化迁移
         $this->run_structure_optimization_migration();
 
@@ -1555,6 +1558,31 @@ class ContentAuto_Database {
         $error_column_exists = $wpdb->get_var("SHOW COLUMNS FROM $topics_table LIKE 'material_search_error'");
         if (!$error_column_exists) {
             $wpdb->query("ALTER TABLE $topics_table ADD COLUMN `material_search_error` text DEFAULT NULL COMMENT '自动素材搜索错误信息' AFTER `material_search_status`");
+        }
+    }
+
+    /**
+     * 更新数据库结构以支持素材收集模式选择
+     * 新增 material_collection_mode 字段：none / search_engine / extension_rag
+     */
+    public function update_database_for_material_collection_mode() {
+        global $wpdb;
+        
+        $publish_rules_table = $wpdb->prefix . 'content_auto_publish_rules';
+        
+        // 检查表是否存在
+        if ($wpdb->get_var("SHOW TABLES LIKE '$publish_rules_table'") != $publish_rules_table) {
+            return;
+        }
+        
+        // 检查 material_collection_mode 字段是否存在
+        $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $publish_rules_table LIKE 'material_collection_mode'");
+        if (!$column_exists) {
+            // 添加新字段
+            $wpdb->query("ALTER TABLE $publish_rules_table ADD COLUMN `material_collection_mode` varchar(20) NOT NULL DEFAULT 'none' COMMENT '素材收集模式：none/search_engine/extension_rag' AFTER `enable_auto_material_search`");
+            
+            // 迁移旧数据：如果 enable_auto_material_search = 1，则设置为 search_engine
+            $wpdb->query("UPDATE $publish_rules_table SET material_collection_mode = 'search_engine' WHERE enable_auto_material_search = 1");
         }
     }
 
