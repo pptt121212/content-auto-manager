@@ -175,6 +175,11 @@ class ContentAuto_License_Manager {
         $payload = json_decode($payload_json, true);
         $payload['last_validated'] = time();
         $payload['verified_by_official'] = true;
+        
+        // 保存原始凭证，以便第三方（如浏览器插件）可进行离线校验
+        $payload['raw_payload'] = $data->payload;
+        $payload['signature'] = $data->signature;
+        
         update_option(self::LICENSE_OPTION, $payload);
         
         if ($payload['status'] === 'valid') {

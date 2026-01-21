@@ -4,27 +4,24 @@
 文章任务模块用于将主题库中的主题转化为完整文章，实现从标题到正文内容的自动化生成。核心类 `ContentAuto_ArticleTaskManager` 位于 `article-tasks/class-article-task-manager.php`，通过任务队列逐篇生成文章内容。
 
 ## 业务逻辑
-1. **任务创建**：
-   - `create_article_task($topic_ids, $name)` 接收主题ID数组，创建文章生成任务。
-   - 验证主题存在性，生成唯一 `article_task_id`，插入 `content_auto_article_tasks` 表。
-   - 使用 `topic_ids` 字段（JSON数组）记录需要处理的所有主题。
-2. **任务调度**：
-   - 任务添加到 `content_auto_job_queue` 表，由 `ContentAuto_JobQueue` 调度执行。
-   - 每次处理一个主题，生成完成后更新进度统计（`completed_topics`, `failed_topics`）。
-3. **文章生成流程**：
-   - 调用 `ContentAuto_ArticleGenerator` 根据主题标题、规则配置、发布规则生成正文内容。
-   - 使用 `ContentAuto_ArticleApiHandler` 与AI API交互，获取文章内容。
-   - 解析模型返回的内容，处理 HTML/Markdown 格式，提取特色图片描述。
-4. **文章发布**：
-   - 根据发布规则（`content_auto_publish_rules`）将文章插入WordPress文章表（`wp_posts`）。
-   - 设置文章标题、内容、分类、标签、作者、发布状态（草稿/发布）等。
-   - 如启用自动配图，调用图像API生成特色图片并附加到文章。
-5. **状态管理与恢复**：
-   - `ContentAuto_TaskStatusManager` 维护任务状态、记录错误信息。
-   - `ContentAuto_ArticleTaskTimeoutHandler` 定时检测超时任务并自动恢复。
-   - `class-article-queue-processor.php` 负责队列调度逻辑与子任务管理。
-6. **性能监控**：
-   - `ContentAuto_ArticlePerformanceMonitor` 记录每个环节的耗时、成功率、错误类型。
+1. **内容生成链路**：
+   - **XML 模板引擎**：使用 `ContentAuto_XmlTemplateProcessor` 将主题、素材、发布规则及文章结构（XML 格式）动态渲染为 AI 提示词（Prompt）。
+   - **Markdown 转换**：通过 `ContentAuto_MarkdownConverter` 将 AI 返回的 Markdown 正文转换为标准的 WordPress HTML 格式。
+   - **智能过滤**：`ContentAuto_ContentFilter` 自动剔除 AI 生成中带有引导性的冗余文字（如"好的，这是一篇文章..."）。
+2. **高级内容加工**：
+   - **语义品牌嵌入**：利用向量引擎，在文章中实时搜索并插入最匹配的**品牌资料**（Brand Profiles）。支持根据语义相似度决定插入位置（第二段落前或文章结尾）。
+   - **SEO 优化**：`ContentAuto_PinyinConverter` 自动将文章标题转换为**拼音 Slug**（URL 别名），优化搜索引擎抓取效果。
+   - **站内内链**：根据主题关键词自动识别并插入指向站内已发文章的**锚点内链**。
+3. **自动化发布策略**：
+   - **智能配图**：识别正文中的 `<!-- image prompt: ... -->` 占位符，自动调用图像 API 生成并插入对应插图及特色图片（Featured Image）。
+   - **发布频率控制**：支持**发布任务间隔**（Publish Interval）。系统自动计算上一篇文章的发布时间并累加间隔，以 `future` 状态实现定时定量发布，模拟人工更新频率。
+   - **动态归类**：支持 `auto` 模式（根据 AI 推荐的 `matched_category` 归类）或 `manual` 模式（强制归类到指定分类）。
+4. **状态与性能监控**：
+   - 任务在 `content_auto_job_queue` 中异步执行，由 `class-article-queue-processor.php` 统筹。
+   - `ContentAuto_ArticlePerformanceMonitor` 细粒度记录生成总词数、处理时长、API 消耗等核心数据。
+5. **任务级联与恢复**：
+   - **子任务一致性**：按索引顺序精准匹配主题，确保生成过程中数据完整。
+   - **阻塞自愈**：超时或失败的任务由 `ContentAuto_ArticleTaskTimeoutHandler` 自动重置并重新入队。
 
 ## 使用场景
 - 批量文章生成：选中一批主题，一键生成完整文章。

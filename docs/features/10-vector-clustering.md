@@ -4,36 +4,36 @@
 向量聚类模块负责对主题的语义向量进行聚类分析，用于提高主题检索、自动分类和相似度匹配的准确性。管理页面位于 `admin/class-clustering-admin-page.php`，核心算法在 `shared/content-processing/` 目录实现。
 
 ## 业务逻辑
-1. **聚类管理页面**：
-   - `ContentAuto_ClusteringAdminPage::render_page()` 提供聚类训练入口和相似标题调试工具。
-   - 页面显示当前向量数量，并根据数量自动计算推荐的聚类数（每100个向量约一个簇）。
-2. **聚类流程**：
-   - 点击“开始生成/重新校准所有聚类”后，调用 `class-vector-clustering.php` 中的K-Means算法。
-   - 流程步骤：读取所有向量 → 解码 → 初始化聚类中心 → 迭代计算 → 更新每个主题的簇ID。
-   - 处理完成后，将聚类中心保存到数据库供增量分类使用。
-3. **相似检索**：
-   - 页面提供“相似标题调试工具”，输入文章ID后计算余弦相似度，找出最相似的20个主题。
-   - 依赖共享服务 `class-vector-search-service.php` 实现向量相似度计算。
-4. **后台增量聚类**：
-   - 新增主题向量时，后台任务使用 `ContentAuto_IncrementalClustering` 将其分配到最近簇，保持聚类效果。
+1. **全量聚类管理 (Cold Start & Calibration)**：
+   - **手动执行**：通过 `ContentAuto_ClusteringAdminPage` 手动触发。系统自动计算聚类数（每 100 个向量约 1 个簇，上限 100），并开启 K-Means 训练。
+   - **自动调度**：`ContentAuto_VectorClusteringManager` 每小时检查一次未归类向量，若超过 100 个（阈值）则自动触发全量重聚类。
+   - **黄金中心点**：计算得出的聚类中心点保存于 `wp_options` 的 `content_auto_vector_centroids` 字段，作为后续检索和增量归类的基准。
+2. **增量聚类归类 (Incremental Assignment)**：
+   - `ContentAuto_IncrementalClustering` 每 5 分钟运行一次。
+   - 将新生成的向量（`vector_cluster_id` 为空的主题）分配到与其 **余弦距离 (Cosine Distance)** 最近的黄金中心点所属的簇中。
+3. **语义相似度搜索**：
+   - 核心算法位于 `shared/common/functions.php` 的 `content_auto_find_similar_titles()`。
+   - **工作流**：定位查询向量最近的 N 个簇 → 在这些簇内进行精细的 **余弦相似度 (Cosine Similarity)** 计算 → 按分值排序并返回结果。
+   - 设定了 0.8 的相似度阈值（针对已发布的 WordPress 文章），确保去重和检索的高相关性。
+4. **调试评估工具**：
+   - 提供“相似标题调试工具”，输入文章 ID 后可实时查看基于聚类优化后的相似文章列表，用于评估向量模型与聚类质量。
 
 ## 使用场景
-- 新系统冷启动：积累足够向量后执行第一次聚类，为后续检索提供基线。
-- 定期校准：每隔数周或主题量显著增加时重新训练，确保中心精准。
-- 主题相似度分析：快速定位重复或相似主题，辅助去重。
-- 调试评估：通过相似标题列表检验聚类与向量效果。
+- **数据库冷启动**：积攒数千个主题后，执行首次聚类以建立语义索引基准。
+- **动态去重**：在生成新文章前，利用余弦相似度检测是否存在高度重复的已发布内容。
+- **语义关联推荐**：基于向量相似度为文章自动生成内链或推荐相关阅读。
+- **自动分类映射**：利用中心点相似度将新主题精准投放到最匹配的 WordPress 分类。
 
 ## 技术实现
-- 算法实现：`shared/content-processing/class-vector-clustering.php` 使用K-Means聚类，支持多次迭代和随机初始化。
-- 数据来源：`content_auto_topics.vector_embedding` 字段存储Base64编码的向量。
-- 性能优化：聚类前设置较高的执行时间和内存限制（2小时/1GB）。
-- 安全验证：提交聚类请求时，通过 `wp_verify_nonce` 校验表单合法性。
-- 辅助服务：`shared/services/class-incremental-clustering.php` 负责增量向量处理。
+- **核心算法**：`shared/content-processing/class-vector-clustering.php` 实现 K-Means 算法，已全面转向 **余弦度量 (Cosine Metric)**。
+- **数据流转**：
+  - Base64 编码向量持久化于数据库。
+  - `content_auto_decompress_vector_from_base64()` 负责反序列化为浮点数组进行计算。
+- **性能调度**：大规模计算时设置了 1GB 内存和 2 小时执行限制；增量任务采用轻量级批量处理（每次 100 条）。
 
 ## 相关文件
-- `admin/class-clustering-admin-page.php`（管理页面）
-- `shared/content-processing/class-vector-clustering.php`（聚类算法）
-- `shared/services/class-incremental-clustering.php`（增量聚类服务）
-- `shared/services/class-vector-search-service.php`（相似度检索）
-- `shared/logging/class-logging-system.php`（日志输出）
-- `shared/database/class-database.php`（数据库操作）
+- `admin/class-clustering-admin-page.php`（管理界面）
+- `shared/content-processing/class-vector-clustering.php`（K-Means 算法核心）
+- `shared/common/functions.php`（相似度搜索与向量解码函数）
+- `shared/services/class-vector-clustering-manager.php`（全量自动调度服务）
+- `shared/services/class-incremental-clustering.php`（增量归类服务）

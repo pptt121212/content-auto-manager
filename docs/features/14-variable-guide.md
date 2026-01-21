@@ -5,41 +5,46 @@
 
 ## 业务逻辑
 1. **主题生成变量**：
-   - `CURRENT_DATE`：动态注入当前日期，为AI提供时间上下文。
-   - `LANGUAGE_INSTRUCTION` 和 `LANGUAGE_NAME`：根据发布语言设置生成语言指令。
-   - `REFERENCE_CONTENT_BLOCK`：通过 `RuleManager::get_content_by_rule_item_id()` 获取规则项目的源材料（上传文本、关键词、分类名称等），构建XML结构。
-   - `EXISTING_TOPICS_BLOCK`：查询数据库中最近生成的主题（状态为unused/queued），通过向量相似度去重，避免生成重复主题。
-   - `SITE_CATEGORIES_BLOCK`：使用 `ContentAuto_Category_Filter` 或 WordPress `get_categories()` 获取分类列表。
-   - `{N}`：任务创建时指定的每规则项生成数量。
+   - `CURRENT_DATE`：注入当前日期，帮助 AI 生成具备时效性的标题。
+   - `LANGUAGE_NAME`：目标输出语言（如“简体中文”）。
+   - `REFERENCE_CONTENT_BLOCK`：规则项的原始素材（XML 封装），支持关键词、上传文本等。
+   - `EXISTING_TOPICS_BLOCK`：通过向量检索获取的已有主题列表（XML），用于实现语义去重。
+   - `SITE_CATEGORIES_BLOCK`：当前站点的可用分类列表，用于 AI 智能分类建议。
 2. **文章生成变量**：
-   - **核心内容变量**：`TITLE`（文章标题）、`SOURCE_ANGLE`（内容角度）等，来自 `content_auto_topics` 表。
-   - **时间与语言变量**：与主题生成类似，提供日期和语言指令。
-   - **结构指导变量**：`ARTICLE_STRUCTURE`（文章结构模板）、`CONTENT_ANGLES`（内容角度）等，来自 `content_auto_article_structures` 表。
-   - **品牌与优化变量**：`BRAND_PROFILE`（品牌资料）、`SEO_KEYWORDS`、`IMAGE_PROMPT`（自动配图指令）等。
-   - **引用与示例变量**：`REFERENCE_ARTICLES`（参考文章）、`SIMILAR_CONTENT`（相似内容）等，辅助内容质量。
-3. **变量分类**：
-   - 页面将变量按类别组织（核心内容、时间语言、结构指导、品牌优化、引用示例等），便于查阅。
-   - 每个变量包含：名称、描述、数据来源、业务含义、示例、使用建议、重要性级别等信息。
-4. **前端呈现**：
-   - 使用可折叠的卡片式布局，支持搜索和过滤。
-   - 页面提供复制变量名功能，快速粘贴到提示词模板中。
+   - **内容核心**：
+     - `{{TITLE}}`：文章主标题。
+     - `{{USER_VALUE}}`：主题关联的用户价值/动机。
+     - `{{MATCHED_CATEGORY}}`：预指派的分类名称。
+   - **策略与受众**：
+     - `{{CONTENT_STRATEGY_BLOCK}}`：包含知识深度要求的指令集（浅层普及/深度分析等）。
+     - `{{TARGET_AUDIENCE_BLOCK}}`：针对受众角色（决策者/潜在客户等）的写作建议。
+     - `{{ROLE_DESCRIPTION}}`：管理员定义的 AI 角色设定（如“资深科技编辑”）。
+   - **结构与指导**：
+     - `{{STRUCTURE_BLOCK}}`：由 `SmartStructureSelector` 智能选定的 XML 章节大纲。
+     - `{{STRUCTURE_USAGE_GUIDANCE}}`：关于如何通过 `<section>` 展开正文的逻辑引导。
+   - **参考与物料**：
+     - `{{REFERENCE_MATERIAL_BLOCK}}`：搜索获取的参考资料内容（XML）。
+     - `{{REFERENCE_MATERIAL_STRATEGY}}`：指导 AI 如何在“以标题为纲”的前提下利用参考资料。
+     - `{{INTERNAL_LINKING_INSTRUCTIONS}}`：包含相关文章标题与 URL 的内链注入指令。
+   - **参数类**：
+     - `{{TARGET_LENGTH}}`：限定输出字数范围（如 800-1500 字）。
+     - `{{IMAGE_INSTRUCTIONS}}`：根据自动配图策略生成的配图提示词模板。
+3. **变量填充引擎**：
+   - 由 `ContentAuto_XmlTemplateProcessor` 统一负责。
+   - 在生成提示词前，处理器会调用各服务模块（向量检索、规则管理、分类过滤器）拉取实时数据并进行 XML 转义处理。
 
 ## 使用场景
-- 配置发布规则：在编辑提示词模板时参考变量说明，选择合适的变量组合。
-- 优化内容质量：了解变量的数据来源和去重逻辑，调整规则以减少重复内容。
-- 调试提示词：当生成内容不符合预期时，查看变量数据源确认问题根源。
-- 团队培训：为运营团队提供变量使用参考，标准化提示词配置流程。
+- **提示词工程调优**：通过组合不同的 `{{STRATEGY}}` 和 `{{PRINCIPLE}}` 变量，精细化控制 AI 的写作习惯。
+- **差异化内容输出**：利用 `{{TARGET_AUDIENCE_BLOCK}}` 实现同一主题针对不同人群的差异化表达。
+- **SEO 深度优化**：配合 `{{SEO_KEYWORDS}}` 与 `{{INTERNAL_LINKING_INSTRUCTIONS}}` 实现搜索友好度提升。
 
 ## 技术实现
-- 数据定义：页面内硬编码两个数组 `$topic_variables` 和 `$article_variables`，包含所有变量的元信息。
-- 数据来源追溯：每个变量的 `description` 字段注明数据表和字段、获取方法等细节。
-- 前端渲染：使用 PHP 循环输出变量列表，配合 `variable-guide/assets/css/variable-guide.css` 美化显示。
-- JavaScript交互：`variable-guide/assets/js/variable-guide.js` 提供搜索、折叠、复制等功能。
+- **模板处理**：`prompt-templating/class-xml-template-processor.php` 定义了所有 `{{VARIABLE}}` 到具体数据源的映射逻辑。
+- **动态填充**：处理器根据 `topic_id` 实时反查数据库中的 `vector_embedding` 和 `source_angle`。
+- **多语言适配**：由 `language-mappings.php` 提供各语言环境下指令的本地化输出。
 
 ## 相关文件
-- `variable-guide/views/variable-guide.php`（页面模板与数据定义）
-- `variable-guide/assets/js/variable-guide.js`（前端交互）
-- `variable-guide/assets/css/variable-guide.css`（样式）
-- `publish-settings/views/publish-rules.php`（提示词模板编辑）
-- `topic-management/class-topic-task-manager.php`（变量实际填充逻辑）
-- `article-tasks/class-article-generator.php`（变量实际填充逻辑）
+- `prompt-templating/class-xml-template-processor.php`（核心填充逻辑）
+- `article-tasks/class-article-generator.php`（文章生成入口）
+- `shared/services/class-smart-structure-selector.php`（结构变量来源）
+- `variable-guide/views/variable-guide.php`（管理端文档呈现）

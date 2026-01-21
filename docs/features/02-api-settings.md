@@ -1,28 +1,34 @@
 # API设置（API Settings）
 
 ## 功能概述
-API设置模块用于管理大语言模型（LLM）服务的接口配置，包括自定义API端点、预定义服务商（如OpenAI、Gemini、Qwen等）、向量嵌入服务以及渠道管理。该模块位于 `api-settings/` 目录，是整个内容生产流程的基础设施层。
+API设置模块是系统的基础设施层，位于 `api-settings/` 目录。它负责管理大语言模型（LLM）的接入、向量（Embedding）服务、实时搜索组件以及网页采集服务。系统提供 5 个主要配置选项卡：
+1. **自定义API配置**：支持所有标准 OpenAI 格式的接口（如 GPT-4、Claude、Qwen、SiliconFlow 等）。
+2. **预置API配置**：提供免配置或简易配置的官方及第三方渠道（Pollinations、官方 API）。
+3. **向量API配置**：专门用于向量化主题和分类，支持 OpenAI 和 Jina Embeddings。
+4. **搜索API设置**：配置基于 DuckDuckGo 的实时联网搜索参数。
+5. **Jina Reader API**：配置用于网页内容采集的 Jina Reader 服务。
 
 ## 业务逻辑
-1. **API配置存储**：
-   - 通过 `ContentAuto_ApiConfig` 类管理配置的增删改查。
-   - 配置项包括：API名称、端点URL、模型名称、API密钥、角色描述、向量模型等。
-   - 支持自定义API和预定义API（从 `class-predefined-api.php` 读取常见服务商模板）。
-2. **渠道管理**：
-   - 实现官方渠道（`class-official-channel.php`）和第三方渠道（如 `class-pollinations-channel.php`）的抽象层。
-   - 基类 `class-api-channel.php` 定义调用接口规范，子类实现具体请求逻辑。
-3. **连接测试**：
-   - 提供测试按钮，AJAX调用 `content_auto_manager_test_api_connection` 或 `content_auto_manager_test_predefined_api` 验证API可用性。
-   - 测试时发送简单提示词，检查返回状态和响应内容。
-4. **多配置管理**：
-   - 支持同时维护多个API配置，每个规则可选择使用哪个API。
-   - 启用/禁用开关允许快速切换配置，无需删除。
+1. **统一 API 调度与轮询**：
+   - **多级 API 轮询**：通过 `get_next_active_config()` 在多个激活的自定义 API 间自动循环，平衡负载。
+   - **自动故障转移 (Failover)**：当主 API 调用超时或报错（如 cURL 56 SSL Reset）时，调度器自动按权重切换至下一可用 API 进行重试。
+   - **预置渠道集成**：Pollinations（免费）与 官方专属 API（稳定/高并发），作为生产力的兜底保障。
+2. **向量服务 (Embedding) 增强**：
+   - **速率限制保护**：内置 RPM（每分钟请求）与 TPM（每分钟 Token）限制器（`ContentAuto_RateLimiter`），支持基于 Transients 的精准配额管理。
+   - **Jina 深度优化**：针对 Jina v3/v4 模型，支持 **Matryoshka 嵌入**（截断至 1024 维）与 **Task LoRA**（提升文本匹配精度）。
+   - **Base64 自动转换**：系统自动将浮点数组（Float Array）封装为 Base64 二进制流，确保存储效率与算法兼容性。
+3. **响应净化与安全**：
+   - **AI 思考过滤**：由 `strip_think_tags()` 自动剔除 DeepSeek 等模型产生的 `<think>` 标签内容，确保输出正文纯度。
+   - **SSL 冗余处理**：针对部分 API 强制使用 HTTP 1.1 协议，解决 HTTP/2 兼容性导致的连接重置问题。
+4. **采集与联网增强**：
+   - **Jina Reader 集成**：通过专用读取端点提取网页 Markdown 正文，规避广告与导航干扰。
+   - **DuckDuckGo 零密搜索**：基于 License 授权的免密搜索组件，支撑联网增强任务。
 
 ## 使用场景
-- 初始化插件：配置第一个LLM API，如OpenAI GPT-4或国内Qwen服务。
-- 多服务商策略：配置多个API，分别用于高质量文章生成和快速主题批量生成。
-- 备用冗余：主API不可用时，规则自动切换到备用API。
-- 成本优化：低成本API用于主题生成，高性能API用于正式文章内容生成。
+- **大规模矩阵高并发**：配置 10+ 个 SiliconFlow 备用，利用轮询机制实现不间断生产。
+- **混合模型策略**：生产大纲用轻量级模型，生成正文用旗舰级模型（如 GPT-4 / Claude 3.5）。
+- **语义库冷启动**：利用 Jina Embeddings 的高维度特性快速构建精确的主题向量索引。
+- **故障自动恢复**：API 额度耗尽或服务波动时，系统自动完成静默切换，无需人工干预。
 
 ## 实际业务应用
 
@@ -145,16 +151,17 @@ API设置模块用于管理大语言模型（LLM）服务的接口配置，包�
 **实际案例**：某内容聚合平台导入了15万条历史标题，通过向量聚类自动归类到500个细分主题，原本需要10人月的分类工作在3天内完成。
 
 ## 技术实现
-- 数据表：`{prefix}_content_auto_api_configs`，包含 `config_name`, `api_endpoint`, `model_name`, `api_key`, `role_description`, `vector_model` 等字段。
-- 参数类：`class-api-config-params.php` 定义参数验证与封装。
-- AJAX处理器：`shared/ajax-handlers.php` 中注册测试连接和配额查询接口。
-- 表单页面：`api-settings/views/api-config-form.php` 渲染编辑界面。
+- **核心类库**：
+  - `ContentAuto_UnifiedApiHandler`：全局调度引擎，负责请求分发与净化。
+  - `ContentAuto_VectorApiHandler`：高性能向量生产处理器，支持批量生成与指数退避重试。
+  - `ContentAuto_RateLimiter`：基于 WP Transients 的轻量级配额管理器。
+- **存储方案**：`content_auto_api_configs` 表存储持久化凭证；向量数据 Base64 化存储于主题表。
+- **调试监控**：调试模式开启后，`shared/logging/` 将记录完整的提示词 Payload 与 API 原始响应 Headers。
 
 ## 相关文件
 - `api-settings/class-api-config.php`（核心配置管理类）
-- `api-settings/class-api-config-params.php`（参数验证）
 - `api-settings/class-api-channel.php`（渠道抽象基类）
-- `api-settings/class-official-channel.php`（官方API渠道实现）
-- `api-settings/class-predefined-api.php`（预定义服务商模板）
+- `shared/services/class-unified-api-handler.php`（统一API调度）
+- `shared/services/class-vector-api-handler.php`（向量处理器）
+- `shared/services/class-unified-api-handler.php`（API 调度实现）
 - `api-settings/views/api-config-form.php`（界面渲染）
-- `shared/ajax-handlers.php`（AJAX处理）

@@ -4,51 +4,39 @@
 任务队列模块负责调度和执行所有后台任务，包括主题任务、文章任务和向量生成任务。核心类 `ContentAuto_JobQueue` 位于 `shared/queue/class-job-queue.php`，与 WordPress Cron 协同工作，实现任务的串行执行与失败恢复。
 
 ## 业务逻辑
-1. **任务入队**：
-   - 主题任务和文章任务创建后，会调用 `ContentAuto_JobQueue::add_job()`（或内部方法）将任务写入 `content_auto_job_queue` 数据表。
-   - 任务记录包含 `job_type`, `payload`, `priority`, `status`, `retry_count`, `last_error` 等字段。
-2. **任务调度**：
-   - `content_auto_manager_start_queue_processor()` 在插件初始化时注册 `content_auto_manager_process_queue` Cron 事件，每分钟运行。
-   - `ContentAuto_JobQueue::process_next_job()` 从队列中取出一条待处理任务，根据类型分发给相应处理器：
-     - `topic_task` → `ContentAuto_TopicTaskManager`
-     - `article` → `ContentAuto_ArticleQueueProcessor`
-     - `vector_generation` → `ContentAuto_VectorGenerator`
-   - 若队列为空，则调用 `process_simple_topic_task()` 直接执行待处理主题任务，提升效率。
-3. **锁机制**：
-   - 使用 WordPress Transient 实现全局任务锁与子任务锁，防止并发执行：
-     - `content_auto_global_task_lock`
-     - `content_auto_global_subtask_lock`
-   - 锁超时时间由常量 `CONTENT_AUTO_QUEUE_LOCK_TIMEOUT` 控制。
-4. **失败重试与恢复**：
-   - 任务失败时记录错误信息，增加 `retry_count`，遵循指数退避策略延迟重试。
-   - 主题任务和文章任务分别由各自的恢复处理器（`ContentAuto_TaskRecoveryHandler`、`ContentAuto_ArticleTaskTimeoutHandler`）定时检查卡顿任务并重新入队。
-5. **向量生成调度**：
-   - 队列在空闲时调用 `start_vector_generation_scheduler()` 启动向量生成任务，维持主题向量与品牌向量的同步。
+1. **严格串行调度 (Strict Serialization)**：
+   - **单发模式**：为了确保高并发下的稳定性，`process_next_job()` 每次 Cron 运行仅处理 **一个** Pending 任务（`max_jobs_per_run = 1`）。
+   - **多重锁定**：通过 `acquire_global_task_lock`（全局处理器锁）和 `acquire_global_subtask_lock`（子任务原子锁）实现双层并发保护，防止任务抢跑。
+2. **任务类型分发**：
+   - `topic_task`：主题生成任务。
+   - `article`：文章生成子任务。
+   - `vector_generation`：向量化任务。
+   - **material_search**：素材/参考资料搜索任务。
+3. **素材搜索详解 (Material Search)**：
+   - **模式识别**：支持 `extension_rag`（浏览器插件知识库）与 `search_engine`（搜索引擎）两种模式。
+   - **异步挂起**：插件模式下，任务返回 `waiting` 状态。此时队列状态保持为 `processing` 但不阻塞后续 Cron 的安全检测，直到 `cam_extension_task_completed` 动作触发回调闭环。
+   - **超时收割机制**：系统会对 `material_search` 任务执行 **300秒 (5分钟)** 的强制超时检查。若超过此阈值，系统会通过“收割逻辑”将任务标记为失败并释放队列，防止僵尸任务永久占用。
+4. **数据完整性与自愈**：
+   - **完整性验证**：`verify_queue_data_integrity()` 定期检查孤立任务（无对应文章 ID）或非法引用。
+   - **自愈功能**：`fix_queue_data_integrity()` 可自动删除重复队列项及已失效的临时记录。
+5. **失败重试策略**：
+   - 记录详尽的 `error_message`。
+   - 结合 `ContentAuto_TaskRecoveryHandler` 实现对卡死在 `processing` 状态任务的平滑迁移。
 
 ## 使用场景
-- 自动化流水线：主题生成 → 文章生成 → 向量更新，全流程由任务队列驱动。
-- 高峰保护：通过串行执行控制API调用频率，避免触发限流。
-- 异常恢复：任务失败后自动重试，减少人工介入。
-- 扩展任务：可向队列新增自定义任务类型（如图片生成、外链推送等）。
+- **异步 RAG 集成**：利用插件模式将耗周期的知识库检索任务放入队列，确保主线程不阻塞。
+- **采集频率管控**：通过严格串行机制，自然控制对各搜素引擎或 AI 接口的请求频率。
+- **无人值守运行**：依靠超时收割与自动重试，确保持续生产不受单点异常影响。
 
 ## 技术实现
-- 数据表：`content_auto_job_queue`，字段包括 `id`, `job_type`, `payload`, `status`, `priority`, `retry_count`, `scheduled_at`, `locked_at` 等。
-- 核心方法：
-  - `process_next_job()`：取出并执行下一个任务。
-  - `execute_job()`：根据类型调度具体处理器。
-  - `schedule_retry()`：失败后重新安排任务。
-  - `cleanup_stale_locks()`：清理过期锁。
-- 常量：
-  - `CONTENT_AUTO_SUBTASK_INTERVAL`（子任务间隔）
-  - `CONTENT_AUTO_MAX_JOBS_PER_RUN`（单次Cron处理任务上限）
-  - `CONTENT_AUTO_QUEUE_LOCK_TIMEOUT`（锁超时时间）
-- 集成：任务处理器位于 `topic-management/`、`article-tasks/`、`shared/services/` 等目录，通过依赖注入在构造函数中初始化。
+- **核心类库**：`ContentAuto_JobQueue` 控制调度流。
+- **关键钩子**：`cam_extension_task_completed` 连接浏览器插件与 WordPress 后端队列。
+- **锁配置**：`CONTENT_AUTO_QUEUE_LOCK_TIMEOUT` 定义锁生命周期，默认配合 300s 保护。
+- **存储架构**：`content_auto_job_queue` 表具备 `reference_id` 语义化字段，用于精确关联主题资源。
 
 ## 相关文件
-- `shared/queue/class-job-queue.php`（任务队列核心）
-- `content-auto-manager.php`（Cron注册与启动）
-- `topic-management/class-topic-task-manager.php`（主题任务处理）
-- `article-tasks/class-article-queue-processor.php`（文章任务处理）
-- `shared/services/class-vector-generator.php`（向量任务处理）
-- `topic-management/class-task-recovery-handler.php`（任务恢复）
-- `article-tasks/class-article-task-timeout-handler.php`（超时恢复）
+- `shared/queue/class-job-queue.php`（核心引擎）
+- `article-tasks/class-article-queue-processor.php`（文章子任务分发）
+- `shared/services/class-vector-generator.php`（向量生成器）
+- `search-materials/class-search-materials-service.php`（搜索引擎同步实现）
+- `topic-management/class-task-recovery-handler.php`（任务状态监控）

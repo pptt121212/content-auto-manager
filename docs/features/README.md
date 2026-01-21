@@ -15,6 +15,7 @@
 
 ### 1. 系统管理模块
 - [仪表盘 (Dashboard)](./01-dashboard.md) - 系统总览和数据统计
+- [浏览器扩展 (Browser Extension)](./19-browser-extension.md) - 知识库插件连接与配置
 - [调试工具 (Debug Tools)](./13-debug-tools.md) - 系统调试和问题排查工具
 
 ### 2. API配置模块
@@ -39,6 +40,7 @@
 
 ### 6. 核心服务模块
 - [任务队列 (Job Queue)](./15-job-queue.md) - 后台任务队列处理
+- [搜索物料 (Search Materials)](./20-search-materials.md) - 多源素材采集与 RAG
 - [数据库服务 (Database Services)](./16-database-services.md) - 数据库操作封装
 - [日志系统 (Logging System)](./17-logging-system.md) - 系统日志记录
 - [数据一致性验证 (Data Validation)](./18-data-validation.md) - 数据一致性检查

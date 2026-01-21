@@ -4,22 +4,14 @@
 数据库服务模块封装了插件与WordPress数据库的所有交互逻辑，提供统一的增删改查接口，并负责创建和维护插件自定义数据表。核心类 `ContentAuto_Database` 位于 `shared/database/class-database.php`，为整个插件提供数据持久化能力。
 
 ## 业务逻辑
-1. **数据表创建**：
-   - `create_tables()` 在插件激活时被调用，创建所有必需的数据表：
-     - `content_auto_api_configs`：大模型API配置
-     - `content_auto_rules`：内容生产规则
-     - `content_auto_rule_items`：规则项目（子规则）
-     - `content_auto_topics`：主题库
-     - `content_auto_topic_tasks`：主题生成任务
-     - `content_auto_articles`：文章内容
-     - `content_auto_article_tasks`：文章生成任务
-     - `content_auto_job_queue`：任务队列
-     - `content_auto_publish_rules`：发布规则
-     - `content_auto_article_structures`：文章结构模板
-     - `content_auto_brand_profiles`：品牌资料
-     - 其他辅助表（外部访问统计、日志等）
-   - 使用 `dbDelta()` 实现幂等创建，支持升级场景。
-2. **CRUD操作**：
+1. **数据表架构与演进**：
+   - `create_tables()` 实现了一套鲁棒的架构，主要表包括：
+     - `content_auto_api_configs`：支持多级 API 轮询、模型参数（RPM/TPM）及权重设置。
+     - `content_auto_topics`：核心主题表，具备 `vector_embedding`（存储压缩向量）和 `material_search_status` 状态追踪。
+     - `content_auto_job_queue`：具备 `reference_id` 语义字段，确保任务与资源的强一致性。
+     - `content_auto_brand_profiles`：支持向量化品牌特征存储。
+   - **向量高效存储**：系统采用 **Base64 二进制流** 方案存储嵌入向量（Embeddings），将 Float 数组压缩后持久化，极大降低了数据库 IO 并保持了检索精度。
+2. **CRUD 与安全封装**：
    - `insert($table, $data)`：插入记录，返回新记录ID。
    - `update($table, $data, $where)`：更新符合条件的记录。
    - `delete($table, $where)`：删除符合条件的记录。

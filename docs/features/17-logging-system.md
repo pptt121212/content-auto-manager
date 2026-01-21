@@ -4,21 +4,18 @@
 日志系统模块为插件提供统一的日志记录能力，支持记录调试、信息、警告、错误等不同级别的日志，输出到插件目录下的 `logs/` 文件夹，供调试工具与运维人员使用。核心类包括 `ContentAuto_PluginLogger` 和 `ContentAuto_LoggingSystem`，位于 `shared/logging/` 目录。
 
 ## 业务逻辑
-1. **日志记录**：
-   - `ContentAuto_PluginLogger::log($message, $level, $context)` 将日志写入每天的文件（`logs/YYYY-MM-DD.log`）。
-   - 支持上下文信息，以JSON格式输出；如果包含提示词内容会完整记录，供调试分析。
-   - 提供快捷方法：`debug()`, `info()`, `warning()`, `error()`。
-2. **日志读取**：
-   - `get_recent_logs($limit)` 读取最近的日志条目（默认100条），按时间倒序返回。
-   - 解析日志行，分离时间、级别、消息、上下文，供调试工具展示。
-3. **日志清理**：
-   - `clear_log()` 删除 `logs/` 目录下所有 `.log` 文件，用于清空历史记录。
-4. **高级日志服务**：
-   - `ContentAuto_LoggingSystem` 封装更高层的日志逻辑，提供模块化日志输出、性能记录、错误上报等功能。
-   - 在主题任务、文章任务、向量服务等模块中注入 `ContentAuto_LoggingSystem`，统一日志格式。
-5. **调试模式联动**：
-   - 当 `content_auto_debug_mode` 启用时，日志系统记录更详细的上下文数据。
-   - 调试工具通过AJAX调用 `get_recent_logs()` 与 `clear_log()` 进行展示与管理。
+1. **层级化日志架构**：
+   - **底层驱动 (`ContentAuto_PluginLogger`)**：执行物理 IO，按日期（`logs/YYYY-MM-DD.log`）滚动存储，支持 `LOCK_EX` 并发锁。
+   - **业务适配器 (`ContentAuto_LoggingSystem`)**：核心逻辑层，提供 `log_success`, `log_error`, `log_warning` 等语义化接口。
+2. **结构化上下文 (Structured Context)**：
+   - 支持自动组装业务指纹，如 `rule_id`、`topic_id`、`job_id` 等核心标识。
+   - 通过 `build_context()` 辅助方法，确保所有异步操作产生的日志均可追溯至原始配置项。
+3. **响应净化与调试**：
+   - 调试模式激活后，系统利用 `ContentAuto_UnifiedApiHandler` 在日志中捕获完整的 `Prompt Payload` 与 API 原始 JSON。
+   - 内置响应净化，记录日志前会自动移除冗余的大模型思考（`<think>`）标记及重复的 XML 标签。
+4. **日志运维管理**：
+   - 支持 AJAX 异步滚动取回（`get_recent_logs`），具备大容量数据截断逻辑，防止调试界面因大模型输出过长而崩溃。
+   - 提供物理删除接口（`clear_log`），用于重置运维环境。
 
 ## 使用场景
 - 任务排查：任务失败时记录错误原因、API响应、上下文信息。
