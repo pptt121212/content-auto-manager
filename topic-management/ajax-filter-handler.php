@@ -316,6 +316,22 @@ function cam_ajax_bulk_generate_references() {
         );
         
         if ($updated !== false) {
+            // ✅ 关键修复：手动触发也必须写入队列，以支持 extension_rag 模式
+            $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+            $wpdb->insert($queue_table, array(
+                'job_type' => 'material_search',
+                'job_id' => 0, // material_search 没有父任务表
+                // 使用时间戳确保唯一性，允许手动重新触发
+                'subtask_id' => 'material_' . $topic_id . '_' . uniqid(), 
+                'reference_id' => $topic_id,
+                'priority' => 20,
+                'retry_count' => 0,
+                'status' => 'pending',
+                'error_message' => '',
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
+            ));
+
             $queued_count++;
         }
     }

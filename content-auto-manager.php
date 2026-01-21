@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: 内容自动生成管家
+ * Plugin Name: AI SEO 全能内容创作管家
  * Plugin URI: https://github.com/pptt121212/content-auto-manager
  * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
- * Version: 1.0.6
+ * Version: 1.0.7
  * Author: Your Name
  * Author URI: https://github.com/pptt121212/content-auto-manager
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // 定义插件常量
-define('CONTENT_AUTO_MANAGER_VERSION', '1.0.6');
+define('CONTENT_AUTO_MANAGER_VERSION', '1.0.7');
 define('CONTENT_AUTO_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CONTENT_AUTO_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -306,8 +306,72 @@ function content_auto_manager_check_version() {
         update_option('content_auto_manager_version', CONTENT_AUTO_MANAGER_VERSION);
     }
 }
-
 function content_auto_manager_init() {
+    // 修复 Apache/FastCGI 环境下 Authorization 头丢失的问题
+    if ( ! isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+        if ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+            $_SERVER['HTTP_AUTHORIZATION'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        } elseif ( isset( $_SERVER['HTTP_X_CAM_AUTH'] ) ) {
+             $_SERVER['HTTP_AUTHORIZATION'] = $_SERVER['HTTP_X_CAM_AUTH'];
+        }
+    }
+
+    // 修复 PHP-FPM/FastCGI 不设置 PHP_AUTH_* 变量的问题
+    if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) && 0 === strpos( $_SERVER['HTTP_AUTHORIZATION'], 'Basic ' ) ) {
+        $decoded = base64_decode( substr( $_SERVER['HTTP_AUTHORIZATION'], 6 ) );
+        if ( $decoded && strpos( $decoded, ':' ) !== false ) {
+            list( $user, $pass ) = explode( ':', $decoded, 2 );
+            $_SERVER['PHP_AUTH_USER'] = $user;
+            $_SERVER['PHP_AUTH_PW']   = $pass;
+        }
+    }
+
+    // --- 修复：浏览器插件 API Key 认证逻辑 ---
+    // 允许通过 X-CAM-API-Key 头自动识别用户身份，无需 Cookie/Nonce
+    add_filter('determine_current_user', function($user_id) {
+        // 如果已经通过传统方式认证，直接返回
+        if ($user_id) return $user_id;
+
+        // 检查自定义认证头
+        $api_key = '';
+        if (isset($_SERVER['HTTP_X_CAM_API_KEY'])) {
+            $api_key = $_SERVER['HTTP_X_CAM_API_KEY'];
+        } elseif (isset($_SERVER['REDIRECT_HTTP_X_CAM_API_KEY'])) {
+            $api_key = $_SERVER['REDIRECT_HTTP_X_CAM_API_KEY'];
+        }
+
+        if (empty($api_key)) return $user_id;
+
+        // 验证 API Key
+        $stored_key = get_option('cam_extension_api_key', '');
+        if (empty($stored_key) || !hash_equals($stored_key, $api_key)) {
+            return $user_id;
+        }
+
+        // 验证通过，临时赋予管理员权限
+        $admins = get_users(array('role' => 'administrator', 'number' => 1));
+        if (!empty($admins)) {
+            return $admins[0]->ID;
+        }
+
+        return $user_id;
+    }, 20);
+
+    // 对于使用了 API Key 的 REST 请求，放行认证错误（跳过 Nonce 检查）
+    add_filter('rest_authentication_errors', function($result) {
+        if (!empty($_SERVER['HTTP_X_CAM_API_KEY']) || !empty($_SERVER['REDIRECT_HTTP_X_CAM_API_KEY'])) {
+            return true; // 强制通过认证
+        }
+        return $result;
+    }, 100);
+
+    // 允许自定义认证头通过 CORS
+    add_filter( 'rest_allowed_cors_headers', function( $allow_headers ) {
+        $allow_headers[] = 'X-Cam-Auth';
+        $allow_headers[] = 'X-CAM-API-Key';
+        return $allow_headers;
+    });
+    // --- 修复结束 ---
     // 加载文本域
     load_plugin_textdomain('content-auto-manager', false, dirname(plugin_basename(__FILE__)) . '/languages');
     
@@ -334,6 +398,12 @@ function content_auto_manager_init() {
     if (is_admin()) {
         require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'publish-settings/class-publish-settings-admin.php';
         require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'publish-settings/class-category-filter.php';
+        
+        // 加载扩展 API Key 管理页面
+        $extension_admin_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'admin/class-extension-api-key-admin.php';
+        if (file_exists($extension_admin_file)) {
+            require_once $extension_admin_file;
+        }
         
         // 定期清理分类过滤设置
         add_action('wp_loaded', array('ContentAuto_Category_Filter', 'validate_and_clean_settings'));
@@ -369,6 +439,13 @@ function content_auto_manager_init() {
     // 4. 初始化智能结构优化定时任务钩子
     require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-structure-optimization-scheduler.php';
     ContentAuto_StructureOptimizationScheduler::init_hooks();
+
+    // 5. 初始化 REST API
+    if (file_exists(CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/class-rest-api-manager.php')) {
+        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/class-rest-api-manager.php';
+        $rest_api_manager = new \ContentAutoManager\RestApi\Rest_Api_Manager();
+        $rest_api_manager->init();
+    }
 }
 
 /**
@@ -403,6 +480,15 @@ function content_auto_manager_start_queue_processor() {
     }
     
     add_action('content_auto_manager_handle_article_timeouts', 'content_auto_manager_handle_article_timeouts');
+    
+    // 启动历史任务自动清理（每天执行一次）
+    if (!wp_next_scheduled('content_auto_manager_cleanup_old_tasks')) {
+        // 安排在每天 UTC 时间 02:00 执行（北京时间 10:00）
+        $next_cleanup_time = strtotime('tomorrow 02:00:00 UTC');
+        wp_schedule_event($next_cleanup_time, 'daily', 'content_auto_manager_cleanup_old_tasks');
+    }
+    
+    add_action('content_auto_manager_cleanup_old_tasks', 'content_auto_manager_cleanup_old_tasks');
     
     // 注册shutdown函数处理致命错误
     register_shutdown_function('content_auto_manager_handle_fatal_error');
@@ -514,8 +600,102 @@ function content_auto_manager_add_cron_intervals($schedules) {
     return $schedules;
 }
 
+/**
+ * 自动清理历史任务
+ * 每天执行一次，清理：
+ * - 7天前已完成的任务 (completed)
+ * - 30天前失败的任务 (failed)
+ * 
+ * 涉及的表：
+ * - wp_content_auto_job_queue
+ * - wp_content_auto_topic_tasks
+ * - wp_content_auto_article_tasks
+ */
+function content_auto_manager_cleanup_old_tasks() {
+    global $wpdb;
+    
+    $tables = array(
+        $wpdb->prefix . 'content_auto_job_queue',
+        $wpdb->prefix . 'content_auto_topic_tasks',
+        $wpdb->prefix . 'content_auto_article_tasks'
+    );
+    
+    // 使用 current_time 保持与写入时间的一致性
+    // current_time('mysql') 返回本地时间，与 updated_at 字段的写入方式一致
+    $completed_threshold = date('Y-m-d H:i:s', current_time('timestamp') - (7 * DAY_IN_SECONDS));
+    $failed_threshold = date('Y-m-d H:i:s', current_time('timestamp') - (30 * DAY_IN_SECONDS));
+    
+    $total_deleted = 0;
+    $cleanup_log = array();
+    
+    foreach ($tables as $table) {
+        // 检查表是否存在
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
+        if (!$table_exists) {
+            continue;
+        }
+        
+        // 清理7天前已完成的任务
+        $deleted_completed = $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$table} WHERE status = %s AND updated_at < %s",
+            'completed',
+            $completed_threshold
+        ));
+        
+        // 清理30天前失败的任务
+        $deleted_failed = $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$table} WHERE status = %s AND updated_at < %s",
+            'failed',
+            $failed_threshold
+        ));
+        
+        $table_name = str_replace($wpdb->prefix, '', $table);
+        $cleanup_log[] = sprintf(
+            '%s: completed=%d, failed=%d',
+            $table_name,
+            $deleted_completed !== false ? $deleted_completed : 0,
+            $deleted_failed !== false ? $deleted_failed : 0
+        );
+        
+        $total_deleted += ($deleted_completed !== false ? $deleted_completed : 0);
+        $total_deleted += ($deleted_failed !== false ? $deleted_failed : 0);
+    }
+    
+    // 记录清理日志
+    if ($total_deleted > 0) {
+        error_log(sprintf(
+            '[ContentAutoManager] Auto cleanup completed: Total deleted=%d (%s)',
+            $total_deleted,
+            implode('; ', $cleanup_log)
+        ));
+    }
+    
+    return $total_deleted;
+}
+
 // 任务队列处理函数
 function content_auto_manager_process_queue() {
+    // -------------------------------------------------------------------------
+    // 新增：自动修复 "定时发布失败" (Missed Schedule) 的文章
+    // 在高负载下（如大量素材搜索任务运行时），WordPress原生Cron容易错过发布时间点
+    // 此处每分钟强制检查并发布已过期的文章
+    global $wpdb;
+    $now = current_time('mysql');
+    
+    // 查找已过期但仍为 future 状态的文章 (每次处理5篇，避免阻塞)
+    $missed_post_ids = $wpdb->get_col($wpdb->prepare(
+        "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date <= %s LIMIT 5",
+        $now
+    ));
+    
+    if (!empty($missed_post_ids)) {
+        foreach ($missed_post_ids as $p_id) {
+            wp_publish_post($p_id);
+            error_log("[ContentAutoManager] Fixed Missed Schedule for Post ID: {$p_id}");
+        }
+    }
+    // -------------------------------------------------------------------------
+
     $queue = new ContentAuto_JobQueue();
     // 首先尝试处理队列中的任务（包括文章任务和主题任务）
     $result = $queue->process_next_job();
@@ -531,9 +711,19 @@ function content_auto_manager_process_queue() {
 
 // 任务恢复处理函数
 function content_auto_manager_recover_tasks() {
+    // 恢复主题任务
     if (class_exists('ContentAuto_TopicTaskManager')) {
         $task_manager = new ContentAuto_TopicTaskManager();
-        $recovered_count = $task_manager->auto_recover_hanging_tasks();
+        $task_manager->auto_recover_hanging_tasks(); // topic_task
+    }
+    
+    // 恢复素材搜索任务
+    if (!class_exists('ContentAuto_TaskRecoveryHandler')) {
+        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-task-recovery-handler.php';
+    }
+    if (class_exists('ContentAuto_TaskRecoveryHandler')) {
+        $recovery_handler = new ContentAuto_TaskRecoveryHandler();
+        $recovery_handler->auto_recover_hanging_tasks('material_search');
     }
 }
 

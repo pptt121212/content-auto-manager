@@ -4,8 +4,12 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * 自动素材搜索任务管理器
- * 负责扫描并执行后台素材搜索任务
+ * 自动素材搜索任务管理器（旧版调度器）
+ * 
+ * 重要说明：
+ * - 此调度器现在只处理 "search_engine" 模式（网络搜索）
+ * - "extension_rag" 模式（知识库搜索）由 job_queue 队列处理器分发到浏览器插件
+ * - 这确保了不同模式走不同的执行路径
  */
 class ContentAuto_MaterialSearchManager {
 
@@ -29,15 +33,36 @@ class ContentAuto_MaterialSearchManager {
 
     /**
      * 处理一批待搜索任务
+     * 
+     * 注意：此方法现在会检查 material_collection_mode 设置
+     * - search_engine 模式：直接执行网络搜索
+     * - extension_rag 模式：跳过，由 job_queue 处理器分发到浏览器插件
+     * - none 模式：跳过
      */
     public function process_batch() {
-        // 1. 检查总开关
+        // 1. 检查总开关和模式
         $db = new ContentAuto_Database();
         $publish_rules = $db->get_row('content_auto_publish_rules', array('id' => 1));
         
         // 严格检查：必须开启 'enable_reference_material'
-        // 注意：不再检查 'enable_auto_material_search'，因为既然任务已在队列中（可能是手动触发），就应该执行
         if (empty($publish_rules['enable_reference_material'])) {
+            return;
+        }
+        
+        // 获取搜集模式
+        $mode = !empty($publish_rules['material_collection_mode']) ? $publish_rules['material_collection_mode'] : 'none';
+        // 迁移逻辑：如果字段尚未存在但旧开关开启，默认为 search_engine
+        if ($mode === 'none' && !empty($publish_rules['enable_auto_material_search'])) {
+            $mode = 'search_engine';
+        }
+        
+        // 如果模式是 extension_rag 或 none，此调度器不处理
+        // extension_rag 模式由 job_queue 中的 process_material_search 方法处理
+        if ($mode !== 'search_engine') {
+            // 添加调试日志
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+            $logger = new ContentAuto_LoggingSystem();
+            $logger->log_info('MATERIAL_MANAGER_SKIP', "MaterialSearchManager 跳过处理，当前模式: {$mode}（仅处理 search_engine 模式）");
             return;
         }
 
@@ -67,7 +92,15 @@ class ContentAuto_MaterialSearchManager {
             return; // 跳过此任务，等待下次调度
         }
 
-        // 4. 执行搜索
+        // 4. 执行网络搜索（仅 search_engine 模式会到达这里）
+        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+        $logger = new ContentAuto_LoggingSystem();
+        $logger->log_success('MATERIAL_MANAGER_EXECUTE', "MaterialSearchManager 执行网络搜索", array(
+            'topic_id' => $topic['id'],
+            'topic_title' => $topic['title'],
+            'mode' => 'search_engine'
+        ));
+        
         // 确保类文件已加载
         if (!class_exists('ContentAuto_SearchMaterialsService')) {
             require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
@@ -90,12 +123,10 @@ class ContentAuto_MaterialSearchManager {
         }
 
         // 6. 链式调用：继续调度下一次，直到队列为空
-        // 必须再次检查是否存在 pending 任务，避免无限空循环（虽然上面查询能防住，但逻辑上严谨点）
         $remaining = $wpdb->get_var("SELECT COUNT(*) FROM {$topics_table} WHERE material_search_status = 'pending'");
         
         if ($remaining > 0) {
-            // 继续调度下一次（延迟10秒，避免过于频繁，且给服务器喘息时间）
-            // WP会自动处理10分钟内的重复调度请求，确保不会堆积
+            // 继续调度下一次（延迟10秒）
             wp_schedule_single_event(time() + 10, 'content_auto_material_search_event');
         }
     }

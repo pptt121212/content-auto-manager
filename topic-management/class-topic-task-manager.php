@@ -253,20 +253,48 @@ class ContentAuto_TopicTaskManager {
         
         // 获取发布规则配置
         $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
-        if ($publish_rules && !empty($publish_rules['enable_reference_material']) && !empty($publish_rules['enable_auto_material_search'])) {
+        
+        // 判断是否启用自动素材搜索：兼容旧字段和新字段
+        // - 旧字段：enable_auto_material_search (0/1)
+        // - 新字段：material_collection_mode (none/search_engine/extension_rag)
+        $material_mode = !empty($publish_rules['material_collection_mode']) ? $publish_rules['material_collection_mode'] : 'none';
+        $is_auto_search_enabled = !empty($publish_rules['enable_auto_material_search']) || $material_mode !== 'none';
+        
+        // 调试日志：记录自动搜索条件判断
+        $this->logger->log_success('MATERIAL_SEARCH_DEBUG', '素材搜索条件检查', array(
+            'enable_reference_material' => $publish_rules['enable_reference_material'] ?? 'null',
+            'enable_auto_material_search' => $publish_rules['enable_auto_material_search'] ?? 'null',
+            'material_collection_mode' => $material_mode,
+            'is_auto_search_enabled' => $is_auto_search_enabled ? 'YES' : 'NO',
+            'rule_id' => $task['rule_id'] ?? 'null'
+        ));
+        
+        if ($publish_rules && !empty($publish_rules['enable_reference_material']) && $is_auto_search_enabled) {
             // 检查规则级参考资料
             $rule_has_material = false;
             if (!empty($task['rule_id'])) {
                 $rule = $this->database->get_row('content_auto_rules', array('id' => $task['rule_id']));
                 if ($rule && !empty($rule['reference_material'])) {
                     $rule_has_material = true;
+                    $this->logger->log_warning('MATERIAL_SEARCH_SKIP', '规则已有参考资料，跳过自动搜索', array(
+                        'rule_id' => $task['rule_id'],
+                        'reference_material_length' => strlen($rule['reference_material'])
+                    ));
                 }
             }
             
             // 只有当规则没有资料时，才启用自动搜索
             if (!$rule_has_material) {
                 $enable_auto_search = true;
+                $this->logger->log_success('MATERIAL_SEARCH_ENABLED', '自动素材搜索已启用，将创建 material_search 任务');
             }
+        } else {
+            // 记录未启用的原因
+            $this->logger->log_warning('MATERIAL_SEARCH_DISABLED', '自动素材搜索未启用', array(
+                'publish_rules_exists' => $publish_rules ? 'YES' : 'NO',
+                'enable_reference_material' => $publish_rules['enable_reference_material'] ?? 'null',
+                'is_auto_search_enabled' => $is_auto_search_enabled ? 'YES' : 'NO'
+            ));
         }
         // -----------------------
 
@@ -327,41 +355,26 @@ class ContentAuto_TopicTaskManager {
                 // 如果满足自动搜索条件，标记为 pending
                 if ($enable_auto_search) {
                     $topic_data['material_search_status'] = 'pending';
-                    $has_pending_search = true;
                 }
                 
-                $this->database->insert('content_auto_topics', $topic_data);
-            }
-        }
-
-        // 如果生成了待搜索任务，添加到统一队列系统
-        if ($has_pending_search) {
-            global $wpdb;
-            $topics_table = $wpdb->prefix . 'content_auto_topics';
-            
-            // 重要修复：只查询本次任务(task_id)生成的主题
-            // 避免错误地将历史旧主题（如果有pending状态）也加入队列
-            $pending_topics = $wpdb->get_results(
-                $wpdb->prepare(
-                    "SELECT id FROM {$topics_table} 
-                     WHERE task_id = %s 
-                     AND material_search_status = 'pending' 
-                     AND (reference_material IS NULL OR reference_material = '') 
-                     ORDER BY id ASC",
-                    $task['topic_task_id']
-                ),
-                ARRAY_A
-            );
-            
-            if (!empty($pending_topics)) {
-                // 为每个主题创建队列任务
-                foreach ($pending_topics as $topic) {
+                // 插入主题记录
+                $inserted_topic_id = $this->database->insert('content_auto_topics', $topic_data);
+                
+                // ✅ 根本性修复：在主题创建的同时，立即创建对应的 job_queue 任务
+                // 一个主题 → 一个任务，不再需要后续的批量查询
+                if ($inserted_topic_id && $enable_auto_search) {
+                    global $wpdb;
+                    $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+                    
+                    // 直接插入，不再需要防重检查（因为这是主题首次创建）
+                    // 统一语义：job_id = 父任务ID（无父任务时为 0），reference_id = 业务实体ID（主题ID）
+                    // 注意：job_id 使用 0 而非 NULL，因为数据库字段约束为 NOT NULL
                     $queue_data = [
                         'job_type' => 'material_search',
-                        'job_id' => $topic['id'],  // 主题 ID
-                        'subtask_id' => null,
-                        'reference_id' => $topic['id'],  // 也存储主题 ID
-                        'priority' => 20,  // 最低优先级
+                        'job_id' => 0,  // material_search 没有父任务表，设为 0（数据库不允许 NULL）
+                        'subtask_id' => 'material_' . $inserted_topic_id,  // 使用 topic_id 作为唯一标识
+                        'reference_id' => $inserted_topic_id,  // 主题 ID
+                        'priority' => 20,  // 最低优先级（低于主题生成和文章生成）
                         'retry_count' => 0,
                         'status' => 'pending',
                         'error_message' => '',
@@ -369,9 +382,27 @@ class ContentAuto_TopicTaskManager {
                         'updated_at' => current_time('mysql')
                     ];
                     
-                    $this->database->insert('content_auto_job_queue', $queue_data);
+                    $insert_result = $wpdb->insert($queue_table, $queue_data);
+                    $insert_id = $wpdb->insert_id;
+                    
+                    // 记录任务创建结果
+                    $this->logger->log_success('MATERIAL_SEARCH_QUEUE_INSERT', '素材搜索任务已插入队列', array(
+                        'topic_id' => $inserted_topic_id,
+                        'queue_id' => $insert_id,
+                        'insert_result' => $insert_result !== false ? 'SUCCESS' : 'FAILED',
+                        'wpdb_error' => $wpdb->last_error ?: 'none'
+                    ));
+                    
+                    $has_pending_search = true;
                 }
             }
+        }
+
+        // 如果本次有创建待搜索任务，触发调度器
+        if ($has_pending_search) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php';
+            $search_manager = new ContentAuto_MaterialSearchManager();
+            $search_manager->schedule_process();
         }
 
         return ['success' => true];

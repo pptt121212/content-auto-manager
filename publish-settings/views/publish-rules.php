@@ -184,6 +184,12 @@ if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
 
     $image_prompt_from_post = isset($_POST['image_prompt_template']) ? trim(wp_unslash($_POST['image_prompt_template'])) : null;
 
+    // 素材收集模式：直接保存到数据库字段
+    $material_mode = isset($_POST['material_collection_mode']) ? sanitize_text_field($_POST['material_collection_mode']) : 'none';
+    
+    // 兼容旧字段：只要不是 'none'，就视为启用了自动搜索（从而触发任务创建）
+    $enable_auto_material_search = ($material_mode !== 'none') ? 1 : 0;
+
     $data = array(
         'post_status' => sanitize_text_field($_POST['post_status']),
         'author_id' => intval($_POST['author_id']),
@@ -202,7 +208,8 @@ if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
         'brand_profile_position' => isset($_POST['brand_profile_position']) ? sanitize_text_field($_POST['brand_profile_position']) : 'before_second_paragraph',
         'enable_reference_material' => isset($_POST['enable_reference_material']) ? 1 : 0,
         'enable_ai_reference_select' => isset($_POST['enable_ai_reference_select']) ? 1 : 0,
-        'enable_auto_material_search' => isset($_POST['enable_auto_material_search']) ? 1 : 0,
+        'enable_auto_material_search' => $enable_auto_material_search,
+        'material_collection_mode' => $material_mode, // 新字段：存储到数据库
         'enable_intent_inference' => isset($_POST['enable_intent_inference']) ? 1 : 0,
         'publish_interval_minutes' => intval($_POST['publish_interval_minutes']),
         'publish_language' => sanitize_text_field($_POST['publish_language']),
@@ -729,12 +736,34 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                             </p>
                             
                             <div style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
-                                <label>
-                                    <input type="checkbox" name="enable_auto_material_search" id="enable_auto_material_search" value="1" <?php checked($publish_rule['enable_auto_material_search'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
-                                    <strong><?php _e('启用自动素材搜索（异步）', 'content-auto-manager'); ?></strong>
+                                <p><strong><?php _e('素材收集方式', 'content-auto-manager'); ?></strong></p>
+                                <?php
+                                // 从数据库字段读取（material_collection_mode），而非 wp_options
+                                $collection_mode = !empty($publish_rule['material_collection_mode']) ? $publish_rule['material_collection_mode'] : 'none';
+                                // 兼容旧版本迁移：如果字段尚未存在但旧开关开启，默认为 search_engine
+                                if ($collection_mode === 'none' && !empty($publish_rule['enable_auto_material_search'])) {
+                                    $collection_mode = 'search_engine';
+                                }
+                                ?>
+                                <label style="display: block; margin-bottom: 5px;">
+                                    <input type="radio" name="material_collection_mode" value="none" <?php checked($collection_mode, 'none'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                    <?php _e('关闭自动收集', 'content-auto-manager'); ?>
                                 </label>
+                                <label style="display: block; margin-bottom: 5px;">
+                                    <input type="radio" name="material_collection_mode" value="search_engine" <?php checked($collection_mode, 'search_engine'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                    <?php _e('启用网络搜索', 'content-auto-manager'); ?>
+                                </label>
+                                <label style="display: block; margin-bottom: 5px;">
+                                    <input type="radio" name="material_collection_mode" value="extension_rag" <?php checked($collection_mode, 'extension_rag'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                    <?php _e('启用知识库搜索 (Browser Extension)', 'content-auto-manager'); ?>
+                                </label>
+                                
                                 <p class="description" style="margin-top: 8px;">
-                                    <?php _e('启用后，当主题和关联规则都没有参考资料时，系统将自动执行搜索、筛选和汇总任务（异步后台执行），并将结果补充到主题的参考资料中。', 'content-auto-manager'); ?>
+                                    <?php _e('选择参考资料的来源方式。', 'content-auto-manager'); ?>
+                                    <br>
+                                    <?php _e('• 自动素材搜索：系统后台异步调用搜索引擎API搜集资料。', 'content-auto-manager'); ?>
+                                    <br>
+                                    <?php _e('• 插件收集：向浏览器插件发起向量检索请求（需要浏览器保持开启）。', 'content-auto-manager'); ?>
                                 </p>
                             </div>
                         </div>
@@ -991,10 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (aiReferenceSelect) {
                     aiReferenceSelect.checked = false;
                 }
-                var autoMaterialSearch = document.getElementById('enable_auto_material_search');
-                if (autoMaterialSearch) {
-                    autoMaterialSearch.checked = false;
-                }
+
             }
         }
     }

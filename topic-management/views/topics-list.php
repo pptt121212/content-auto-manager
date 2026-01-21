@@ -303,6 +303,12 @@ $rule_manager = new ContentAuto_RuleManager();
                 <?php _e('删除所有符合条件的主题', 'content-auto-manager'); ?> 
                 (<span id="filtered-total-count"><?php echo intval($total_items); ?></span> <?php _e('条', 'content-auto-manager'); ?>)
             </button>
+            
+            <span class="bulk-separator" style="margin-left: 10px;">|</span>
+            <button type="button" class="button button-primary" id="bulk-generate-reference" style="margin-left: 10px;">
+                <span class="dashicons dashicons-book" style="vertical-align: middle;"></span>
+                <?php _e('生成参考资料', 'content-auto-manager'); ?>
+            </button>
         </div>
         <p class="bulk-action-warning" style="margin-top: 10px; color: #856404; font-size: 12px;">
             <span class="dashicons dashicons-warning" style="vertical-align: middle;"></span>
