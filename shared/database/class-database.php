@@ -773,6 +773,13 @@ class ContentAuto_Database {
             $updates_applied = true;
         }
         
+        // 检查并添加 source_url 字段（用于采集网址仿写规则，记录主题来源URL）
+        $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $table_name LIKE 'source_url'");
+        if (!$column_exists) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN `source_url` text DEFAULT NULL COMMENT '主题来源URL，用于采集网址仿写规则，即使规则删除也保留用于去重' AFTER `reference_material`");
+            $updates_applied = true;
+        }
+        
         return $updates_applied;
     }
     

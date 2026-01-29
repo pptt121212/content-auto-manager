@@ -320,82 +320,110 @@ class ContentAuto_ContentFilter {
     
     /**
      * 提取JSON字段内容
-     * 支持 {"任意字段名": "内容"} 格式，特别处理多层嵌套的转义
-     * 新增对结构化文章JSON的支持（markdown + sections + chapters）
+     * 
+     * 重要设计原则：
+     * 1. API响应的JSON解析应该在API层完成，这里只处理"AI返回的内容本身是JSON"的情况
+     * 2. 只有当内容明确是完整的JSON对象时才尝试提取
+     * 3. 不应该因为内容中包含JSON代码示例而误判
      * 
      * @param string $content 原始内容
      * @return string 提取的内容或原内容
      */
     private function extract_json_content($content) {
-        // 预处理：先修复转义字符，确保JSON能正确解析
-        $content = $this->fix_multilayer_escaped_json($content);
+        // 初始化日志
+        if (!class_exists('ContentAuto_PluginLogger')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        }
+        $logger = new ContentAuto_PluginLogger();
         
-        // 第一步：尝试直接解析整个内容为JSON
-        $json_data = json_decode($content, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($json_data)) {
-            
-            // 优先处理结构化文章JSON（新支持）
-            $structured_content = $this->extract_structured_article_content($json_data);
-            if ($structured_content !== null) {
-                return $this->fix_escaped_characters($structured_content);
-            }
-            
-            // 传统处理：查找第一个字符串类型的字段值
-            foreach ($json_data as $value) {
-                if (is_string($value)) {
-                    // 对提取的内容进行转义字符修复
-                    return $this->fix_escaped_characters(trim($value));
-                }
+        $trimmed = trim($content);
+        
+        // 🚀 关键检查：只有当整个内容是完整的JSON对象时才处理
+        // 如果内容不是以 { 开头并以 } 结尾，直接返回原内容
+        if (strlen($trimmed) < 2 || $trimmed[0] !== '{' || substr($trimmed, -1) !== '}') {
+            $logger->info('[CONTENT_FILTER_NOT_JSON] Content is not wrapped in JSON braces, returning as-is', [
+                'content_length' => strlen($content),
+                'first_char' => substr($trimmed, 0, 1),
+                'last_char' => substr($trimmed, -1)
+            ]);
+            return $content;
+        }
+        
+        // 尝试解析为 JSON
+        $json_data = json_decode($trimmed, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($json_data)) {
+            $logger->info('[CONTENT_FILTER_JSON_INVALID] Content looks like JSON but failed to parse', [
+                'content_length' => strlen($content),
+                'json_error' => json_last_error_msg()
+            ]);
+            return $content;
+        }
+        
+        $logger->info('[CONTENT_FILTER_JSON_PARSED] Valid JSON detected', [
+            'content_length' => strlen($content),
+            'json_keys' => array_keys($json_data)
+        ]);
+        
+        // 优先处理结构化文章JSON（markdown + sections 格式）
+        $structured_content = $this->extract_structured_article_content($json_data);
+        if ($structured_content !== null) {
+            $logger->info('[CONTENT_FILTER_STRUCTURED] Extracted structured article content', [
+                'extracted_length' => strlen($structured_content)
+            ]);
+            return $this->fix_escaped_characters($structured_content);
+        }
+        
+        // 查找已知的内容字段（按优先级排序）
+        $known_content_fields = [
+            'content',           // 最常见的内容字段
+            'article',           // 文章字段
+            'article_content',   // 文章内容字段
+            'text',              // 文本字段
+            'body',              // 正文字段
+            'markdown',          // Markdown字段
+            'html',              // HTML字段
+            'result',            // 结果字段
+            'output',            // 输出字段
+            'message',           // 消息字段（可能是 AI 返回的）
+        ];
+        
+        foreach ($known_content_fields as $field) {
+            if (isset($json_data[$field]) && is_string($json_data[$field]) && strlen($json_data[$field]) > 50) {
+                $logger->info('[CONTENT_FILTER_KNOWN_FIELD] Extracted from known field', [
+                    'field_name' => $field,
+                    'extracted_length' => strlen($json_data[$field])
+                ]);
+                return $this->fix_escaped_characters(trim($json_data[$field]));
             }
         }
         
-        // 第二步：查找JSON对象模式：{"任意字段名": "内容"}
-        if (preg_match('/\{[^{}]*"[^"]*"\s*:\s*"([^"]*)"[^{}]*\}/s', $content, $matches)) {
-            if (isset($matches[1]) && !empty($matches[1])) {
-                // 对匹配的内容进行转义字符修复
-                return $this->fix_escaped_characters(trim($matches[1]));
+        // 如果没有找到已知字段，查找最长的字符串字段（但必须足够长以确定是文章内容）
+        $longest_field = null;
+        $longest_length = 0;
+        $longest_key = '';
+        
+        foreach ($json_data as $key => $value) {
+            if (is_string($value) && strlen($value) > $longest_length) {
+                $longest_length = strlen($value);
+                $longest_field = $value;
+                $longest_key = $key;
             }
         }
         
-        // 第三步：查找嵌套JSON中的内容字段（处理pollinations这类API的嵌套结构）
-        if (preg_match('/\{(?:[^{}]|(?R))*\}/s', $content, $json_matches)) {
-            $json_candidate = $json_matches[0];
-            
-            // 尝试解析候选JSON
-            $json_data = json_decode($json_candidate, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($json_data)) {
-                
-                // 优先处理结构化文章JSON
-                $structured_content = $this->extract_structured_article_content($json_data);
-                if ($structured_content !== null) {
-                    return $this->fix_escaped_characters($structured_content);
-                }
-                
-                foreach ($json_data as $value) {
-                    if (is_string($value)) {
-                        return $this->fix_escaped_characters(trim($value));
-                    }
-                }
-            }
-            
-            // 如果直接解析失败，尝试修复转义后重新解析
-            $fixed_json = $this->fix_multilayer_escaped_json($json_candidate);
-            $json_data = json_decode($fixed_json, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($json_data)) {
-                
-                // 优先处理结构化文章JSON
-                $structured_content = $this->extract_structured_article_content($json_data);
-                if ($structured_content !== null) {
-                    return $this->fix_escaped_characters($structured_content);
-                }
-                
-                foreach ($json_data as $value) {
-                    if (is_string($value)) {
-                        return $this->fix_escaped_characters(trim($value));
-                    }
-                }
-            }
+        // 只有当最长字段足够长（至少100字符）时才提取，避免提取短字段如 "role": "assistant"
+        if ($longest_field !== null && $longest_length >= 100) {
+            $logger->info('[CONTENT_FILTER_LONGEST_FIELD] Extracted longest string field', [
+                'field_name' => $longest_key,
+                'extracted_length' => $longest_length
+            ]);
+            return $this->fix_escaped_characters(trim($longest_field));
         }
+        
+        // 如果 JSON 中没有找到合适的内容字段，返回原内容
+        $logger->warning('[CONTENT_FILTER_NO_CONTENT_FIELD] JSON parsed but no suitable content field found', [
+            'json_keys' => array_keys($json_data),
+            'longest_field_length' => $longest_length
+        ]);
         
         return $content;
     }

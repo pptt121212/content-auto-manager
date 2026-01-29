@@ -965,14 +965,20 @@ function content_auto_delete_task() {
     }
     
     // 删除任务相关数据
-    $task_manager = new ContentAuto_TopicTaskManager();
-    $result = $task_manager->delete_task($task_id);
-    
-    if ($result === false) {
-        wp_send_json_error(array('message' => __('删除任务失败，请检查数据库连接或权限。', 'content-auto-manager')));
+    try {
+        $task_manager = new ContentAuto_TopicTaskManager();
+        $result = $task_manager->delete_task($task_id);
+        
+        if ($result === false) {
+            wp_send_json_error(array('message' => __('删除任务失败，请检查数据库连接或权限。', 'content-auto-manager')));
+        }
+        
+        wp_send_json_success(array('message' => __('任务已删除，但已生成的主题数据仍保留。', 'content-auto-manager')));
+    } catch (Throwable $e) {
+        // 记录错误日志
+        error_log('Delete Task Error: ' . $e->getMessage());
+        wp_send_json_error(array('message' => __('删除任务时发生错误: ', 'content-auto-manager') . $e->getMessage()));
     }
-    
-    wp_send_json_success(array('message' => __('任务已删除，但已生成的主题数据仍保留。', 'content-auto-manager')));
 }
 
 /**
@@ -2065,3 +2071,5 @@ function content_auto_test_search_api() {
     }
 }
 add_action('wp_ajax_content_auto_test_search_api', 'content_auto_test_search_api');
+
+

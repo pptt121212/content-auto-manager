@@ -14,7 +14,11 @@ class ContentAuto_PluginLogger {
     private $current_log_file;
 
     public function __construct() {
-        $this->logs_dir = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'logs';
+        // 使用 __DIR__ 计算插件根目录，避免依赖可能未定义的常量
+        $plugin_dir = defined('CONTENT_AUTO_MANAGER_PLUGIN_DIR') 
+            ? CONTENT_AUTO_MANAGER_PLUGIN_DIR 
+            : dirname(dirname(__DIR__)) . '/';
+        $this->logs_dir = $plugin_dir . 'logs';
         $this->current_log_file = $this->logs_dir . '/' . date('Y-m-d') . '.log';
     }
     

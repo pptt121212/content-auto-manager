@@ -182,6 +182,11 @@ class ContentAuto_JobQueue {
                 'material_search_error' => '插件返回结果为空'
             ], ['id' => $topic_id]);
             $this->close_job_if_needed($task_id, 'failed', '插件返回结果为空');
+            
+            // 清理 Option 队列中的已完成任务
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/queue/class-task-queue-cleaner.php';
+            $cleaner = new ContentAuto_TaskQueueCleaner();
+            $cleaner->remove_from_option_queue($task_id);
             return;
         }
 
@@ -193,6 +198,11 @@ class ContentAuto_JobQueue {
 
         // 更新 Job Queue 状态
         $this->close_job_if_needed($task_id, 'completed');
+        
+        // 清理 Option 队列中的已完成任务
+        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/queue/class-task-queue-cleaner.php';
+        $cleaner = new ContentAuto_TaskQueueCleaner();
+        $cleaner->remove_from_option_queue($task_id);
     }
 
     /**
@@ -305,6 +315,28 @@ class ContentAuto_JobQueue {
 
             // === [核心加固] 定点超时检查与全局串行锁定 ===
             
+            // 0. 检查等待浏览器采集超时的任务 (status = waiting_browser)
+            $waiting_jobs = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, updated_at FROM $table_name WHERE status = %s",
+                'waiting_browser'
+            ), ARRAY_A);
+
+            if (!empty($waiting_jobs)) {
+                $current_time = current_time('timestamp');
+                $browser_timeout = 600; // 10分钟超时
+
+                foreach ($waiting_jobs as $wj) {
+                    $last_update = strtotime($wj['updated_at']);
+                    if (($current_time - $last_update) > $browser_timeout) {
+                        $wpdb->update($table_name, [
+                            'status' => CONTENT_AUTO_STATUS_FAILED,
+                            'error_message' => sprintf('浏览器采集超时 (超过%d秒)，请检查插件是否连接', $browser_timeout),
+                            'updated_at' => current_time('mysql')
+                        ], ['id' => $wj['id']]);
+                    }
+                }
+            }
+
             // 1. 查找当前处理中的任务
             $processing_jobs = $wpdb->get_results($wpdb->prepare(
                 "SELECT id, job_type, job_id, reference_id, updated_at FROM $table_name WHERE status = %s",
@@ -351,8 +383,9 @@ class ContentAuto_JobQueue {
                 }
                 
                 // 再次检查是否仍有活跃的任务在处理中 (包含所有类型)
+                // [优化] 排除 'waiting_browser' 状态的项目，因为它们由插件异步处理，不应占用 Worker 的串行锁
                 $active_count = $wpdb->get_var($wpdb->prepare(
-                    "SELECT COUNT(*) FROM $table_name WHERE status = %s",
+                    "SELECT COUNT(*) FROM $table_name WHERE status = %s AND status != 'waiting_browser'",
                     CONTENT_AUTO_STATUS_PROCESSING
                 ));
                 
@@ -434,7 +467,7 @@ class ContentAuto_JobQueue {
                     // 更新任务状态
                     $is_success = is_array($result) ? $result['success'] : $result;
 
-                    if (is_array($result) && isset($result['status']) && $result['status'] === 'waiting') {
+                    if (is_array($result) && isset($result['status']) && ($result['status'] === 'waiting' || $result['status'] === 'waiting_for_browser')) {
                         // 任务处于异步等待状态（如浏览器插件搜索），保持 processing 状态
                         // 不更新数据库状态，等待回调函数处理
                         // 防止任务被标记为完成而导致下游任务抢跑
@@ -871,6 +904,33 @@ class ContentAuto_JobQueue {
         
         if (!$topic) {
             return ['success' => false, 'message' => '主题不存在'];
+        }
+        
+        // 2.5 检查主题来源的规则类型
+        // 如果是 collect_url_rewrite 规则生成的主题，跳过素材搜索（网页采集已提供参考资料）
+        if (!empty($topic['rule_id'])) {
+            $rules_table = $wpdb->prefix . 'content_auto_rules';
+            $rule = $wpdb->get_row($wpdb->prepare(
+                "SELECT rule_type FROM {$rules_table} WHERE id = %d",
+                $topic['rule_id']
+            ));
+            
+            if ($rule && $rule->rule_type === 'collect_url_rewrite') {
+                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+                $logger = new ContentAuto_LoggingSystem();
+                $logger->log_info('MATERIAL_SEARCH_SKIP', '跳过素材搜索：主题来源于采集网址仿写规则', [
+                    'topic_id' => $topic_id,
+                    'rule_id' => $topic['rule_id'],
+                    'rule_type' => $rule->rule_type
+                ]);
+                
+                // 直接标记为完成
+                $wpdb->update($topics_table, [
+                    'material_search_status' => 'completed'
+                ], ['id' => $topic_id]);
+                
+                return ['success' => true, 'message' => '采集网址仿写规则无需素材搜索'];
+            }
         }
         
         // 如果主题已有参考资料，直接完成

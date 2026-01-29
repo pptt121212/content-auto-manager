@@ -9,8 +9,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// 引入底层的 PluginLogger
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+// 引入底层的 PluginLogger（使用相对路径，避免常量未定义问题）
+require_once __DIR__ . '/class-plugin-logger.php';
 
 class ContentAuto_LoggingSystem {
     
