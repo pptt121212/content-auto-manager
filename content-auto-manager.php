@@ -3,7 +3,7 @@
  * Plugin Name: AI SEO 全能内容创作管家
  * Plugin URI: https://github.com/pptt121212/content-auto-manager
  * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。
- * Version: 1.0.7
+ * Version: 1.0.8
  * Author: Your Name
  * Author URI: https://github.com/pptt121212/content-auto-manager
  * License: GPL v2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // 定义插件常量
-define('CONTENT_AUTO_MANAGER_VERSION', '1.0.7');
+define('CONTENT_AUTO_MANAGER_VERSION', '1.0.8');
 define('CONTENT_AUTO_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CONTENT_AUTO_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -68,6 +68,7 @@ require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-api-settings/ajax-handler.
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/ajax-handler.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/ajax-filter-handler.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/ajax-manual-add-handler.php';
+require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/ajax-url-import-handler.php';
 
 // 引入外部访问统计功能
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/analytics/class-external-visit-tracker.php';

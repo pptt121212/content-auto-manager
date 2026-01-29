@@ -13,7 +13,8 @@ require_once __DIR__ . '/class-topic-api-handler.php';
 require_once __DIR__ . '/class-json-parser.php';
 require_once __DIR__ . '/class-task-status-manager.php';
 require_once __DIR__ . '/class-task-recovery-handler.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+require_once dirname(__DIR__) . '/rule-management/class-rule-manager.php';
+require_once dirname(__DIR__) . '/shared/logging/class-logging-system.php';
 
 class ContentAuto_TopicTaskManager {
     
@@ -156,8 +157,24 @@ class ContentAuto_TopicTaskManager {
                 $this->handle_successful_processing($task_id, $task, $subtask_id);
                 $wpdb->query('COMMIT');
                 return ['success' => true];
+            } elseif (isset($result['status']) && $result['status'] === 'waiting_for_browser') {
+                // 特殊处理：等待浏览器采集，这不算失败，但需要暂时释放 Worker 锁
+                $wpdb->query('COMMIT'); 
+                
+                // 将主任务重置为 pending，以便 Worker 下次能再次扫描它，也为了不阻塞全局队列
+                // 注意：由于我们设置了并发限制，这个 pending 任务在子任务未完成前会一直“跳过”逻辑
+                $this->status_manager->safe_update_task_status($task_id, CONTENT_AUTO_STATUS_PENDING, '等待浏览器采集内容');
+                
+                // 同时更新 job_queue 子任务状态为 waiting_browser (如果之前不是的话)
+                $wpdb->update(
+                    $wpdb->prefix . 'content_auto_job_queue',
+                    array('status' => 'waiting_browser', 'updated_at' => current_time('mysql')),
+                    array('job_type' => 'topic_task', 'job_id' => $task_id, 'subtask_id' => $subtask_id)
+                );
+
+                return ['success' => true, 'status' => 'waiting_for_browser', 'message' => 'waiting_for_browser'];
             } else {
-                // 先回滚事务，然后处理失败状态
+                // 处理失败状态
                 $wpdb->query('ROLLBACK');
                 $error_message = $this->handle_failed_processing($task_id, $task, $subtask_id, $result['error']);
                 return ['success' => false, 'message' => $error_message];
@@ -206,6 +223,44 @@ class ContentAuto_TopicTaskManager {
             return ['success' => false, 'error' => $error_details];
         }
 
+        // 检查是否是"采集网址仿写"规则，且内容尚未采集
+        // 如果 upload_text 以 http:// 或 https:// 开头，说明是待采集的 URL
+        if (isset($task['rule_id'])) {
+            global $wpdb;
+            $rule = $wpdb->get_row($wpdb->prepare("SELECT rule_type FROM {$wpdb->prefix}content_auto_rules WHERE id = %d", $task['rule_id']));
+            
+            // 调试日志
+            $this->logger->log_info('RULE_TYPE_CHECK', "规则类型检查", [
+                'rule_id' => $task['rule_id'],
+                'rule_type' => $rule ? $rule->rule_type : 'null',
+                'content_count' => count($content),
+                'first_item_url' => isset($content[0]['url']) ? $content[0]['url'] : 'not_set',
+                'first_item_content' => isset($content[0]['content']) ? mb_substr($content[0]['content'], 0, 100) : 'not_set'
+            ]);
+            
+            if ($rule && $rule->rule_type === 'collect_url_rewrite') {
+                $first_item = $content[0] ?? null;
+                $url_to_fetch = $first_item['url'] ?? '';
+                
+                $this->logger->log_info('COLLECT_URL_REWRITE_CHECK', "采集网址仿写检查", [
+                    'url_to_fetch' => $url_to_fetch,
+                    'url_empty' => empty($url_to_fetch) ? 'yes' : 'no'
+                ]);
+                
+                // 简单判断：如果 url 字段非空 且 content字段为空，说明是待采集的 URL
+                // 注意：由于我们现在保留了原始 URL (upload_text)，所以 url 字段总是有值的
+                // 必须检查 content 是否已经从 Transient 中读取到了
+                $has_content = !empty($first_item['content']);
+                
+                if (!empty($url_to_fetch) && !$has_content) {
+                     $this->logger->log_info('WAIT_FOR_BROWSER', "规则项 {$rule_item_id} 尚未采集内容，转入等待状态", ['url' => $url_to_fetch]);
+                     
+                     // 返回特殊状态，通知调用者挂起任务
+                     return ['success' => false, 'status' => 'waiting_for_browser', 'message' => '等待浏览器插件采集内容'];
+                }
+            }
+        }
+
         // 格式化内容为提示
         $prompt_content = $this->format_content_for_prompt($content, $task);
 
@@ -226,7 +281,9 @@ class ContentAuto_TopicTaskManager {
         $topics = $result;
 
         if ($topics && is_array($topics)) {
-            $save_result = $this->save_generated_topics($topics, $task, $subtask_id);
+            // 传递 rule_item_id 给保存函数，以便建立正确的数据关联
+            // 同时传递 content 的内容，以便保存到 reference_material
+            $save_result = $this->save_generated_topics($topics, $task, $subtask_id, $rule_item_id, $content);
             if ($save_result['success']) {
                 return ['success' => true];
             } else {
@@ -242,14 +299,31 @@ class ContentAuto_TopicTaskManager {
     }
     
     
-    
-    /**
+        /**
      * 保存生成的主题
      */
-    private function save_generated_topics($topics, $task, $subtask_id) {
+    private function save_generated_topics($topics, $task, $subtask_id, $rule_item_id = null, $content = null) {
         // --- 自动搜索物料逻辑准备 ---
         $has_pending_search = false;
         $enable_auto_search = false;
+        
+        // 检查是否是"采集网址仿写"规则
+        $is_rewrite_rule = false;
+        if (!empty($task['rule_id'])) {
+             $rule = $this->database->get_row('content_auto_rules', array('id' => $task['rule_id']));
+             // 注意：get_row 返回数组，使用数组访问方式
+             if ($rule && isset($rule['rule_type']) && $rule['rule_type'] === 'collect_url_rewrite') {
+                  $is_rewrite_rule = true;
+             }
+             
+             // 调试日志
+             $this->logger->log_info('SAVE_TOPICS_RULE_CHECK', '规则类型检查', [
+                 'rule_id' => $task['rule_id'],
+                 'rule_exists' => $rule ? 'YES' : 'NO',
+                 'rule_type' => $rule['rule_type'] ?? 'null',
+                 'is_rewrite_rule' => $is_rewrite_rule ? 'YES' : 'NO'
+             ]);
+        }
         
         // 获取发布规则配置
         $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
@@ -258,7 +332,8 @@ class ContentAuto_TopicTaskManager {
         // - 旧字段：enable_auto_material_search (0/1)
         // - 新字段：material_collection_mode (none/search_engine/extension_rag)
         $material_mode = !empty($publish_rules['material_collection_mode']) ? $publish_rules['material_collection_mode'] : 'none';
-        $is_auto_search_enabled = !empty($publish_rules['enable_auto_material_search']) || $material_mode !== 'none';
+        // 如果是仿写规则，强制关闭自动搜索（因为已有内容）
+        $is_auto_search_enabled = !$is_rewrite_rule && (!empty($publish_rules['enable_auto_material_search']) || $material_mode !== 'none');
         
         // 调试日志：记录自动搜索条件判断
         $this->logger->log_success('MATERIAL_SEARCH_DEBUG', '素材搜索条件检查', array(
@@ -266,7 +341,8 @@ class ContentAuto_TopicTaskManager {
             'enable_auto_material_search' => $publish_rules['enable_auto_material_search'] ?? 'null',
             'material_collection_mode' => $material_mode,
             'is_auto_search_enabled' => $is_auto_search_enabled ? 'YES' : 'NO',
-            'rule_id' => $task['rule_id'] ?? 'null'
+            'rule_id' => $task['rule_id'] ?? 'null',
+            'is_rewrite_rule' => $is_rewrite_rule ? 'YES' : 'NO'
         ));
         
         if ($publish_rules && !empty($publish_rules['enable_reference_material']) && $is_auto_search_enabled) {
@@ -327,16 +403,35 @@ class ContentAuto_TopicTaskManager {
                     $topic_data = [
                         'task_id' => $task['topic_task_id'],
                         'rule_id' => $task['rule_id'],
-                        'rule_item_index' => $subtask_id,
+                        'rule_item_index' => $rule_item_id ? $rule_item_id : $subtask_id, // 优先使用 rule_item_id
                         'title' => trim($topic['title']),
                         'status' => CONTENT_AUTO_TOPIC_UNUSED,
-                        'source_angle' => $topic['source_angle'],
+                        'source_angle' => $topic['source_angle'], // 移除 [REWRITE] 前缀，改为通过 rule_type 判断
                         'user_value' => $topic['user_value'],
                         'seo_keywords' => json_encode($topic['seo_keywords']),
                         'matched_category' => $topic['matched_category'],
                         'priority_score' => intval($topic['priority_score']),
                         'material_search_status' => 'none' // ✅ 显式默认值
                     ];
+                    
+                    // 如果是采集网址仿写，保存源URL和采集内容
+                    if ($is_rewrite_rule && !empty($content) && is_array($content)) {
+                        $first_content = reset($content); // 获取第一条内容
+                        
+                        // 保存源 URL 到 source_url 字段（用于去重，即使规则删除也保留）
+                        if (!empty($first_content['url'])) {
+                            $topic_data['source_url'] = $first_content['url'];
+                        }
+                        
+                        // 保存采集内容到参考资料字段
+                        if (!empty($first_content['content'])) {
+                             $topic_data['reference_material'] = $first_content['content'];
+                        } elseif (!empty($first_content['upload_text']) && strpos($first_content['upload_text'], 'http') !== 0) {
+                             // 兼容性处理：如果 content 字段为空但 upload_text 包含内容
+                             $topic_data['reference_material'] = $first_content['upload_text'];
+                        }
+                    }
+                    
                 } else {
                     $error_message = '主题数据字段不完整: ' . json_encode($topic);
                     $this->logger->log_error('INCOMPLETE_TOPIC', $error_message);
@@ -400,9 +495,14 @@ class ContentAuto_TopicTaskManager {
 
         // 如果本次有创建待搜索任务，触发调度器
         if ($has_pending_search) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php';
+            require_once dirname(__DIR__) . '/topic-management/class-material-search-manager.php';
             $search_manager = new ContentAuto_MaterialSearchManager();
             $search_manager->schedule_process();
+        }
+        
+        // 如果没有成功保存任何主题，返回错误
+        if ($saved_count === 0) {
+            return ['success' => false, 'error' => 'API返回的主题数据不完整，或没有有效的主题被保存'];
         }
 
         return ['success' => true];
@@ -414,8 +514,22 @@ class ContentAuto_TopicTaskManager {
     private function format_content_for_prompt($content, $task) {
         $prompt = '';
         
-        // 尝试从数据库获取启用的主题生成模板
-        if (class_exists('ContentAuto_TemplateManager')) {
+        // 动态选择模板：如果任务有特定规则类型，优先使用对应模板
+        $selected_template = 'topic-generation-prompt.xml';
+        $use_generic_db_template = true;
+        
+        // 检查规则类型
+        if (isset($task['rule_id'])) {
+            global $wpdb;
+            $rule = $wpdb->get_row($wpdb->prepare("SELECT rule_type FROM {$wpdb->prefix}content_auto_rules WHERE id = %d", $task['rule_id']));
+            if ($rule && $rule->rule_type === 'collect_url_rewrite') {
+                $selected_template = 'topic-generation-prompt-rewrite.xml';
+                $use_generic_db_template = false; // 强制使用文件模板，因为这是一个特殊的规则类型，通用DB模板不适用
+            }
+        }
+
+        // 尝试从数据库获取启用的主题生成模板 (仅当允许使用通用模板时)
+        if ($use_generic_db_template && class_exists('ContentAuto_TemplateManager')) {
             $template_manager = new ContentAuto_TemplateManager();
             $db_template_content = $template_manager->get_active_template_content('topic_generation');
             
@@ -426,17 +540,17 @@ class ContentAuto_TopicTaskManager {
 
         // 如果没有数据库模板，回退到文件系统
         if (empty($prompt)) {
-            // 随机选择模板文件
-            $template_files = [
-                'topic-generation-prompt.xml',
-                'topic1-generation-prompt.xml'
-            ];
-            $selected_template = $template_files[array_rand($template_files)];
             $template_path = __DIR__ . '/../prompt-templating/' . $selected_template;
             
             if (!file_exists($template_path)) {
-                $this->logger->log_error('TEMPLATE_MISSING', '提示词模板文件未找到: ' . $template_path);
-                return "模板加载失败，请检查插件文件完整性。";
+                // 如果特定模板不存在，回退到默认模板
+                $fallback_template = 'topic-generation-prompt.xml';
+                $template_path = __DIR__ . '/../prompt-templating/' . $fallback_template;
+                
+                if (!file_exists($template_path)) {
+                     $this->logger->log_error('TEMPLATE_MISSING', '提示词模板文件未找到: ' . $template_path);
+                     return "模板加载失败，请检查插件文件完整性。";
+                }
             }
             
             $prompt = file_get_contents($template_path);
@@ -509,7 +623,27 @@ class ContentAuto_TopicTaskManager {
      */
     private function should_create_new_task($rule_id) {
         global $wpdb;
+
+        // 1. [新增] 严格检查子任务队列状态
+        // 只要该规则关联的任一主任务下，还有未完成的子任务（包括等待浏览器采集的 waiting_browser），严禁创建新任务
+        $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $topic_tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
         
+        $active_subtasks = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$job_queue_table} tq
+             JOIN {$topic_tasks_table} tt ON tq.job_id = tt.id
+             WHERE tt.rule_id = %d
+             AND tq.job_type = 'topic_task'
+             AND tq.status IN ('pending', 'processing', 'running', 'waiting_browser')",
+             $rule_id
+        ));
+        
+        if ($active_subtasks > 0) {
+             $this->logger->log_warning('DUPLICATE_TASK_SUB', "规则 {$rule_id} 仍有 {$active_subtasks} 个活跃子任务（包含 waiting_browser），拒绝创建新任务");
+             return false;
+        }
+        
+        // 2. [原有] 检查主任务状态
         $task_timeout = 30 * 60; // 30分钟超时
         $existing_tasks = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}content_auto_topic_tasks 
@@ -836,24 +970,48 @@ class ContentAuto_TopicTaskManager {
     public function delete_task($topic_task_id) {
         global $wpdb;
         
-        // 1. 首先根据topic_task_id找到父任务信息
-        $task = $this->database->get_row('content_auto_topic_tasks', array('topic_task_id' => $topic_task_id));
-        if (!$task) {
+        try {
+            // 1. 首先根据topic_task_id找到父任务信息
+            $task = $this->database->get_row('content_auto_topic_tasks', array('topic_task_id' => $topic_task_id));
+            if (!$task) {
+                // 任务可能已被其他进程删除
+                return true; // 返回 true，因为目标（任务不存在）已达成
+            }
+            
+            // 防御性检查：确保 $task 包含 id
+            $task_id = isset($task['id']) ? intval($task['id']) : 0;
+            if ($task_id <= 0) {
+                $this->logger->log_warning('DELETE_TASK_INVALID', '任务记录无效，跳过清理', array(
+                    'topic_task_id' => $topic_task_id,
+                    'task_data' => $task
+                ));
+                return false;
+            }
+            
+            // 2. 使用统一清理器清理所有相关队列项
+            require_once dirname(__DIR__) . '/shared/queue/class-task-queue-cleaner.php';
+            $cleaner = new ContentAuto_TaskQueueCleaner();
+            $cleanup_stats = $cleaner->cleanup_by_task_id($task_id, 'topic_task');
+            
+            $this->logger->log_info('TASK_DELETE_CLEANUP', '删除任务时执行了队列清理', array(
+                'task_id' => $task_id,
+                'cleanup_stats' => $cleanup_stats
+            ));
+            
+            // 3. 删除任务记录本身
+            $result = $this->database->delete('content_auto_topic_tasks', array('topic_task_id' => $topic_task_id));
+            
+            return $result !== false;
+            
+        } catch (Exception $e) {
+            // 捕获任何异常，记录日志并返回失败
+            $this->logger->log_error('DELETE_TASK_ERROR', '删除任务时发生异常', array(
+                'topic_task_id' => $topic_task_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ));
             return false;
         }
-        
-        // 2. 删除非成功状态的子任务队列项
-        // 只删除 pending, processing, failed 等非成功状态的子任务
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $deleted_queue_count = $wpdb->query($wpdb->prepare(
-            "DELETE FROM {$queue_table} WHERE job_type = 'topic_task' AND job_id = %d AND status != 'completed'",
-            $task['id']
-        ));
-        
-        // 3. 删除任务记录本身
-        $result = $this->database->delete('content_auto_topic_tasks', array('topic_task_id' => $topic_task_id));
-        
-        return $result !== false;
     }
     
     /**
@@ -902,14 +1060,21 @@ class ContentAuto_TopicTaskManager {
      * 检查主题数据完整性
      */
     private function is_complete_topic_data($topic) {
-        $required_fields = array('title', 'source_angle', 'user_value', 'seo_keywords', 'matched_category', 'priority_score');
+        // 移除 'matched_category'，允许其为空字符串
+        $required_fields = array('title', 'source_angle', 'user_value', 'seo_keywords', 'priority_score');
         
         foreach ($required_fields as $field) {
-            if (!isset($topic[$field]) || empty($topic[$field])) {
+            // 对于必需字段，要求既存在又不为空
+            if (!isset($topic[$field]) || (is_string($topic[$field]) && trim($topic[$field]) === '') || (is_array($topic[$field]) && empty($topic[$field]))) {
                 return false;
             }
         }
         
+        // 单独检查 matched_category 是否存在（允许为空）
+        if (!isset($topic['matched_category'])) {
+            return false;
+        }
+
         return true;
     }
     
@@ -950,7 +1115,21 @@ class ContentAuto_TopicTaskManager {
                     $reference_content_block .= "      <category_description>" . htmlspecialchars($item['category_description']) . "</category_description>\n";
                 }
                 $reference_content_block .= "    </reference_content>\n";
+            } elseif (isset($item['url']) && !empty($item['url'])) {
+                // 采集网址仿写规则的内容（未采集状态）
+                $reference_content_block .= "    <reference_content>\n";
+                $reference_content_block .= "      <url>" . htmlspecialchars($item['url']) . "</url>\n";
+                $reference_content_block .= "    </reference_content>\n";
+            } elseif (isset($item['content']) && !empty($item['content'])) {
+                // 已采集的任务内容或上传的文本内容
+                $reference_content_block .= "    <reference_content>\n";
+                if (!empty($item['title'])) {
+                    $reference_content_block .= "      <title>" . htmlspecialchars($item['title']) . "</title>\n";
+                }
+                $reference_content_block .= "      <content>" . htmlspecialchars($item['content']) . "</content>\n";
+                $reference_content_block .= "    </reference_content>\n";
             } else {
+                // 回退到默认文章/分类逻辑
                 $reference_content_block .= "    <current_category>\n";
                 if (!empty($item['category_names'])) {
                     $reference_content_block .= "      <name>" . htmlspecialchars($item['category_names']) . "</name>\n";
@@ -1074,7 +1253,7 @@ class ContentAuto_TopicTaskManager {
         // 检查两个主题是否都有有效的向量数据
         if ($topic1 && $topic2 && !empty($topic1['vector_embedding']) && !empty($topic2['vector_embedding'])) {
             // 如果两个标题都有向量数据，使用余弦相似度计算
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/common/functions.php';
+            require_once dirname(__DIR__) . '/shared/common/functions.php';
             
             $vector1 = content_auto_decompress_vector_from_base64($topic1['vector_embedding']);
             $vector2 = content_auto_decompress_vector_from_base64($topic2['vector_embedding']);
@@ -1126,11 +1305,33 @@ class ContentAuto_TopicTaskManager {
             return false;
         }
         
-        // 获取规则的所有项目
+        // 获取规则信息
         global $wpdb;
+        $rules_table = $wpdb->prefix . 'content_auto_rules';
+        $rule = $wpdb->get_row($wpdb->prepare("SELECT rule_type, rule_conditions FROM {$rules_table} WHERE id = %d", $task['rule_id']));
+        $is_collect_url_rewrite = ($rule && $rule->rule_type === 'collect_url_rewrite');
+        
+        // 获取采集选项（用于 collect_url_rewrite 规则）
+        $collect_options = array('keep_images' => false, 'keep_links' => false);
+        if ($is_collect_url_rewrite && $rule->rule_conditions) {
+            $conditions = maybe_unserialize($rule->rule_conditions);
+            if (isset($conditions['collect_options'])) {
+                $collect_options = array_merge($collect_options, $conditions['collect_options']);
+            }
+        }
+        
+        // 调试日志
+        $this->logger->log_info('ADD_TO_QUEUE_START', '开始添加任务到队列', [
+            'task_id' => $task_id,
+            'rule_id' => $task['rule_id'],
+            'rule_type' => $rule ? $rule->rule_type : 'null',
+            'is_collect_url_rewrite' => $is_collect_url_rewrite ? 'YES' : 'NO'
+        ]);
+        
+        // 获取规则的所有项目
         $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
         $rule_items = $wpdb->get_results($wpdb->prepare(
-            "SELECT id FROM {$rule_items_table} WHERE rule_id = %d ORDER BY id",
+            "SELECT id, upload_text FROM {$rule_items_table} WHERE rule_id = %d ORDER BY id",
             $task['rule_id']
         ));
         
@@ -1141,14 +1342,47 @@ class ContentAuto_TopicTaskManager {
         // 为每个规则项目创建队列项
         $queue_ids = array();
         foreach ($rule_items as $rule_item) {
+            $subtask_id = 'subtask_' . uniqid();
+            
+            // 预处理文本 (去除首尾空格，防止 http 前有空格导致 fetch 失败)
+            $item_text = trim($rule_item->upload_text);
+            $upload_text_preview = mb_substr($item_text, 0, 100);
+            
+            // 智能判断是否为待采集URL：
+            // 1. 标准URL格式 (http/https 开头)
+            // 2. 也是URL特征 (www. 开头)
+            // 3. 仿写规则下的简短无换行文本 (视为省略协议头的URL) - 兼容用户输入不规范
+            $is_standard_url = (strpos($item_text, 'http') === 0) || (strpos($item_text, 'www.') === 0);
+            $is_short_text = (iconv_strlen($item_text, 'UTF-8') < 500 && strpos($item_text, "\n") === false);
+            
+            $is_pending_url = $is_collect_url_rewrite && ($is_standard_url || $is_short_text);
+            
+            // 调试日志
+            $this->logger->log_info('QUEUE_ITEM_CHECK', '检查规则项目', [
+                'rule_item_id' => $rule_item->id,
+                'upload_text_preview' => $upload_text_preview,
+                'upload_text_length' => strlen($item_text),
+                'is_standard_url' => $is_standard_url ? 'YES' : 'NO',
+                'is_pending_url' => $is_pending_url ? 'YES' : 'NO'
+            ]);
+            
+            // 设置初始状态：如果是待采集 URL
+            $initial_status = CONTENT_AUTO_STATUS_PENDING;
+            if ($is_pending_url) {
+                // [修复] 关键逻辑：先检查是否已经采集到了内容（由插件回传后存入 Transient）
+                // 如果已经有内容了，就设为 pending 等待 AI 处理；否则才设为 waiting_browser 等待插件
+                $has_collected_content = (bool) get_transient('cam_fetched_content_' . $rule_item->id);
+                $initial_status = $has_collected_content ? CONTENT_AUTO_STATUS_PENDING : 'waiting_browser';
+            }
+            
             $data = array(
                 'job_type' => 'topic_task',
                 'job_id' => $task_id,
-                'subtask_id' => 'subtask_' . uniqid(),  // 使用唯一ID
+                'subtask_id' => $subtask_id,
                 'reference_id' => $rule_item->id,  // reference_id存储规则项目ID
                 'priority' => 80, // 主题生成优先级（高于文章生成）
                 'retry_count' => 0,
-                'status' => CONTENT_AUTO_STATUS_PENDING,
+                'status' => $initial_status,
                 'error_message' => '',
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql')
@@ -1157,10 +1391,65 @@ class ContentAuto_TopicTaskManager {
             $queue_id = $this->database->insert('content_auto_job_queue', $data);
             if ($queue_id) {
                 $queue_ids[] = $queue_id;
+                
+                // 如果是待采集 URL，同时写入浏览器插件队列（类似知识库搜索的机制）
+                // 此时 status='waiting_browser'，由插件抓取后回调触发下一步
+                // 注意：传入 trim 后的 item_text 作为 URL
+                if ($is_pending_url) {
+                    $this->add_to_extension_queue($queue_id, $item_text, $rule_item->id, $collect_options);
+                }
             }
         }
         
         return !empty($queue_ids);
+    }
+    
+    /**
+     * 将采集任务写入浏览器插件队列
+     * 与知识库搜索使用相同的机制，确保浏览器插件能立即接收到任务
+     */
+    private function add_to_extension_queue($queue_id, $url, $rule_item_id, $collect_options = array()) {
+        $queue_key = 'cam_extension_task_queue';
+        $queue = get_option($queue_key, array());
+        
+        // 清理旧任务（防止膨胀）
+        if (count($queue) > 50) {
+            $queue = array_slice($queue, -20, null, true);
+        }
+        
+        // 设置默认采集选项
+        $options = array_merge(
+            array('keep_images' => false, 'keep_links' => false),
+            $collect_options
+        );
+        
+        $task_id = 'fetch_' . $queue_id;
+        $queue[$task_id] = array(
+            'id' => $task_id,
+            'type' => 'content_fetch',
+            'payload' => array(
+                'url' => $url,
+                'rule_item_id' => $rule_item_id,
+                'queue_id' => $queue_id,
+                'options' => array(
+                    'keepImages' => (bool) $options['keep_images'],
+                    'keepLinks' => (bool) $options['keep_links']
+                )
+            ),
+            'status' => 'pending',
+            'created_at' => time()
+        );
+        
+        $saved = update_option($queue_key, $queue);
+        
+        $this->logger->log_info('EXTENSION_QUEUE_ADD', '已写入浏览器插件采集任务', array(
+            'task_id' => $task_id,
+            'url' => $url,
+            'queue_size' => count($queue),
+            'save_success' => $saved ? 'YES' : 'NO'
+        ));
+        
+        return $saved;
     }
     
     /**

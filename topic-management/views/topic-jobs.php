@@ -44,9 +44,23 @@ if (isset($_POST['submit']) && isset($_POST['content_auto_manager_nonce'])) {
     }
 }
 
+
+
 // 获取启用的规则
 $rule_manager = new ContentAuto_RuleManager();
 $rules = $rule_manager->get_active_rules();
+
+// 获取发布规则配置（用于检查是否启用了插件模式）
+$db_access = new ContentAuto_Database();
+$publish_rules = $db_access->get_row('content_auto_publish_rules', array('id' => 1));
+$extension_rag_global = (isset($publish_rules['material_collection_mode']) && $publish_rules['material_collection_mode'] === 'extension_rag');
+
+// 准备规则类型映射，用于前端 JS 判断
+$rule_type_map = [];
+foreach ($rules as $r) {
+    $rule_type_map[$r->id] = $r->rule_type;
+}
+
 
 // 获取所有主题任务并根据状态筛选
 $topic_task_manager = new ContentAuto_TopicTaskManager();
@@ -169,25 +183,7 @@ function get_rule_type_name($rule) {
         return __('规则不存在', 'content-auto-manager');
     }
     
-    switch ($rule->rule_type) {
-        case 'random_selection':
-            return __('随机选择文章', 'content-auto-manager');
-            
-        case 'fixed_articles':
-            return __('固定选择文章', 'content-auto-manager');
-            
-        case 'upload_text':
-            return __('上传文本内容', 'content-auto-manager');
-            
-        case 'import_keywords':
-            return __('导入关键词', 'content-auto-manager');
-            
-        case 'random_categories':
-            return __('随机分类', 'content-auto-manager');
-            
-        default:
-            return __('未知类型', 'content-auto-manager');
-    }
+    return ContentAuto_RuleManager::get_rule_type_label($rule->rule_type);
 }
 ?>
 
@@ -216,6 +212,26 @@ function get_rule_type_name($rule) {
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                            
+                            <!-- 插件提醒区块 -->
+                            <div id="browser-extension-notice" style="display: none; margin-top: 15px; padding: 15px; background-color: #f0f6fb; border-left: 4px solid #2271b1; border-radius: 4px;">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <span class="dashicons dashicons-external" style="color: #2271b1; margin-top: 2px;"></span>
+                                    <div>
+                                        <strong style="display: block; margin-bottom: 5px; color: #1d2327; font-size: 14px;">
+                                            <?php _e('⚠️ 需要开启浏览器插件', 'content-auto-manager'); ?>
+                                        </strong>
+                                        <p style="margin: 0 0 10px; color: #50575e; line-height: 1.5;">
+                                            <?php _e('当前任务包含“网址采集”或“知识库搜索”，需要浏览器插件配合执行。', 'content-auto-manager'); ?><br>
+                                            <strong><?php _e('请确保已提前打开 AI SEO 浏览器插件', 'content-auto-manager'); ?></strong>
+                                        </p>
+                                        <div style="font-size: 13px; color: #1d2327;">
+                                            <p style="margin: 5px 0;">📦 <?php _e('插件文件名：', 'content-auto-manager'); ?> <a href="https://github.com/pptt121212/content-auto-manager/releases" target="_blank" rel="noopener">dist.zip</a></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <p class="description">
                                 <?php _e('注意：如果在任务执行过程中修改规则，任务将使用修改后的规则内容继续执行。', 'content-auto-manager'); ?>
                             </p>
@@ -240,7 +256,7 @@ function get_rule_type_name($rule) {
         
         <!-- 筛选器 -->
         <div class="tablenav top">
-            <form method="get" action="">
+            <form method="get" action="" style="display: inline-block;">
                 <input type="hidden" name="page" value="content-auto-manager-topic-jobs">
                 <div class="alignleft actions">
                     <select name="status_filter" id="status_filter">
@@ -253,6 +269,8 @@ function get_rule_type_name($rule) {
                     <input type="submit" class="button" value="<?php _e('筛选', 'content-auto-manager'); ?>">
                 </div>
             </form>
+            
+
         </div>
         
         <?php if (empty($tasks)): ?>
@@ -601,6 +619,30 @@ function get_rule_type_name($rule) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 规则类型映射与插件状态
+    const ruleTypeMap = <?php echo json_encode($rule_type_map); ?>;
+    const extensionRagGlobal = <?php echo $extension_rag_global ? 'true' : 'false'; ?>;
+    
+    // 规则选择交互逻辑
+    const ruleSelect = document.querySelector('select[name="rule_id"]');
+    const extensionNotice = document.getElementById('browser-extension-notice');
+    
+    if (ruleSelect && extensionNotice) {
+        ruleSelect.addEventListener('change', function() {
+            const ruleId = this.value;
+            const ruleType = ruleTypeMap[ruleId] || '';
+            
+            // 如果规则是 collect_url_rewrite，或者全局开启了插件 RAG 模式
+            const needsExtension = (ruleType === 'collect_url_rewrite') || extensionRagGlobal;
+            
+            if (needsExtension && ruleId !== '') {
+                extensionNotice.style.display = 'block';
+            } else {
+                extensionNotice.style.display = 'none';
+            }
+        });
+    }
+
     // 全选/取消全选功能
     const selectAllCheckbox = document.getElementById('select_all_tasks');
     const taskCheckboxes = document.querySelectorAll('.task-checkbox');

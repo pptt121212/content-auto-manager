@@ -87,7 +87,8 @@ class ContentAuto_JsonParser {
             }
         
             $validated_topics = array();
-            $required_fields = array('title', 'source_angle', 'user_value', 'seo_keywords', 'matched_category', 'priority_score');
+            // 移除 'matched_category' 作为必需字段，因为它在仿写模式下由后续步骤自动补全
+            $required_fields = array('title', 'source_angle', 'user_value', 'seo_keywords', 'priority_score');
             $total_topics = count($json_data[$topics_field]);
             
             foreach ($json_data[$topics_field] as $index => $topic_data) {
@@ -121,8 +122,9 @@ class ContentAuto_JsonParser {
                         if (!isset($topic_data['seo_keywords'])) {
                             $topic_data['seo_keywords'] = array('相关主题', '关键词');
                         }
+                        // matched_category 不是必需的，但如果是简单格式可以给个默认值
                         if (!isset($topic_data['matched_category'])) {
-                            $topic_data['matched_category'] = '通用';
+                            $topic_data['matched_category'] = ''; 
                         }
                         if (!isset($topic_data['priority_score'])) {
                             $topic_data['priority_score'] = 8;
@@ -169,13 +171,7 @@ class ContentAuto_JsonParser {
                     );
                 }
                 
-                if (!is_string($topic_data['matched_category']) || empty(trim($topic_data['matched_category']))) {
-                    return array(
-                        'valid' => false,
-                        'error' => "主题[$index] matched_category字段必须是非空字符串",
-                        'topics' => array()
-                    );
-                }
+                // matched_category validation removed as it is optional now
                 
                 // 清理和验证SEO关键词
                 $clean_keywords = array();
@@ -199,7 +195,7 @@ class ContentAuto_JsonParser {
                     'source_angle' => sanitize_text_field(trim($topic_data['source_angle'])),
                     'user_value' => sanitize_text_field(trim($topic_data['user_value'])),
                     'seo_keywords' => $clean_keywords,
-                    'matched_category' => sanitize_text_field(trim($topic_data['matched_category'])),
+                    'matched_category' => isset($topic_data['matched_category']) ? sanitize_text_field(trim($topic_data['matched_category'])) : '',
                     'priority_score' => $topic_data['priority_score']
                 );
             }
