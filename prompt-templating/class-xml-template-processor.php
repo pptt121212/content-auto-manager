@@ -57,21 +57,71 @@ class ContentAuto_XmlTemplateProcessor {
         // 处理SEO关键词
         $seo_keywords_list = $this->process_seo_keywords($seo_keywords);
         
-        // 获取文章结构
-        $structure_info = $this->get_dynamic_article_structure($topic_data, $normalize_output);
+        // 🚀 终极防护：内部自动识别仿写模式 (统一判断逻辑)
+        $is_rewrite_task = false;
+        
+        // 初始化日志记录器（始终记录关键诊断信息）
+        if (!class_exists('ContentAuto_PluginLogger')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        }
+        $debug_logger = new ContentAuto_PluginLogger();
+        
+        if (!empty($topic_data['is_rewrite'])) {
+            $is_rewrite_task = true;
+            $debug_logger->info('[TEMPLATE_DEBUG] Rewrite mode detected via is_rewrite flag', ['topic_id' => $topic_data['id'] ?? 'unknown']);
+        } elseif (!empty($topic_data['rule_id'])) {
+            global $wpdb;
+            $rule_type = $wpdb->get_var($wpdb->prepare(
+                "SELECT rule_type FROM {$wpdb->prefix}content_auto_rules WHERE id = %d",
+                $topic_data['rule_id']
+            ));
+            $debug_logger->info('[TEMPLATE_DEBUG] Rule lookup result', [
+                'rule_id' => $topic_data['rule_id'],
+                'detected_type' => $rule_type ?: 'NULL'
+            ]);
+            if ($rule_type === 'collect_url_rewrite') {
+                $is_rewrite_task = true;
+                $debug_logger->info('[TEMPLATE_DEBUG] Rewrite mode confirmed via database lookup', ['topic_id' => $topic_data['id'] ?? 'unknown']);
+            }
+        } else {
+            $debug_logger->warning('[TEMPLATE_DEBUG] No rule_id found in topic_data', ['keys' => implode(', ', array_keys($topic_data))]);
+        }
+        
+        // 获取文章结构 (仿写模式禁用动态结构，以免干扰 AI 重构原文)
+        $structure_info = $is_rewrite_task ? ['id' => null, 'name' => '', 'sections' => ''] : $this->get_dynamic_article_structure($topic_data, $normalize_output);
         $structure_template_name = $structure_info['name'];
         $structure_sections = $structure_info['sections'];
         // We will need this for post meta
         $GLOBALS['cam_used_structure_id'] = $structure_info['id'];
 
         // 处理相关内容
-        $source_materials_content = $this->process_source_materials($related_content);
+        if ($is_rewrite_task) {
+            // 仿写模式：直接使用全部内容，不调用 process_source_materials (避免截断)
+            $source_materials_content = '';
+            foreach ($related_content as $item) {
+                // 如果 content 字段存在则使用，否则尝试 url/upload_text
+                $content_text = isset($item['content']) ? $item['content'] : (isset($item['url']) ? $item['url'] : '');
+                
+                // 🚀 核心净化：剔除素材中可能存在的图片标签
+                $content_text = preg_replace('/<!--\s*image\s+prompt:.*?-->/is', '', $content_text);
+                
+                $source_materials_content .= $content_text . "\n\n";
+            }
+        } else {
+            $source_materials_content = $this->process_source_materials($related_content);
+        }
         
         // 处理相似文章（用于内链）
         $similar_articles_content = $this->process_similar_articles($similar_articles);
 
         // 获取规则的参考资料
-        $reference_material = $this->get_reference_material($topic_data, $publish_rules);
+        // 如果是仿写模式，reference_material 字段存储的内容实际上就是主素材（source_materials），
+        // 已经在上面通过 related_content 处理过了，所以这里不再重复获取，避免 Prompt 中出现重复内容。
+        if ($is_rewrite_task) {
+            $reference_material = '';
+        } else {
+            $reference_material = $this->get_reference_material($topic_data, $publish_rules);
+        }
 
         // 构建完整的XML模板提示词
         $prompt = $this->build_xml_prompt(
@@ -93,7 +143,8 @@ class ContentAuto_XmlTemplateProcessor {
             $source_materials_content,
             $similar_articles_content,
             $reference_material,
-            $image_prompt_template
+            $image_prompt_template,
+            $is_rewrite_task
         );
         
         return $prompt;
@@ -480,7 +531,7 @@ class ContentAuto_XmlTemplateProcessor {
     /**
      * 构建XML模板提示词
      */
-    private function build_xml_prompt($topic_data, $title, $source_angle, $user_value, $seo_keywords, $matched_category, $target_length, $knowledge_depth, $reader_role, $normalize_output, $auto_image_insertion, $enable_internal_linking, $publish_language, $structure_template, $structure_sections, $source_materials_content, $similar_articles_content, $reference_material = '', $image_prompt_template = '') {
+    private function build_xml_prompt($topic_data, $title, $source_angle, $user_value, $seo_keywords, $matched_category, $target_length, $knowledge_depth, $reader_role, $normalize_output, $auto_image_insertion, $enable_internal_linking, $publish_language, $structure_template, $structure_sections, $source_materials_content, $similar_articles_content, $reference_material = '', $image_prompt_template = '', $is_rewrite_task_override = false) {
         
         // 引入语言映射文件
         require_once __DIR__ . '/language-mappings.php';
@@ -503,7 +554,34 @@ class ContentAuto_XmlTemplateProcessor {
             }
         }
         
-        // 如果没有数据库模板，回退到文件系统
+        $is_rewrite_task = $is_rewrite_task_override;
+        
+        // 如果外部未指定，再次检测一次作为兜底
+        if (!$is_rewrite_task) {
+            if (!empty($topic_data['is_rewrite'])) {
+                $is_rewrite_task = true;
+            } elseif (!empty($topic_data['rule_id'])) {
+                global $wpdb;
+                $rule_type = $wpdb->get_var($wpdb->prepare(
+                    "SELECT rule_type FROM {$wpdb->prefix}content_auto_rules WHERE id = %d",
+                    $topic_data['rule_id']
+                ));
+                if ($rule_type === 'collect_url_rewrite') {
+                    $is_rewrite_task = true;
+                }
+            }
+        }
+        
+        // 如果是仿写模式，强制使用仿写模板
+        if ($is_rewrite_task) {
+            $selected_template = 'article-rewrite-prompt.xml';
+            $template_path = __DIR__ . '/' . $selected_template;
+             if (file_exists($template_path)) {
+                $prompt = file_get_contents($template_path);
+             }
+        }
+
+        // 如果没有数据库模板且未选中仿写模板，回退到文件系统
         if (empty($prompt)) {
             // 随机选择文章模板
             $available_templates = [
@@ -511,20 +589,24 @@ class ContentAuto_XmlTemplateProcessor {
                 'article-generation-prompt1.xml',
                 'article-generation-prompt2.xml'
             ];
-    
             $selected_template = $available_templates[array_rand($available_templates)];
             $template_path = __DIR__ . '/' . $selected_template;
-    
-            if (!file_exists($template_path)) {
-                return "模板加载失败，请检查插件文件完整性。";
+            
+            if (file_exists($template_path)) {
+                $prompt = file_get_contents($template_path);
             }
-            $prompt = file_get_contents($template_path);
         }
 
-        // 记录选择的模板（仅在调试模式下）
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            error_log("Content Auto Manager: 选择的文章模板 - " . $selected_template . " (标题: " . $title . ")");
+        // 记录选择的模板（始终记录）
+        if (!class_exists('ContentAuto_PluginLogger')) {
+            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
+        $template_logger = new ContentAuto_PluginLogger();
+        $template_logger->info('[TEMPLATE_FINAL] Template selection complete', [
+            'is_rewrite' => $is_rewrite_task ? 'TRUE' : 'FALSE',
+            'selected_template' => $selected_template,
+            'topic_id' => $topic_data['id'] ?? 'unknown'
+        ]);
 
         // 根据规范化输出设置决定是否包含结构章节
         $structure_block = '';
@@ -659,7 +741,8 @@ class ContentAuto_XmlTemplateProcessor {
             // 参考资料相关占位符
             '{{REFERENCE_MATERIAL_BLOCK}}' => $reference_material_block,
             '{{REFERENCE_MATERIAL_STRATEGY}}' => $reference_material_strategy,
-            '{{REFERENCE_MATERIAL_PRINCIPLE}}' => $reference_material_principle
+            '{{REFERENCE_MATERIAL_PRINCIPLE}}' => $reference_material_principle,
+            '{{REFERENCE_CONTENT_BLOCK}}' => $source_materials_content // 为仿写模板添加原始内容块
         );
 
         $prompt = str_replace(array_keys($replacements), array_values($replacements), $prompt);

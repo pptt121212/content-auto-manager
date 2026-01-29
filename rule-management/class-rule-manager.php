@@ -9,6 +9,28 @@ if (!defined('ABSPATH')) {
 
 class ContentAuto_RuleManager {
     
+    /**
+     * 获取规则类型标签
+     */
+    public static function get_rule_type_label($rule_type) {
+        switch ($rule_type) {
+            case 'random_selection':
+                return __('随机选择文章', 'content-auto-manager');
+            case 'fixed_articles':
+                return __('固定选择文章', 'content-auto-manager');
+            case 'upload_text':
+                return __('上传文本内容', 'content-auto-manager');
+            case 'import_keywords':
+                return __('导入关键词', 'content-auto-manager');
+            case 'random_categories':
+                return __('随机分类', 'content-auto-manager');
+            case 'collect_url_rewrite':
+                return __('采集网址仿写', 'content-auto-manager');
+            default:
+                return $rule_type;
+        }
+    }
+
     private $database;
     
     public function __construct() {
@@ -252,6 +274,21 @@ class ContentAuto_RuleManager {
                     'category_description' => $item->category_descriptions // 分类描述
                 );
             }
+        } elseif ($rule->rule_type === 'collect_url_rewrite') {
+            // 从规则项目表中获取采集网址内容
+            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+            $items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' LIMIT %d", $rule_id, $limit));
+
+            foreach ($items as $item) {
+                $content[] = array(
+                    'id' => 0,
+                    'title' => '',
+                    'content' => '',
+                    'excerpt' => '',
+                    'date' => '',
+                    'url' => $item->upload_text // URL从upload_text字段获取
+                );
+            }
         }
         
         return $content;
@@ -373,11 +410,32 @@ class ContentAuto_RuleManager {
                     'category_description' => $item->category_descriptions // 分类描述
                 );
             }
+        } elseif ($rule->rule_type === 'collect_url_rewrite') {
+            // 从规则项目表中获取特定子任务的采集网址内容
+            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+            $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' ORDER BY id LIMIT %d, 1", $rule_id, $subtask_index));
+
+            if ($item) {
+                // 判断逻辑：如果内容以 http:// 或 https:// 开头，认为是待采集的 URL
+                $raw_text = $item->upload_text;
+                $is_pending_url = (strpos($raw_text, 'http://') === 0 || strpos($raw_text, 'https://') === 0);
+                
+                $content[] = array(
+                    'id' => 0,
+                    'title' => '',
+                    'content' => $is_pending_url ? '' : $raw_text,
+                    'category_ids' => '',
+                    'category_names' => '',
+                    'category_descriptions' => '',
+                    'tag_names' => '',
+                    'url' => $is_pending_url ? $raw_text : ''
+                );
+            }
         }
         
         return $content;
     }
-
+    
     /**
      * 检查规则是否正在被使用
      * 注意：文章任务只使用已有主题，不受规则变更影响，所以只检查主题任务
@@ -385,14 +443,27 @@ class ContentAuto_RuleManager {
     public function is_rule_in_use($rule_id) {
         global $wpdb;
 
-        // 只检查主题任务队列中是否有该规则的子任务
-        // 文章任务使用已生成的主题，不受规则变更影响
+        // 1. 先检查主任务表
+        // 只要有 pending/processing/running 的主任务，即视为使用中
+        // 这覆盖了“任务刚创建尚未生成子任务”的阶段
+        $active_main_tasks = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}content_auto_topic_tasks 
+             WHERE rule_id = %d AND status IN ('pending', 'processing', 'running')",
+             $rule_id
+        ));
+        
+        if ($active_main_tasks > 0) {
+            return true;
+        }
+
+        // 2. 再检查子任务队列表
+        // 主要是为了捕获 waiting_browser 这种特殊状态（主任务可能已 finished，但子任务还在跑）
         $topic_queue_table = $wpdb->prefix . 'content_auto_job_queue';
         $topic_tasks_in_use = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$topic_queue_table} tq
             JOIN {$wpdb->prefix}content_auto_topic_tasks tt ON tq.job_id = tt.id
             WHERE tt.rule_id = %d
-            AND tq.status IN ('pending', 'processing', 'running')",
+            AND tq.status IN ('pending', 'processing', 'running', 'waiting_browser')",
             $rule_id
         ));
 
@@ -412,14 +483,21 @@ class ContentAuto_RuleManager {
             'task_details' => array()
         );
 
-        // 只检查主题任务
+        // 检查活跃的主题任务
+        // 使用 LEFT JOIN 确保：
+        // 1. 即使还没有生成子任务的主任务也能被统计到（覆盖刚创建阶段）
+        // 2. 能够统计处于 waiting_browser 状态的子任务
         $topic_queue_table = $wpdb->prefix . 'content_auto_job_queue';
         $topic_tasks = $wpdb->get_results($wpdb->prepare(
-            "SELECT tt.topic_task_id, tt.status as task_status, COUNT(tq.id) as active_subtasks
+            "SELECT tt.topic_task_id, tt.status as task_status, 
+                    COUNT(CASE WHEN tq.status IN ('pending', 'processing', 'running', 'waiting_browser') THEN tq.id END) as active_subtasks
             FROM {$wpdb->prefix}content_auto_topic_tasks tt
-            JOIN {$topic_queue_table} tq ON tt.id = tq.job_id
+            LEFT JOIN {$topic_queue_table} tq ON tt.id = tq.job_id
             WHERE tt.rule_id = %d
-            AND tq.status IN ('pending', 'processing', 'running')
+            AND (
+                tt.status IN ('pending', 'processing', 'running')
+                OR (tq.id IS NOT NULL AND tq.status IN ('pending', 'processing', 'running', 'waiting_browser'))
+            )
             GROUP BY tt.id",
             $rule_id
         ));
@@ -431,7 +509,7 @@ class ContentAuto_RuleManager {
                     'type' => '主题任务',
                     'id' => $t->topic_task_id,
                     'status' => $t->task_status,
-                    'active_subtasks' => $t->active_subtasks
+                    'active_subtasks' => (int)$t->active_subtasks
                 );
             },
             $topic_tasks
@@ -498,6 +576,40 @@ class ContentAuto_RuleManager {
                     'category_descriptions' => '',
                     'tag_names' => '',
                     'keyword' => $item->upload_text
+                );
+            } elseif ($rule && $rule->rule_type === 'collect_url_rewrite') {
+                // 采集网址类型
+                $raw_text = trim($item->upload_text);
+                
+                // 优先从 Transient 获取采集到的内容 (修复：不再覆盖数据库中的 upload_text)
+                $cached_content = get_transient('cam_fetched_content_' . $item->id);
+                
+                if ($cached_content) {
+                    // 如果有缓存内容，直接使用
+                    $content_text = $cached_content;
+                    $url_text = $raw_text; // 保留原始 URL 用于记录
+                    $is_pending = false;
+                } else {
+                    // 没有缓存，检查 upload_text 本身是否就是内容（兼容旧数据）
+                    // 或者是待采集的 URL
+                    $is_standard_url = (strpos($raw_text, 'http') === 0) || (strpos($raw_text, 'www.') === 0);
+                    $is_short_text = (iconv_strlen($raw_text, 'UTF-8') < 500 && strpos($raw_text, "\n") === false);
+                    
+                    $is_pending_url = ($is_standard_url || $is_short_text);
+                    
+                    $content_text = $is_pending_url ? '' : $raw_text;
+                    $url_text = $is_pending_url ? $raw_text : '';
+                }
+                
+                $content[] = array(
+                    'id' => 0,
+                    'title' => '',
+                    'content' => $content_text,
+                    'category_ids' => '',
+                    'category_names' => '',
+                    'category_descriptions' => '',
+                    'tag_names' => '',
+                    'url' => $url_text
                 );
             } else {
                 // 上传文本类型

@@ -85,6 +85,130 @@ class ContentAuto_RuleHandler {
             $rule_conditions['keywords'] = array_slice($keywords_array, 0, 200);
         } elseif ($rule_type === 'random_categories') {
             $rule_conditions['categories'] = isset($_POST['categories']) ? array_map('intval', $_POST['categories']) : array();
+        } elseif ($rule_type === 'collect_url_rewrite') {
+            $url_text = isset($_POST['collect_url_content']) ? sanitize_textarea_field($_POST['collect_url_content']) : '';
+            // 分割网址并过滤
+            $urls_array = array();
+            $duplicate_in_input = array();      // 输入中的重复项
+            $duplicate_in_rules = array();      // 其他待处理规则中的重复项
+            $duplicate_in_topics = array();     // 已生成主题的重复项
+            
+            if (!empty($url_text)) {
+                $raw_urls = explode("\n", $url_text);
+                $seen_urls = array(); // 用于检测输入内重复
+                
+                foreach ($raw_urls as $url) {
+                    $url = trim($url);
+                    if (!empty($url)) {
+                        // 标准化 URL（移除末尾斜杠和空格，统一小写协议）
+                        $normalized_url = rtrim($url, '/');
+                        $normalized_url = preg_replace('/^https?:\/\//i', '', $normalized_url);
+                        $normalized_key = strtolower($normalized_url);
+                        
+                        // 检查输入内是否重复
+                        if (isset($seen_urls[$normalized_key])) {
+                            $duplicate_in_input[] = $url;
+                            continue;
+                        }
+                        $seen_urls[$normalized_key] = true;
+                        $urls_array[] = $url;
+                    }
+                }
+                
+                // 检查历史重复（两个来源）
+                if (!empty($urls_array)) {
+                    global $wpdb;
+                    $topics_table = $wpdb->prefix . 'content_auto_topics';
+                    $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+                    $rules_table = $wpdb->prefix . 'content_auto_rules';
+                    
+                    // 排除当前正在编辑的规则
+                    $exclude_rule_id = $is_edit_mode ? $rule_id : 0;
+                    
+                    // 来源1：从主题表查询已成功生成主题的 URL
+                    $topic_urls = $wpdb->get_col(
+                        "SELECT DISTINCT source_url 
+                         FROM {$topics_table} 
+                         WHERE source_url IS NOT NULL 
+                         AND source_url != ''"
+                    );
+                    
+                    // 来源2：从规则项目表查询其他规则中待处理的 URL
+                    $rule_urls = $wpdb->get_col($wpdb->prepare(
+                        "SELECT DISTINCT ri.upload_text 
+                         FROM {$rule_items_table} ri
+                         INNER JOIN {$rules_table} r ON ri.rule_id = r.id
+                         WHERE r.rule_type = 'collect_url_rewrite'
+                         AND ri.rule_id != %d
+                         AND ri.upload_text != ''
+                         AND ri.upload_text LIKE 'http%%'",
+                        $exclude_rule_id
+                    ));
+                    
+                    // 标准化主题表 URL
+                    $topic_normalized = array();
+                    foreach ($topic_urls as $hist_url) {
+                        $normalized = strtolower(rtrim(preg_replace('/^https?:\/\//i', '', trim($hist_url)), '/'));
+                        $topic_normalized[$normalized] = $hist_url;
+                    }
+                    
+                    // 标准化规则项目表 URL（排除已在主题表中的）
+                    $rule_normalized = array();
+                    foreach ($rule_urls as $hist_url) {
+                        $normalized = strtolower(rtrim(preg_replace('/^https?:\/\//i', '', trim($hist_url)), '/'));
+                        // 只记录不在主题表中的（避免重复计数）
+                        if (!isset($topic_normalized[$normalized])) {
+                            $rule_normalized[$normalized] = $hist_url;
+                        }
+                    }
+                    
+                    // 过滤重复 URL 并分类记录
+                    $filtered_urls = array();
+                    foreach ($urls_array as $url) {
+                        $normalized = strtolower(rtrim(preg_replace('/^https?:\/\//i', '', trim($url)), '/'));
+                        
+                        if (isset($topic_normalized[$normalized])) {
+                            // 已生成过主题
+                            $duplicate_in_topics[] = $url;
+                        } elseif (isset($rule_normalized[$normalized])) {
+                            // 在其他待处理规则中
+                            $duplicate_in_rules[] = $url;
+                        } else {
+                            $filtered_urls[] = $url;
+                        }
+                    }
+                    $urls_array = $filtered_urls;
+                }
+            }
+            
+            // 限制最多500个网址
+            $rule_conditions['collect_url_content'] = array_slice($urls_array, 0, 500);
+            
+            // 处理采集选项（保留图片、保留链接）
+            $rule_conditions['collect_options'] = array(
+                'keep_images' => isset($_POST['collect_keep_images']) && $_POST['collect_keep_images'] == '1',
+                'keep_links' => isset($_POST['collect_keep_links']) && $_POST['collect_keep_links'] == '1'
+            );
+            
+            // 记录去重信息（用于前端显示详细提示）
+            $has_duplicates = !empty($duplicate_in_input) || !empty($duplicate_in_rules) || !empty($duplicate_in_topics);
+            if ($has_duplicates) {
+                set_transient('cam_url_dedup_info_' . get_current_user_id(), array(
+                    // 数量统计
+                    'count_in_input' => count($duplicate_in_input),
+                    'count_in_rules' => count($duplicate_in_rules),
+                    'count_in_topics' => count($duplicate_in_topics),
+                    // 具体 URL 列表（用于详细展示）
+                    'urls_in_input' => array_slice($duplicate_in_input, 0, 10),    // 最多显示10条
+                    'urls_in_rules' => array_slice($duplicate_in_rules, 0, 10),
+                    'urls_in_topics' => array_slice($duplicate_in_topics, 0, 10),
+                    // 总计
+                    'total_filtered' => count($duplicate_in_input) + count($duplicate_in_rules) + count($duplicate_in_topics)
+                ), 60); // 60秒有效期
+            }
+            
+            // 强制设置循环次数为1，因为此规则类型没有循环次数配置
+            $item_count = 1;
         }
 
         // 处理所有规则类型通用的目标分类字段
@@ -417,6 +541,29 @@ class ContentAuto_RuleHandler {
                             )
                         );
                     }
+                }
+            }
+        } elseif ($rule_type === 'collect_url_rewrite') {
+            // 采集网址仿写逻辑
+            $urls = $conditions['collect_url_content'] ?? array();
+            if (!empty($urls)) {
+                foreach ($urls as $url) {
+                    $wpdb->insert(
+                        $rule_items_table,
+                        array(
+                            'rule_id' => $rule_id,
+                            'rule_task_id' => $rule_task_id,
+                            'post_id' => 0,
+                            'post_title' => '', 
+                            'category_ids' => '',
+                            'category_names' => '',
+                            'category_descriptions' => '',
+                            'tag_names' => '',
+                            'upload_text' => $url, // 网址存储在upload_text字段
+                            'created_at' => current_time('mysql'),
+                            'updated_at' => current_time('mysql'),
+                        )
+                    );
                 }
             }
         }

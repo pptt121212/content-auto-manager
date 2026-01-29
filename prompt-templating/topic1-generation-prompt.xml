@@ -79,6 +79,13 @@
     <requirement name="参考资料一致性">当存在reference_material时，生成的主题应与参考资料的专业方向和内容重点保持一致</requirement>
   </quality_requirements>
 
+  <anti_ai_detection_rules priority="HIGH">
+    <rule name="高困惑度和突发性">保持高困惑度(high perplexity)和突发性(burstiness)特征。同批次标题长度应在12-30字符范围内产生明显的长短变化，包含短标题(少于18字)、中等长度(18-24字)和长标题(超过24字)，避免所有标题都集中在相似长度</rule>
+    <rule name="自然不完美特征">偶尔在标题和user_value等字段中包含轻微的自然表达特征(minor grammar quirks or natural imperfections)，如适度口语化、非标准但通顺的词语搭配，模拟人类写作的自然不规则性</rule>
+    <rule name="标点符号严格限制">在所有文本字段中避免使用冒号、分号和破折号。将原本用冒号引出的内容改为独立句子，用逗号和基础连接词替代分号，用句号拆分替代破折号补充说明</rule>
+    <rule name="打破模板机械性">虽然提供了title_templates，但生成时必须灵活应用，不要机械套用模板格式。同一模板应产生完全不同的语言风格，适当混合或打破模板结构</rule>
+  </anti_ai_detection_rules>
+
   <output_constraints>
     <constraint name="输出语言">所有生成内容（包括industry_analysis、title、source_angle、user_value、seo_keywords字段）必须使用{{LANGUAGE_NAME}}语言</constraint>
     <constraint name="标题长度">12-30个中文字符，确保完整表达核心意思</constraint>

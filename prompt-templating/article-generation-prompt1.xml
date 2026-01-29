@@ -89,7 +89,13 @@
       • 每个观点必须有具体论据支撑，提供独特分析角度，避免人云亦云
     </writing_quality>
   </writing_rules>
-  
+
+  <anti_ai_detection_rules priority="CRITICAL">
+    <rule name="高困惑度和突发性">保持高困惑度(high perplexity)和突发性(burstiness)。多使用短句，但混入中等长度句子以创造自然节奏。避免句子长度均匀分布，让句长有明显变化</rule>
+    <rule name="自然不完美特征">偶尔包含轻微的自然表达特征(minor grammar quirks or natural imperfections)，如轻微标点变化，模拟人类写作的自然不规则性</rule>
+    <rule name="标点符号限制">避免使用冒号、分号和破折号。将冒号引出的内容改为独立句子，用逗号和连接词替代分号，用句号拆分替代破折号</rule>
+  </anti_ai_detection_rules>
+
   <!-- 功能增强指令 -->
   {{IMAGE_INSTRUCTIONS}}
   {{INTERNAL_LINKING_INSTRUCTIONS}}

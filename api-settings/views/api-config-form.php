@@ -805,7 +805,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
                             <select name="search_safesearch">
                                 <option value="moderate" <?php selected($safesearch, 'moderate'); ?>><?php _e('适中 (Moderate)', 'content-auto-manager'); ?></option>
                                 <option value="off" <?php selected($safesearch, 'off'); ?>><?php _e('关闭 (Off)', 'content-auto-manager'); ?></option>
-                                <option value="strict" <?php selected($safesearch, 'strict'); ?>><?php _e('严格 (Strict)', 'content-auto-manager'); ?></option>
+                                <option value="on" <?php selected($safesearch, 'on'); ?>><?php _e('严格 (Strict)', 'content-auto-manager'); ?></option>
                             </select>
                         </td>
                     </tr>

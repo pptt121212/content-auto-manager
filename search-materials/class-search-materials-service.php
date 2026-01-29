@@ -206,6 +206,12 @@ class ContentAuto_SearchMaterialsService {
         $prompt .= "严禁返回对象数组（如 `[{\"search_queries\":...}]`），严禁包含 Markdown 标记之外的任何解释性文字。";
         
         $response = $this->unified_api->generate_content($prompt, 'search_intent');
+
+        // 预防API返回错误数组导致 json_decode 报错
+        if (is_array($response) && isset($response['error'])) {
+            error_log("Search Query Generation API Error: " . $response['error']);
+            return [$title]; // 降级处理：直接返回标题作为搜索词
+        }
         
         // 解析
         $queries = [];

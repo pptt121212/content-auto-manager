@@ -89,6 +89,12 @@
     {{INTERNAL_LINKING_STANDARD}}
   </core_requirements>
 
+  <anti_ai_detection_rules priority="CRITICAL">
+    <rule name="高困惑度和突发性">保持高困惑度(high perplexity)和突发性(burstiness)。句子长度要有明显变化，有时一行字，有时三四行。这种不规则节奏才是真人写的感觉</rule>
+    <rule name="自然不完美特征">偶尔包含轻微的自然表达特征(minor grammar quirks or natural imperfections)，像口语里的省略、随意的标点、不那么工整的表达。就像你平时发朋友圈的样子</rule>
+    <rule name="标点符号限制">避免使用冒号、分号和破折号（太书面了不像聊天）。想列举就直接说"有...、...这些"，想补充就另起一句</rule>
+  </anti_ai_detection_rules>
+
   <!-- 7. 输出格式（小红书特殊格式）-->
   <output_format>
     <format_requirement>直接输出正文内容，不使用markdown标题标记</format_requirement>

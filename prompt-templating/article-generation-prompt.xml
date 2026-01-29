@@ -64,6 +64,12 @@
     {{INTERNAL_LINKING_STANDARD}}
   </core_requirements>
 
+  <anti_ai_detection_rules priority="CRITICAL">
+    <rule name="高困惑度和突发性">保持高困惑度(high perplexity)和突发性(burstiness)以反映人类写作的句长和结构变化。多使用短句，但适当混入中等长度句子创造自然节奏。避免句子长度的统计学平滑分布</rule>
+    <rule name="自然不完美特征">偶尔包含轻微的自然表达特征(minor grammar quirks or natural imperfections)，如轻微的标点变化，以模拟人类写作。避免过度完美的语法结构</rule>
+    <rule name="标点符号限制">避免使用冒号、分号和破折号。将需要冒号引出的内容拆分为独立句子，用逗号和基础连接词替代分号，用句号拆分替代破折号</rule>
+  </anti_ai_detection_rules>
+
   <output_format>
     <format_requirement>使用标准markdown格式输出纯粹的文章正文</format_requirement>
     <content_boundary>输出内容严格限制为文章正文本身，从文章第一个章节标题(##)开始，到文章最后一个自然段落结束，不要包含任何文章内容以外的对话性、解释性或说明文字</content_boundary>

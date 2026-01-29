@@ -183,8 +183,10 @@ $is_edit_mode = isset($_GET['action']) && $_GET['action'] === 'edit';
 $rule = null;
 $selected_cats = array();
 $selected_articles = array();
+$selected_articles = array();
 $upload_text_content = '';
 $keywords_content = '';
+$collect_url_content = '';
 
 if ($is_edit_mode && isset($_GET['id'])) {
     global $wpdb;
@@ -207,6 +209,8 @@ if ($is_edit_mode && isset($_GET['id'])) {
             $upload_text_content = $conditions['upload_text'];
         } elseif ($rule->rule_type === 'import_keywords' && isset($conditions['keywords'])) {
             $keywords_content = implode("\n", $conditions['keywords']);
+        } elseif ($rule->rule_type === 'collect_url_rewrite' && isset($conditions['collect_url_content'])) {
+            $collect_url_content = implode("\n", $conditions['collect_url_content']);
         }
     }
 }
@@ -233,15 +237,17 @@ if ($is_edit_mode && isset($_GET['id'])) {
                 <th scope="row">规则类型</th>
                 <td>
                     <fieldset>
-                        <label><input type="radio" name="rule_type" value="random_selection" <?php echo (!$rule || $rule->rule_type === 'random_selection') ? 'checked' : ''; ?>> 随机选择文章</label>
+                        <label><input type="radio" name="rule_type" value="random_selection" <?php echo (!$rule || $rule->rule_type === 'random_selection') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('random_selection'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="fixed_articles" <?php echo ($rule && $rule->rule_type === 'fixed_articles') ? 'checked' : ''; ?>> 固定选择文章</label>
+                        <label><input type="radio" name="rule_type" value="fixed_articles" <?php echo ($rule && $rule->rule_type === 'fixed_articles') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('fixed_articles'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="upload_text" <?php echo ($rule && $rule->rule_type === 'upload_text') ? 'checked' : ''; ?>> 上传文本内容</label>
+                        <label><input type="radio" name="rule_type" value="upload_text" <?php echo ($rule && $rule->rule_type === 'upload_text') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('upload_text'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="import_keywords" <?php echo ($rule && $rule->rule_type === 'import_keywords') ? 'checked' : ''; ?>> 导入关键词</label>
+                        <label><input type="radio" name="rule_type" value="import_keywords" <?php echo ($rule && $rule->rule_type === 'import_keywords') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('import_keywords'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="random_categories" <?php echo ($rule && $rule->rule_type === 'random_categories') ? 'checked' : ''; ?>> 随机分类</label>
+                        <label><input type="radio" name="rule_type" value="random_categories" <?php echo ($rule && $rule->rule_type === 'random_categories') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('random_categories'); ?></label>
+                        <br>
+                        <label><input type="radio" name="rule_type" value="collect_url_rewrite" <?php echo ($rule && $rule->rule_type === 'collect_url_rewrite') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('collect_url_rewrite'); ?></label>
                     </fieldset>
                 </td>
             </tr>
@@ -310,6 +316,40 @@ if ($is_edit_mode && isset($_GET['id'])) {
                 </td>
             </tr>
 
+            <!-- 条件：采集网址仿写 -->
+            <tr id="condition-collect-url-rewrite" class="rule-condition-group form-field" style="<?php echo ($rule && $rule->rule_type === 'collect_url_rewrite') ? '' : 'display: none;'; ?>">
+                <th scope="row"><label for="collect_url_content">网址列表</label></th>
+                <td>
+                    <textarea id="collect_url_content" name="collect_url_content" rows="15" cols="50" placeholder="请输入网址，每行一条，最多500条"><?php echo isset($collect_url_content) ? esc_textarea($collect_url_content) : ''; ?></textarea>
+                    <p class="description">请输入网址，每行一条，最多允许输入500条网址。系统将抓取每个网址的内容并进行仿写生成。</p>
+                    <p class="description" style="color: #666;"><strong>智能去重：</strong>系统会自动过滤重复的网址（包括输入中的重复项和已在历史规则中采集过的网址）。</p>
+                    <div id="url-count">已输入: <span id="current-url-count">0</span>/<span id="max-url-count">500</span> 条网址</div>
+                    
+                    <!-- 采集选项 -->
+                    <div class="collect-options" style="margin-top: 15px; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px;">采集选项</h4>
+                        <?php
+                        // 获取已保存的采集选项
+                        $collect_options = array('keep_images' => false, 'keep_links' => false);
+                        if ($rule && $rule->rule_type === 'collect_url_rewrite') {
+                            $conditions = maybe_unserialize($rule->rule_conditions);
+                            if (isset($conditions['collect_options'])) {
+                                $collect_options = array_merge($collect_options, $conditions['collect_options']);
+                            }
+                        }
+                        ?>
+                        <label style="display: block; margin-bottom: 5px;">
+                            <input type="checkbox" name="collect_keep_images" value="1" <?php checked($collect_options['keep_images'], true); ?>>
+                            保留图片 <span style="color: #888; font-size: 12px;">(默认不保留，仿写时通常不需要原文图片)</span>
+                        </label>
+                        <label style="display: block;">
+                            <input type="checkbox" name="collect_keep_links" value="1" <?php checked($collect_options['keep_links'], true); ?>>
+                            保留链接 <span style="color: #888; font-size: 12px;">(默认不保留，仿写时链接通常会失效)</span>
+                        </label>
+                    </div>
+                </td>
+            </tr>
+
             <!-- 条件：随机分类 -->
             <tr id="condition-random-categories" class="rule-condition-group form-field" style="<?php echo ($rule && $rule->rule_type === 'random_categories') ? '' : 'display: none;'; ?>">
                 <th scope="row"><label>选择分类</label></th>
@@ -357,7 +397,7 @@ if ($is_edit_mode && isset($_GET['id'])) {
             </tr>
 
             <!-- 规则循环次数 -->
-            <tr class="form-field">
+            <tr id="row-item-count" class="form-field">
                 <th scope="row"><label for="item_count">规则循环次数</label></th>
                 <td>
                     <input type="number" id="item_count" name="item_count" class="small-text" value="<?php echo $rule ? esc_attr($rule->item_count) : '1'; ?>" min="1" required>
@@ -372,7 +412,7 @@ if ($is_edit_mode && isset($_GET['id'])) {
             </tr>
 
             <!-- 参考资料 -->
-            <tr class="form-field">
+            <tr id="row-reference-material" class="form-field">
                 <th scope="row"><label for="reference_material">参考资料</label></th>
                 <td>
                     <textarea id="reference_material" name="reference_material" rows="4" class="large-text" maxlength="800" placeholder="请输入参考资料，最多800字。此内容将在文章生成时作为参考信息使用，可留空。"><?php echo $rule ? esc_textarea($rule->reference_material ?? '') : ''; ?></textarea>
@@ -582,6 +622,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentCountSpan = document.getElementById('current-count');
     const keywordsInput = document.getElementById('keywords_content');
     const currentKeywordsCountSpan = document.getElementById('current-keywords-count');
+    const collectUrlRewriteRow = document.getElementById('condition-collect-url-rewrite');
+    const collectUrlInput = document.getElementById('collect_url_content');
+    const currentUrlCountSpan = document.getElementById('current-url-count');
+    const rowItemCount = document.getElementById('row-item-count');
+    const rowReferenceMaterial = document.getElementById('row-reference-material');
     
     // 初始化已选文章
     let selectedArticles = [];
@@ -639,6 +684,11 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadTextRow.style.display = 'none';
         importKeywordsRow.style.display = 'none';
         randomCategoriesRow.style.display = 'none';
+        collectUrlRewriteRow.style.display = 'none';
+
+        // 默认显示通用字段
+        if (rowItemCount) rowItemCount.style.display = 'table-row';
+        if (rowReferenceMaterial) rowReferenceMaterial.style.display = 'table-row';
 
         if (selectedType === 'random_selection') {
             randomSelectionRow.style.display = 'table-row';
@@ -650,6 +700,11 @@ document.addEventListener('DOMContentLoaded', function() {
             importKeywordsRow.style.display = 'table-row';
         } else if (selectedType === 'random_categories') {
             randomCategoriesRow.style.display = 'table-row';
+        } else if (selectedType === 'collect_url_rewrite') {
+            collectUrlRewriteRow.style.display = 'table-row';
+            // 隐藏该类型不需要的字段
+            if (rowItemCount) rowItemCount.style.display = 'none';
+            if (rowReferenceMaterial) rowReferenceMaterial.style.display = 'none';
         }
     }
 
@@ -763,6 +818,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 更新参考资料字符计数
     function updateReferenceMaterialCount() {
+        // ... (保持原有逻辑，因为我们使用了变量 rowReferenceMaterial 来控制显示，计数逻辑本身不冲突)
+        // 为了避免修改过多，这里只保留原函数的壳，或者直接让原函数不报错
         const referenceMaterialTextarea = document.getElementById('reference_material');
         const referenceMaterialCountSpan = document.getElementById('reference_material_count');
 
@@ -770,12 +827,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const text = referenceMaterialTextarea.value;
             const count = text.length;
             referenceMaterialCountSpan.textContent = count;
+            if (count > 800) referenceMaterialCountSpan.style.color = 'red';
+            else referenceMaterialCountSpan.style.color = '';
+        }
+    }
 
-            // 如果超过限制，显示警告
-            if (count > 800) {
-                referenceMaterialCountSpan.style.color = 'red';
+    // 更新URL计数
+    function updateUrlCount() {
+        if (collectUrlInput) {
+            const text = collectUrlInput.value.trim();
+            // 过滤空行
+            const urls = text.split('\n').filter(url => url.trim().length > 0);
+            const count = urls.length;
+            currentUrlCountSpan.textContent = count;
+
+            if (count > 500) {
+                currentUrlCountSpan.style.color = 'red';
             } else {
-                referenceMaterialCountSpan.style.color = '';
+                currentUrlCountSpan.style.color = '';
             }
         }
     }
@@ -901,6 +970,11 @@ document.addEventListener('DOMContentLoaded', function() {
         referenceMaterialTextarea.addEventListener('input', updateReferenceMaterialCount);
     }
 
+    // 监听URL输入框变化
+    if (collectUrlInput) {
+        collectUrlInput.addEventListener('input', updateUrlCount);
+    }
+
     // 网址内容采集功能
     const fetchContentBtn = document.getElementById('fetch_content_btn');
     const contentUrlInput = document.getElementById('content_url');
@@ -980,6 +1054,8 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleConditions();
     updateTextCount();
     updateKeywordsCount();
+    updateKeywordsCount();
     updateReferenceMaterialCount();
+    updateUrlCount();
 });
 </script>

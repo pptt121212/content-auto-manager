@@ -246,6 +246,13 @@
       {{INTERNAL_LINKING_STRATEGY}}
       {{INTERNAL_LINKING_STANDARD}}
     </rule_6_system_integration>
+
+    <rule_7_anti_ai_detection>
+      **反AI检测核心** (基于 humanizer.txt):
+      - **高困惑度和突发性 (high perplexity and burstiness)**：句子长度必须有明显的不可预测性变化，避免统计学上的平滑分布。这是对抗AI检测的核心指标。
+      - **自然不完美特征 (minor grammar quirks or natural imperfections)**：偶尔包含轻微的标点变化、略显随意的表达，模拟人类写作的自然不规则性。
+      - **标点符号限制**：避免使用冒号、分号和破折号（这是AI写作的典型特征）。将冒号引出的内容改为独立句子，用逗号和连接词替代分号，用句号拆分替代破折号。
+    </rule_7_anti_ai_detection>
   </writing_engine>
 
   <!-- 7. 输出格式规范 (Output Format) - 极其重要 -->

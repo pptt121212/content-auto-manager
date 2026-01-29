@@ -53,6 +53,79 @@ $message = isset($_GET['message']) && $_GET['message'] == '1' ? '新规则已成
         } elseif ($message_code === 5) {
             echo '<div id="message" class="error notice is-dismissible"><p>删除规则失败，请重试。</p></div>';
         }
+        
+        // 检查是否有 URL 去重信息需要显示
+        $dedup_info = get_transient('cam_url_dedup_info_' . get_current_user_id());
+        if ($dedup_info && ($message_code === 1 || $message_code === 3)) {
+            $count_input = isset($dedup_info['count_in_input']) ? intval($dedup_info['count_in_input']) : 0;
+            $count_rules = isset($dedup_info['count_in_rules']) ? intval($dedup_info['count_in_rules']) : 0;
+            $count_topics = isset($dedup_info['count_in_topics']) ? intval($dedup_info['count_in_topics']) : 0;
+            $total = isset($dedup_info['total_filtered']) ? intval($dedup_info['total_filtered']) : 0;
+            
+            if ($total > 0) {
+                echo '<div class="notice notice-warning is-dismissible">';
+                echo '<p><strong>⚠️ 网址去重提示：</strong>共过滤了 <strong>' . $total . '</strong> 条重复网址</p>';
+                
+                // 1. 输入中的重复
+                if ($count_input > 0) {
+                    echo '<div style="margin: 10px 0; padding: 10px; background: #fff3cd; border-radius: 4px;">';
+                    echo '<strong>📋 输入重复（' . $count_input . ' 条）</strong>';
+                    echo '<p style="margin: 5px 0 0; color: #856404; font-size: 12px;">在您输入的网址中发现重复项，已自动保留第一条</p>';
+                    if (!empty($dedup_info['urls_in_input'])) {
+                        echo '<ul style="margin: 5px 0 0 20px; font-size: 12px; color: #666;">';
+                        foreach ($dedup_info['urls_in_input'] as $url) {
+                            echo '<li>' . esc_html(mb_substr($url, 0, 80)) . (mb_strlen($url) > 80 ? '...' : '') . '</li>';
+                        }
+                        if ($count_input > 10) {
+                            echo '<li>...还有 ' . ($count_input - 10) . ' 条</li>';
+                        }
+                        echo '</ul>';
+                    }
+                    echo '</div>';
+                }
+                
+                // 2. 其他待处理规则中的重复
+                if ($count_rules > 0) {
+                    echo '<div style="margin: 10px 0; padding: 10px; background: #cce5ff; border-radius: 4px;">';
+                    echo '<strong>📁 其他规则中已存在（' . $count_rules . ' 条）</strong>';
+                    echo '<p style="margin: 5px 0 0; color: #004085; font-size: 12px;">这些网址已在其他规则中等待处理，无需重复添加</p>';
+                    if (!empty($dedup_info['urls_in_rules'])) {
+                        echo '<ul style="margin: 5px 0 0 20px; font-size: 12px; color: #666;">';
+                        foreach ($dedup_info['urls_in_rules'] as $url) {
+                            echo '<li>' . esc_html(mb_substr($url, 0, 80)) . (mb_strlen($url) > 80 ? '...' : '') . '</li>';
+                        }
+                        if ($count_rules > 10) {
+                            echo '<li>...还有 ' . ($count_rules - 10) . ' 条</li>';
+                        }
+                        echo '</ul>';
+                    }
+                    echo '</div>';
+                }
+                
+                // 3. 已成功生成主题的重复
+                if ($count_topics > 0) {
+                    echo '<div style="margin: 10px 0; padding: 10px; background: #d4edda; border-radius: 4px;">';
+                    echo '<strong>✅ 已生成过主题（' . $count_topics . ' 条）</strong>';
+                    echo '<p style="margin: 5px 0 0; color: #155724; font-size: 12px;">这些网址之前已成功生成过主题内容，无需重复采集</p>';
+                    if (!empty($dedup_info['urls_in_topics'])) {
+                        echo '<ul style="margin: 5px 0 0 20px; font-size: 12px; color: #666;">';
+                        foreach ($dedup_info['urls_in_topics'] as $url) {
+                            echo '<li>' . esc_html(mb_substr($url, 0, 80)) . (mb_strlen($url) > 80 ? '...' : '') . '</li>';
+                        }
+                        if ($count_topics > 10) {
+                            echo '<li>...还有 ' . ($count_topics - 10) . ' 条</li>';
+                        }
+                        echo '</ul>';
+                    }
+                    echo '</div>';
+                }
+                
+                echo '</div>';
+            }
+            
+            // 清除 transient，避免刷新页面重复显示
+            delete_transient('cam_url_dedup_info_' . get_current_user_id());
+        }
     }
     ?>
 
@@ -83,14 +156,7 @@ $message = isset($_GET['message']) && $_GET['message'] == '1' ? '新规则已成
                         <td><strong><?php echo esc_html($rule->rule_name); ?></strong></td>
                         <td><?php echo esc_html($rule->rule_task_id); ?></td>
                         <td>
-                            <?php
-                                if ($rule->rule_type === 'random_selection') echo '随机选择文章';
-                                elseif ($rule->rule_type === 'fixed_articles') echo '固定选择文章';
-                                elseif ($rule->rule_type === 'upload_text') echo '上传文本内容';
-                                elseif ($rule->rule_type === 'import_keywords') echo '导入关键词';
-                                elseif ($rule->rule_type === 'random_categories') echo '随机分类';
-                                else echo esc_html($rule->rule_type);
-                            ?>
+                            <?php echo esc_html(ContentAuto_RuleManager::get_rule_type_label($rule->rule_type)); ?>
                         </td>
                         <td><?php echo esc_html($rule->item_count); ?></td>
                         <td><?php echo esc_html($rule->sub_task_count); ?></td>

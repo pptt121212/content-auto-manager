@@ -87,6 +87,12 @@
     {{INTERNAL_LINKING_STANDARD}}
   </core_requirements>
 
+  <anti_ai_detection_rules priority="CRITICAL">
+    <rule name="高困惑度和突发性">保持高困惑度(high perplexity)和突发性(burstiness)。句子长短要有明显变化，有时一句话很长娓娓道来，有时就几个字直接了当。避免所有句子长度差不多，那样太像机器写的</rule>
+    <rule name="自然不完美特征">偶尔包含轻微的自然表达特征(minor grammar quirks or natural imperfections)，比如标点的随意变化、口语化的省略、稍微不那么标准的表达，就像普通人写东西的样子</rule>
+    <rule name="标点符号限制">避免使用冒号、分号和破折号（这些是正式写作的标志，不符合聊天风格）。想列举就直接说"比如...、...这些"，想补充就另起一句说</rule>
+  </anti_ai_detection_rules>
+
   <!-- 7. 输出格式 -->
   <output_format>
     <format_requirement>使用标准markdown格式输出纯粹的文章正文</format_requirement>

@@ -504,6 +504,41 @@ class ContentAuto_AutoImageGenerator {
                     'error' => '文件保存失败'
                 ];
             }
+
+            // --- 自动压缩与优化开始 ---
+            try {
+                $editor = wp_get_image_editor($file_path);
+                if (!is_wp_error($editor)) {
+                    // 设置压缩质量为 80% (平衡画质与体积)
+                    $editor->set_quality(80);
+                    
+                    // 如果是 PNG 格式，强制转换为 JPG 以显著减小体积
+                    if ($mime_type === 'image/png') {
+                        $new_filename = preg_replace('/\.png$/i', '.jpg', $filename);
+                        $new_file_path = $upload_dir['path'] . '/' . $new_filename;
+                        
+                        $save_result = $editor->save($new_file_path, 'image/jpeg');
+                        
+                        if (!is_wp_error($save_result)) {
+                            // 转换成功，删除原 PNG 文件
+                            unlink($file_path);
+                            
+                            // 更新变量以指向新的 JPG 文件
+                            $file_path = $new_file_path;
+                            $filename = $new_filename;
+                            $file_url = $upload_dir['url'] . '/' . $new_filename;
+                            $mime_type = 'image/jpeg';
+                        }
+                    } else {
+                        // 其他格式 (JPG/WebP) 原地保存压缩后的版本
+                        $editor->save($file_path);
+                    }
+                }
+            } catch (Exception $e) {
+                // 如果压缩失败，仅记录错误，继续使用原图
+                error_log('ContentAuto: 图片自动压缩优化异常 - ' . $e->getMessage());
+            }
+            // --- 自动压缩与优化结束 ---
             
             // 创建附件记录
             $attachment_data = [
@@ -635,8 +670,8 @@ class ContentAuto_AutoImageGenerator {
             $task_data[] = $publish_rules;
         }
         
-        // 调度一个异步任务
-        wp_schedule_single_event(time() + 30, 'content_auto_process_post_images', $task_data);
+        // 调度一个异步任务，加入随机延迟（20-40秒）以错峰执行，避免并发压力
+        wp_schedule_single_event(time() + rand(20, 40), 'content_auto_process_post_images', $task_data);
         
         $this->logger->log_info('IMAGE_GENERATION_SCHEDULED', '图片生成任务已调度', [
             'post_id' => $post_id,

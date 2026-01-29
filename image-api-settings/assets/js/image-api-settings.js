@@ -1,4 +1,4 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     // Debug: Check if contentAutoManager object is available
     if (typeof contentAutoManager === 'undefined') {
         console.error('contentAutoManager object is not loaded!');
@@ -20,7 +20,7 @@ jQuery(document).ready(function($) {
         activeProviderInput.val(provider);
     }
 
-    tabs.on('click', function(e) {
+    tabs.on('click', function (e) {
         e.preventDefault();
         activateTab(this);
     });
@@ -42,12 +42,12 @@ jQuery(document).ready(function($) {
     }
 
     function pollModelScopeTask(taskId, config, resultDiv) {
-        const maxPollTime = 180000; // 3 minutes (increased from 2 minutes to handle longer processing times)
+        const maxPollTime = 300000; // 5 minutes (increased to handle longer processing times during peak load)
 
         // Stop polling after timeout
-        modelscopePollTimeout = setTimeout(function() {
+        modelscopePollTimeout = setTimeout(function () {
             stopModelScopePolling();
-            resultDiv.html('<p style="color: orange;"><strong>测试状态:</strong> 轮询超时 (3分钟)，任务可能仍在处理中。您可以稍后手动检查任务状态或尝试使用处理速度更快的模型。</p>');
+            resultDiv.html('<p style="color: orange;"><strong>测试状态:</strong> 轮询超时 (5分钟)，任务可能仍在处理中。您可以稍后手动检查任务状态或尝试使用处理速度更快的模型。</p>');
         }, maxPollTime);
 
         // Poll immediately, then set interval
@@ -64,7 +64,7 @@ jQuery(document).ready(function($) {
                     task_id: taskId,
                     config: config
                 },
-                success: function(response) {
+                success: function (response) {
                     if (!response.success) {
                         stopModelScopePolling();
                         resultDiv.html('<p style="color: red;"><strong>检查任务状态失败:</strong> ' + response.data.message + '</p>');
@@ -100,7 +100,7 @@ jQuery(document).ready(function($) {
                             break;
                     }
                 },
-                error: function(jqXHR, textStatus, errorThrown) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     stopModelScopePolling();
                     resultDiv.html('<p style="color: red;"><strong>轮询请求失败:</strong> ' + textStatus + ' - ' + errorThrown + '</p>');
                 }
@@ -109,7 +109,7 @@ jQuery(document).ready(function($) {
     }
 
     // Use event delegation to handle dynamically hidden/showed buttons
-    $(document).on('click', '#test_api_button_modelscope', function() {
+    $(document).on('click', '#test_api_button_modelscope', function () {
         stopModelScopePolling(); // Stop any previous polling
         const resultDiv = $('#modelscope_test_result');
         const prompt = $('#modelscope_test_prompt').val();
@@ -134,14 +134,14 @@ jQuery(document).ready(function($) {
                 config: config,
                 prompt: prompt
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     pollModelScopeTask(response.data.task_id, config, resultDiv);
                 } else {
                     resultDiv.html('<p style="color: red;"><strong>提交任务失败:</strong> ' + response.data.message + '</p>');
                 }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 resultDiv.html('<p style="color: red;"><strong>提交任务的AJAX请求失败:</strong> ' + textStatus + ' - ' + errorThrown + '</p>');
             }
         });
@@ -149,7 +149,7 @@ jQuery(document).ready(function($) {
 
     // --- Synchronous Test Logic (OpenAI, Silicon Flow, Pollinations) ---
     // Use event delegation for other test buttons as well
-    $(document).on('click', '#test_api_button_openai, #test_api_button_siliconflow, #test_api_button_pollinations', function() {
+    $(document).on('click', '#test_api_button_openai, #test_api_button_siliconflow, #test_api_button_pollinations', function () {
         const provider = $(this).data('provider');
         const resultDiv = $('#' + provider + '_test_result');
         const prompt = $('#' + provider + '_test_prompt').val();
@@ -183,7 +183,7 @@ jQuery(document).ready(function($) {
                 config: config,
                 prompt: prompt
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     const img = '<img src="data:image/jpeg;base64,' + response.data.base64_image + '" style="max-width: 100%; height: auto; margin-top: 10px;">';
                     resultDiv.html(img);
@@ -192,7 +192,7 @@ jQuery(document).ready(function($) {
                     resultDiv.html('<p style="color: red;"><strong>测试失败:</strong> ' + errorMsg + '</p>');
                 }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 resultDiv.html('<p style="color: red;"><strong>AJAX 请求失败:</strong> ' + textStatus + ' - ' + errorThrown + '</p>');
             }
         });

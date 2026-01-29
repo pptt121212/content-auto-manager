@@ -171,9 +171,10 @@ class CAM_Image_API_Handler {
         $task_id = $task_id_result;
 
         // Step 2: Poll the task status until completion or timeout
-        $max_attempts = 30; // Maximum 30 attempts
+        // Increased timeout to 300s (5 minutes) as ModelScope can be slow during peak times
+        $timeout = 300; 
         $attempt_delay = 2; // 2 seconds between attempts
-        $timeout = 60; // Maximum 60 seconds total timeout
+        $max_attempts = ceil($timeout / $attempt_delay) + 10; // Ensure enough attempts to cover the timeout
 
         $start_time = time();
 
@@ -395,71 +396,44 @@ class CAM_Image_API_Handler {
 
     /**
      * Handles image generation via Pollinations.AI API.
+     * - With API Key: Uses new gen.pollinations.ai endpoint
+     * - Without API Key: Uses legacy image.pollinations.ai endpoint (free, may have watermark)
      *
      * @param string $prompt The generation prompt.
      * @param array $config The specific configuration for Pollinations.AI.
      * @return string|WP_Error Base64 image data on success, WP_Error on failure.
      */
     private static function generate_with_pollinations($prompt, $config) {
-        // Get site domain as referrer
-        $site_url = get_site_url();
-        $parsed_url = parse_url($site_url);
-        $referrer = isset($parsed_url['host']) ? $parsed_url['host'] : '';
+        // Available models: flux (default), turbo, gptimage, kontext, seedream
+        $model = !empty($config['model']) ? $config['model'] : 'flux';
+        $token = !empty($config['token']) ? trim($config['token']) : null;
         
-        // Prepare query parameters
-        $query_args = array();
-        
-        // Add model if available
-        if (!empty($config['model'])) {
-            $query_args['model'] = $config['model'];
-        } else {
-            $query_args['model'] = 'flux'; // Default model
-        }
-        
-        // Use fixed dimensions to match other image APIs (1024x576)
-        $query_args['width'] = 1024;
-        $query_args['height'] = 576;
-        
-        // Add nologo setting if a token is provided (for registered users)
-        if (!empty($config['token'])) {
-            $query_args['nologo'] = 'true';
-        }
-        
-        // Always add referrer (site domain)
-        if (!empty($referrer)) {
-            $query_args['referrer'] = $referrer;
-        }
-        
-        // Prevent image from appearing in public feed
-        $query_args['private'] = 'true';
-        
-        // Add token if available (to be used in header)
-        $token = !empty($config['token']) ? $config['token'] : null;
-        
-        // For testing purposes only - uncomment the line below to use the test API key
-        // $token = 'Y5jVdg3LEebuO451';
-        
-        // Add token to query parameters if available (as fallback)
-        if (!empty($token)) {
-            $query_args['token'] = $token;
-        }
-        
-        // Build URL with prompt and query parameters
-        $prompt_encoded = urlencode($prompt);
-        $query_string = http_build_query($query_args);
-        $url = "https://image.pollinations.ai/prompt/{$prompt_encoded}";
-        if (!empty($query_string)) {
-            $url .= "?{$query_string}";
-        }
-
-        // Prepare headers
-        $headers = array(
-            'Content-Type' => 'application/json'
+        // Build query parameters
+        $query_args = array(
+            'model' => $model,
+            'width' => 1024,
+            'height' => 576,
+            'nologo' => 'true',
+            'private' => 'true',
+            'seed' => rand(1, 999999), // Random seed to prevent caching/same image issue
         );
         
-        // Add authorization header if token is provided
+        // Prepare headers
+        $headers = array();
+        
+        // Select endpoint based on whether API key is provided
+        $prompt_encoded = rawurlencode($prompt);
+        
         if (!empty($token)) {
+            // New endpoint with authentication (gen.pollinations.ai)
+            $query_args['key'] = $token;
+            $query_string = http_build_query($query_args);
+            $url = "https://gen.pollinations.ai/image/{$prompt_encoded}?{$query_string}";
             $headers['Authorization'] = 'Bearer ' . $token;
+        } else {
+            // Legacy endpoint without authentication (image.pollinations.ai)
+            $query_string = http_build_query($query_args);
+            $url = "https://image.pollinations.ai/prompt/{$prompt_encoded}?{$query_string}";
         }
 
         $response = wp_remote_get($url, [
@@ -478,13 +452,13 @@ class CAM_Image_API_Handler {
         // Check if the response is an image
         $content_type = wp_remote_retrieve_header($response, 'content-type');
         if (strpos($content_type, 'image/') !== 0) {
-            // The API might return an error message as text instead of an image
-            $error_message = $image_bytes;
-            if (strlen($error_message) < 500) { // Only include short error messages
-                return new WP_Error('pollinations_error', 'Pollinations.AI API returned an error: ' . $error_message, ['status' => $response_code, 'response' => $error_message]);
-            } else {
-                return new WP_Error('pollinations_error', 'Pollinations.AI API returned an error with status code: ' . $response_code, ['status' => $response_code]);
+            // The API might return an error message as JSON instead of an image
+            $error_data = json_decode($image_bytes, true);
+            if (isset($error_data['error']['message'])) {
+                return new WP_Error('pollinations_error', 'Pollinations.AI API error: ' . $error_data['error']['message'], ['status' => $response_code]);
             }
+            $error_message = strlen($image_bytes) < 500 ? $image_bytes : 'Unknown error';
+            return new WP_Error('pollinations_error', 'Pollinations.AI API returned an error: ' . $error_message, ['status' => $response_code]);
         }
 
         if ($response_code >= 300 || empty($image_bytes)) {
@@ -493,5 +467,6 @@ class CAM_Image_API_Handler {
 
         return base64_encode($image_bytes);
     }
+
 
 }

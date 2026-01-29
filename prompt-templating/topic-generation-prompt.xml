@@ -93,6 +93,12 @@
     <rule name="创新表达性">鼓励使用新颖的表达方式，避免套路化和模板化</rule>
   </diversity_enhancement_rules>
 
+  <anti_ai_detection_rules priority="HIGH">
+    <rule name="高困惑度和突发性">保持高困惑度(high perplexity)和突发性(burstiness)以反映人类写作特征。同批次生成的标题长度应有明显变化，避免统计学上的平滑分布。标题应在10-22字符范围内产生长短交替的自然节奏</rule>
+    <rule name="自然不完美特征">偶尔在标题和描述字段中包含轻微的自然表达特征(minor grammar quirks or natural imperfections)，如适度的口语化表达、非标准但自然的词语搭配，模拟人类写作的自然不规则性</rule>
+    <rule name="标点符号限制">在所有文本字段中避免使用冒号、分号和破折号。将需要列举的内容拆分为独立句子，或使用逗号和基础连接词</rule>
+  </anti_ai_detection_rules>
+
   <output_constraints>
     <constraint name="输出语言">所有生成内容（包括industry_analysis、title、source_angle、user_value、seo_keywords字段）必须使用{{LANGUAGE_NAME}}语言</constraint>
     <constraint name="标题长度">10-22个中文字符，确保语义完整且便于传播</constraint>

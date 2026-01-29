@@ -97,6 +97,12 @@
     {{INTERNAL_LINKING_STANDARD}}
   </core_requirements>
 
+  <anti_ai_detection_rules priority="CRITICAL">
+    <rule name="高困惑度和突发性">保持高困惑度(high perplexity)和突发性(burstiness)。技术文章中，适当混合短句说明要点和长句展开解释，避免句长的统计学平滑分布</rule>
+    <rule name="自然不完美特征">偶尔包含轻微的自然表达特征(minor grammar quirks or natural imperfections)，如轻微的标点变化、略显啰嗦但更自然的技术解释，模拟真实工程师改写文档的风格</rule>
+    <rule name="标点符号限制">避免使用冒号、分号和破折号（AI技术文档的典型特征）。将冒号引出的技术列举改为"包括"等词引导，用逗号和连接词替代分号，用句号拆分替代破折号</rule>
+  </anti_ai_detection_rules>
+
   <!-- 7. 输出格式 -->
   <output_format>
     <format_requirement>使用标准markdown格式输出纯粹的文章正文</format_requirement>

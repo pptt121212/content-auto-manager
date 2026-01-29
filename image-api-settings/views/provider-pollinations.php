@@ -5,7 +5,8 @@ if (!defined('ABSPATH')) exit;
 /** @var array $settings */
 ?>
 <h2>Pollinations.AI 设置</h2>
-<p>使用 Pollinations.AI 生成图像。您可以在 <a href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" target="_blank">Pollinations API 文档</a> 中查找更多信息。</p>
+<p>Pollinations.AI 支持免费生成图像（留空 Token 即可）。如需无水印图像，请前往 <a href="https://enter.pollinations.ai" target="_blank">enter.pollinations.ai</a> 获取新版 API Key。</p>
+
 <table class="form-table">
     <tbody>
         <tr>
@@ -15,7 +16,7 @@ if (!defined('ABSPATH')) exit;
             <td>
                 <input type="text" id="pollinations_default_model" name="pollinations[model]" value="<?php echo esc_attr($settings['pollinations']['model'] ?? 'flux'); ?>" class="regular-text">
                 <p class="description">
-                    <?php echo esc_html__('例如：flux, turbo,nanobanana,seedream', 'content-auto-manager'); ?>
+                    <?php echo esc_html__('可用模型：flux (默认), turbo, gptimage, kontext, seedream', 'content-auto-manager'); ?>
                 </p>
             </td>
         </tr>
@@ -26,12 +27,13 @@ if (!defined('ABSPATH')) exit;
             <td>
                 <input type="password" id="pollinations_token" name="pollinations[token]" value="<?php echo esc_attr($settings['pollinations']['token'] ?? ''); ?>" class="regular-text">
                 <p class="description">
-                    <?php echo esc_html__('用于身份验证的API令牌（如有则自动启用无徽标模式）', 'content-auto-manager'); ?>
+                    <?php echo esc_html__('从 enter.pollinations.ai 获取的新密钥。留空可免费使用（可能有水印）。', 'content-auto-manager'); ?>
                 </p>
             </td>
         </tr>
     </tbody>
 </table>
+
 <hr>
 <h2>接口测试</h2>
 <table class="form-table">
