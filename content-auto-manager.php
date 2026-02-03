@@ -189,6 +189,11 @@ function content_auto_manager_activate() {
     require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-structure-optimization-scheduler.php';
     $scheduler = new ContentAuto_StructureOptimizationScheduler();
     $scheduler->register_cron_events();
+
+    // --- 自动植入默认模板 ---
+    // 逻辑已移至 ContentAuto_Database::seed_default_templates 进行统一管理
+    // 避免在此处重复处理，防止逻辑冲突
+
 }
 
 /**

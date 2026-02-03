@@ -88,6 +88,7 @@ class Task_Controller extends Base_Controller {
         // 查询状态为 waiting_browser 的任务，同时获取规则的采集选项
         $rules_table = $wpdb->prefix . 'content_auto_rules';
         $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $topic_tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
         
         // 使用 LEFT JOIN 以确保主要采集逻辑的鲁棒性
         // 只有当主任务确实存在且未被强制失败/取消时才返回

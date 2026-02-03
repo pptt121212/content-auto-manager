@@ -392,7 +392,7 @@ if (!$publish_rule) {
 require_once dirname(__FILE__) . '/../class-category-filter.php';
 
 // 获取用户和过滤后的分类
-$users = get_users(array('who' => 'authors'));
+$users = get_users(array('capability' => 'edit_posts'));
 $categories = ContentAuto_Category_Filter::get_filtered_categories();
 ?>
 

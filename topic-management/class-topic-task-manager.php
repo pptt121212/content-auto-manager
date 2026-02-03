@@ -129,9 +129,30 @@ class ContentAuto_TopicTaskManager {
             return ['success' => false, 'message' => $error_message];
         }
         
-        // 获取当前处理的子任务ID
         if ($subtask_id === null) {
             $subtask_id = $this->get_current_subtask_id($task_id, $task);
+        }
+        
+        // [FIX] 如果仍未获取到子任务ID，检查是否存在 waiting_browser 状态的子任务
+        if ($subtask_id === null) {
+             global $wpdb;
+             $waiting_count = $wpdb->get_var($wpdb->prepare(
+                 "SELECT COUNT(*) FROM {$wpdb->prefix}content_auto_job_queue 
+                  WHERE job_type = 'topic_task' AND job_id = %d AND status = 'waiting_browser'",
+                  $task_id
+             ));
+             
+             if ($waiting_count > 0) {
+                 $this->logger->log_info('TASK_WAITING', "任务 (ID: {$task_id}) 正在等待浏览器采集 ({$waiting_count} 个子任务)", $context);
+                 // 保持 status 为 pending 或 processing 都可以，这里直接返回 success 停止本次执行
+                 return ['success' => true, 'status' => 'waiting_for_browser', 'message' => 'Waiting for browser content'];
+             }
+             
+             // 如果既没有 pending 也没有 waiting_browser，尝试完成任务状态逻辑
+             $this->finalize_task_status_if_completed($task_id, $task);
+             
+             // 返回成功但不执行任何操作，避免报错
+             return ['success' => true, 'message' => 'No pending subtasks found'];
         }
         
         // 仅当任务状态不是 'processing' 时，才更新为 'processing'
@@ -423,11 +444,18 @@ class ContentAuto_TopicTaskManager {
                             $topic_data['source_url'] = $first_content['url'];
                         }
                         
+                        // 保存原始标题
+                        if (!empty($first_content['post_title'])) {
+                            $topic_data['original_title'] = $first_content['post_title'];
+                        } elseif (!empty($first_content['title'])) {
+                            $topic_data['original_title'] = $first_content['title'];
+                        }
+                        
                         // 保存采集内容到参考资料字段
                         if (!empty($first_content['content'])) {
                              $topic_data['reference_material'] = $first_content['content'];
                         } elseif (!empty($first_content['upload_text']) && strpos($first_content['upload_text'], 'http') !== 0) {
-                             // 兼容性处理：如果 content 字段为空但 upload_text 包含内容
+                             // 兼容性处理：如果 content 字段为空 but upload_text 包含内容
                              $topic_data['reference_material'] = $first_content['upload_text'];
                         }
                     }
@@ -540,6 +568,15 @@ class ContentAuto_TopicTaskManager {
 
         // 如果没有数据库模板，回退到文件系统
         if (empty($prompt)) {
+            // 如果不是强制指定的模板（如仿写规则），则随机选择
+            if ($use_generic_db_template) {
+                $available_templates = [
+                    'topic-generation-prompt.xml',
+                    'topic1-generation-prompt.xml'
+                ];
+                $selected_template = $available_templates[array_rand($available_templates)];
+            }
+            
             $template_path = __DIR__ . '/../prompt-templating/' . $selected_template;
             
             if (!file_exists($template_path)) {
@@ -554,6 +591,9 @@ class ContentAuto_TopicTaskManager {
             }
             
             $prompt = file_get_contents($template_path);
+            
+            // 记录使用的模板文件
+            $this->logger->log_info('TEMPLATE_SELECTED', '已加载提示词模板', ['path' => $selected_template]);
         }
         
         // 动态生成内容块

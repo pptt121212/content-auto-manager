@@ -233,7 +233,7 @@ class ContentAuto_TaskRecoveryHandler {
             WHERE q.job_type = %s 
             AND t.id IS NULL
             AND q.status IN ('pending', 'processing')",
-            $job_type, $threshold_time
+            $job_type
         ), ARRAY_A);
         
         foreach ($orphaned_queues as $queue) {

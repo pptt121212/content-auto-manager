@@ -584,9 +584,10 @@ var App = {
     ajaxUrl: '<?php echo admin_url('admin-ajax.php'); ?>',
     nonce: '<?php echo wp_create_nonce('content_auto_template_nonce'); ?>',
     currentId: null,
+    currentFilter: 'all', // Add state tracking for filter
     
     init: function() {
-        this.loadTemplates();
+        this.loadTemplates(this.currentFilter);
         
         // Link template type to sidebar visibility
         jQuery('#template-type').on('change', function() {
@@ -678,7 +679,7 @@ var App = {
     showList: function() {
         jQuery('#view-editor').hide();
         jQuery('#view-list').show();
-        this.loadTemplates();
+        this.loadTemplates(this.currentFilter);
     },
     
     showEditor: function(id = null) {
@@ -715,6 +716,9 @@ var App = {
     
     // Load list
     loadTemplates: function(type = null) {
+        // Sanitize 'all' to null for backend compatibility
+        if (type === 'all') type = null;
+        
         var data = {
             action: 'content_auto_get_templates',
             type: type
@@ -757,7 +761,8 @@ var App = {
     filterList: function(type, el) {
         jQuery('.subsubsub a').removeClass('current');
         jQuery(el).addClass('current');
-        this.loadTemplates(type === 'all' ? null : type);
+        this.currentFilter = (type === 'all' ? 'all' : type);
+        this.loadTemplates(this.currentFilter === 'all' ? null : this.currentFilter);
     },
     
     // Load Detail

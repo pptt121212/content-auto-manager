@@ -546,11 +546,12 @@ class ContentAuto_XmlTemplateProcessor {
         // 尝试从数据库获取启用的文章模板
         if (class_exists('ContentAuto_TemplateManager')) {
             $template_manager = new ContentAuto_TemplateManager();
-            $db_template_content = $template_manager->get_active_template_content('article_generation');
+            // 改用 get_active_template 获取完整信息（包含名称）
+            $db_template = $template_manager->get_active_template('article_generation');
             
-            if ($db_template_content) {
-                $prompt = $db_template_content;
-                $selected_template = 'Database Template';
+            if ($db_template) {
+                $prompt = $db_template['content'];
+                $selected_template = $db_template['name'];
             }
         }
         
@@ -752,7 +753,10 @@ class ContentAuto_XmlTemplateProcessor {
             $this->log_article_prompt_to_file($prompt, $topic_data, $title, $source_angle);
         }
 
-        return $prompt;
+        return array(
+            'prompt' => $prompt,
+            'template_name' => isset($selected_template) ? $selected_template : 'unknown'
+        );
     }
     
     /**
