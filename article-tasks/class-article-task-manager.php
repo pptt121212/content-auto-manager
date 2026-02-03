@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/../topic-management/class-task-status-manager.php';
 require_once __DIR__ . '/../topic-management/class-task-recovery-handler.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
 require_once __DIR__ . '/class-article-performance-monitor.php';
 
 class ContentAuto_ArticleTaskManager {

@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) exit;
 /** @var array $settings */
 ?>
 <h2>Pollinations.AI 设置</h2>
-<p>Pollinations.AI 支持免费生成图像（留空 Token 即可）。如需无水印图像，请前往 <a href="https://enter.pollinations.ai" target="_blank">enter.pollinations.ai</a> 获取新版 API Key。</p>
+<p>由于 Pollinations.AI 免费版接口目前服务不可用，<strong>必须提供 API Token 才能生成图像</strong>。请前往 <a href="https://enter.pollinations.ai" target="_blank">enter.pollinations.ai</a> 获取新版 API Key。</p>
 
 <table class="form-table">
     <tbody>
@@ -22,12 +22,12 @@ if (!defined('ABSPATH')) exit;
         </tr>
         <tr>
             <th scope="row">
-                <label for="pollinations_token"><?php echo esc_html__('API Token (可选)', 'content-auto-manager'); ?></label>
+                <label for="pollinations_token"><?php echo esc_html__('API Token (必填)', 'content-auto-manager'); ?></label>
             </th>
             <td>
-                <input type="password" id="pollinations_token" name="pollinations[token]" value="<?php echo esc_attr($settings['pollinations']['token'] ?? ''); ?>" class="regular-text">
+                <input type="password" id="pollinations_token" name="pollinations[token]" value="<?php echo esc_attr($settings['pollinations']['token'] ?? ''); ?>" class="regular-text" required placeholder="pk_...">
                 <p class="description">
-                    <?php echo esc_html__('从 enter.pollinations.ai 获取的新密钥。留空可免费使用（可能有水印）。', 'content-auto-manager'); ?>
+                    <?php echo esc_html__('从 enter.pollinations.ai 获取的新密钥。必须填写才能使用服务。', 'content-auto-manager'); ?>
                 </p>
             </td>
         </tr>

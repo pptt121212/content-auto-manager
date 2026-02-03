@@ -119,9 +119,10 @@ if ((isset($_POST['submit']) || isset($_POST['submit_custom_api']) || isset($_PO
         $data['temperature_enabled'] = !empty($_POST['temperature_enabled']) ? 1 : 0;
         $data['max_tokens_enabled'] = !empty($_POST['max_tokens_enabled']) ? 1 : 0;
 
-        // 处理新参数 - 流式输出功能已禁用，始终设置为false
-        $data['stream_enabled'] = 0;
-        $data['stream'] = false;
+        // 处理新参数 - 流式输出功能 (默认开启)
+        // [修订] UI只保留一个下拉框，直接对应 stream 字段
+        $data['stream_enabled'] = 1; // 保持数据库表结构兼容，默认为1
+        $data['stream'] = isset($_POST['stream']) && $_POST['stream'] === 'true';
 
         $data['top_p_enabled'] = !empty($_POST['top_p_enabled']) ? 1 : 0;
         if (isset($_POST['top_p'])) {
@@ -148,6 +149,21 @@ if ((isset($_POST['submit']) || isset($_POST['submit_custom_api']) || isset($_PO
             if (isset($_POST['is_active']) && $_POST['is_active'] == 1) {
                 $api_config->set_active_config($_POST['id']);
             }
+            
+            // 强制重置API健康状态
+            if (class_exists('ContentAuto_LayeredCacheManager')) {
+                ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $_POST['id']);
+            } else {
+                // 尝试加载类文件
+                $layered_cache_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'key/layered-cache-manager.php';
+                if (file_exists($layered_cache_file)) {
+                    require_once $layered_cache_file;
+                    if (class_exists('ContentAuto_LayeredCacheManager')) {
+                        ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $_POST['id']);
+                    }
+                }
+            }
+            
             echo '<div class="notice notice-success"><p>' . __('配置已更新并保存到API列表。', 'content-auto-manager') . '</p></div>';
         } else {
             echo '<div class="notice notice-error"><p>' . __('配置更新失败。', 'content-auto-manager') . '</p></div>';
@@ -159,6 +175,21 @@ if ((isset($_POST['submit']) || isset($_POST['submit_custom_api']) || isset($_PO
             if (isset($_POST['is_active']) && $_POST['is_active'] == 1) {
                 $api_config->set_active_config($config_id);
             }
+            
+            // 强制重置API健康状态
+            if (class_exists('ContentAuto_LayeredCacheManager')) {
+                ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $config_id);
+            } else {
+                // 尝试加载类文件
+                $layered_cache_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'key/layered-cache-manager.php';
+                if (file_exists($layered_cache_file)) {
+                    require_once $layered_cache_file;
+                    if (class_exists('ContentAuto_LayeredCacheManager')) {
+                        ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $config_id);
+                    }
+                }
+            }
+            
             echo '<div class="notice notice-success"><p>' . __('配置已创建并保存到API列表。', 'content-auto-manager') . '</p></div>';
         } else {
             echo '<div class="notice notice-error"><p>' . __('配置创建失败。', 'content-auto-manager') . '</p></div>';
@@ -233,6 +264,19 @@ if (isset($_POST['predefined_api_nonce']) && wp_verify_nonce($_POST['predefined_
         $result = $api_config->update_config($config['id'], $update_data, true);
         
         if ($result !== false) {
+            // 强制重置API健康状态
+            if (class_exists('ContentAuto_LayeredCacheManager')) {
+                ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $config['id']);
+            } else {
+                $layered_cache_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'key/layered-cache-manager.php';
+                if (file_exists($layered_cache_file)) {
+                    require_once $layered_cache_file;
+                    if (class_exists('ContentAuto_LayeredCacheManager')) {
+                        ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $config['id']);
+                    }
+                }
+            }
+
             echo '<div class="notice notice-success"><p>' . __('预置API配置已更新。', 'content-auto-manager') . '</p></div>';
         } else {
             echo '<div class="notice notice-error"><p>' . __('更新预置API配置失败。', 'content-auto-manager') . '</p></div>';
@@ -256,6 +300,19 @@ if (isset($_POST['predefined_api_nonce']) && wp_verify_nonce($_POST['predefined_
             }
             
             echo '<div class="notice notice-success"><p>' . __('预置API配置已添加到API列表。', 'content-auto-manager') . '</p></div>';
+            
+            // 强制重置API健康状态 (对于新建的预置API)
+            if (class_exists('ContentAuto_LayeredCacheManager')) {
+                ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $new_config['id']);
+            } else {
+                $layered_cache_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'key/layered-cache-manager.php';
+                if (file_exists($layered_cache_file)) {
+                    require_once $layered_cache_file;
+                    if (class_exists('ContentAuto_LayeredCacheManager')) {
+                        ContentAuto_LayeredCacheManager::on_config_changed('api_config_modified', $new_config['id']);
+                    }
+                }
+            }
         } else {
             echo '<div class="notice notice-error"><p>' . __('添加预置API配置失败。', 'content-auto-manager') . '</p></div>';
         }
@@ -451,17 +508,14 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
                     <tr>
                         <th scope="row"><?php _e('流式输出 (Stream)', 'content-auto-manager'); ?></th>
                         <td>
-                            <label style="margin-right: 10px;">
-                                <input type="checkbox" id="stream_enabled" name="stream_enabled" value="1" disabled checked>
-                                <?php _e('禁用', 'content-auto-manager'); ?>
-                            </label>
-                            <select id="stream" name="stream" style="width: auto;" disabled>
-                                <option value="false" selected><?php _e('关闭', 'content-auto-manager'); ?></option>
-                                <option value="true"><?php _e('开启', 'content-auto-manager'); ?></option>
+                            <!-- [修订] 移除了多余的 Checkbox，只保留下拉框 -->
+                            <select id="stream" name="stream" style="width: auto;">
+                                <option value="false" <?php echo ($edit_config && isset($edit_config['stream']) && !$edit_config['stream']) ? 'selected' : ''; ?>><?php _e('关闭', 'content-auto-manager'); ?></option>
+                                <option value="true" <?php echo (!isset($edit_config) || !isset($edit_config['stream']) || $edit_config['stream']) ? 'selected' : ''; ?>><?php _e('开启 (默认)', 'content-auto-manager'); ?></option>
                             </select>
-                            <p class="description"><?php _e('流式输出功能已禁用。为确保插件稳定性和兼容性，所有API请求将使用标准响应格式。', 'content-auto-manager'); ?></p>
-                            <input type="hidden" name="stream_enabled" value="0">
-                            <input type="hidden" name="stream" value="false">
+                            <p class="description"><?php _e('开启后将使用 Server-Sent Events (SSE) 流式传输数据，可防止长文生成超时。建议保持开启。', 'content-auto-manager'); ?></p>
+                            <!-- 保持 stream_enabled 为 1 以兼容数据库 Schema -->
+                            <input type="hidden" name="stream_enabled" value="1">
                         </td>
                     </tr>
                     <tr>
@@ -1385,6 +1439,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (vectorModelDescription) {
                     vectorModelDescription.textContent = <?php echo json_encode(__('Jina Embeddings v4 固定为1024维，请使用: jina-embeddings-v4', 'content-auto-manager')); ?>;
+                }
+                
+                // Jina 可选填 Key
+                var vectorApiKeyInput = document.querySelector('input[name="vector_api_key"]');
+                if (vectorApiKeyInput) {
+                    vectorApiKeyInput.removeAttribute('required');
+                    vectorApiKeyInput.setAttribute('placeholder', '<?php _e('Jina v4 可选填密钥，留空则允许', 'content-auto-manager'); ?>');
+                }
+            }
+            
+            // 补充 OpenAI 配置时的 Key 必填逻辑
+            if (selectedType === 'openai') {
+                var vectorApiKeyInput = document.querySelector('input[name="vector_api_key"]');
+                if (vectorApiKeyInput) {
+                    var isEditConfig = <?php echo (isset($edit_config) && $edit_config) ? 'true' : 'false'; ?>;
+                    // 如果不是编辑模式（新建模式），则OpenAI必须填Key
+                    if (!isEditConfig) {
+                        vectorApiKeyInput.setAttribute('required', 'required');
+                    }
+                    vectorApiKeyInput.setAttribute('placeholder', '<?php _e('留空则不修改', 'content-auto-manager'); ?>');
                 }
             }
         }

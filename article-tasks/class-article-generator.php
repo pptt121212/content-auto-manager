@@ -12,6 +12,7 @@ require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/class-xml-temp
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/content-processing/class-content-filter.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/content-processing/class-markdown-converter.php';
 require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-pinyin-converter.php';
+require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
 
 class ContentAuto_ArticleGenerator {
     
@@ -51,12 +52,94 @@ class ContentAuto_ArticleGenerator {
         }
         
         // 获取相关内容
-        $related_content = (new ContentAuto_RuleManager())->get_content_by_rule($topic['rule_id'], 5);
+        $rule_manager = new ContentAuto_RuleManager();
+        $related_content = array();
+        
+        // 检查是否为仿写规则
+        $rule = $rule_manager->get_rule($topic['rule_id']);
+        $rule_type = is_object($rule) ? ($rule->rule_type ?? '') : ($rule['rule_type'] ?? '');
+        $is_rewrite = ($rule_type === 'collect_url_rewrite');
+        $topic['is_rewrite'] = $is_rewrite; // 传递标志到下游
+        
+        if ($is_rewrite && isset($topic['rule_item_index'])) {
+            // 对于仿写任务，获取特定的采集内容
+            // 注意：此时 rule_item_index 实际上存储的是 item_id
+            $item_content = $rule_manager->get_content_by_rule_item_id($topic['rule_item_index']);
+            if ($item_content) {
+                // 如果是采集内容，通常存储在 upload_text (或 url) 中，将其映射到 content 供后续处理
+                if (empty($item_content['content']) && !empty($item_content['upload_text'])) {
+                     $item_content['content'] = $item_content['upload_text'];
+                }
+                // 如果 get_content_by_rule_item_id 返回的是数组(被包装过)，则可能需要解包，
+                // 但根据 class-rule-manager.php 的实现，它返回的是 array('id'=>..., 'content'=>..., 'result'=>array(...)) 
+                // Wait, get_content_by_rule_item_id 返回的是 array('url'=>...) 的数组.
+                // 修正：get_content_by_rule_item_id 在 class-rule-manager.php 中返回的是 array(array(...)) ?
+                // 再次确认：现有的 get_content_by_rule_item_id (lines 504+) Returns: array($data) —— 一个包含单个元素的数组。
+                // 所以我们需要取 [0]。
+                
+                if (isset($item_content[0])) {
+                     $single_item = $item_content[0];
+                     
+                     // -------------------------------------------------------------
+                     // 深度风险修复：Transient 缓存过期保护
+                     // 如果 RuleManager 返回的内容看起来像 URL (缓存丢失)，
+                     // 但主题表(reference_material)里存有备份内容，则强制使用备份内容。
+                     // -------------------------------------------------------------
+                     $has_valid_content = !empty($single_item['content']) && mb_strlen($single_item['content']) > 200;
+                     if (!$has_valid_content && !empty($topic['reference_material']) && mb_strlen($topic['reference_material']) > 200) {
+                         $single_item['content'] = $topic['reference_material'];
+                         $has_valid_content = true;
+                     }
+                     
+                     // 常规映射 (Fallback)
+                     if (!$has_valid_content) {
+                        if (empty($single_item['content']) && !empty($single_item['url'])) {
+                            // 即使是 URL，也赋值给 content，让 XML 处理器去决定如何处理(或报错)
+                            $single_item['content'] = $single_item['url'];
+                        } elseif (empty($single_item['content']) && !empty($single_item['upload_text'])) {
+                            $single_item['content'] = $single_item['upload_text'];
+                        }
+                     }
+                     
+                     $related_content = array($single_item);
+                }
+            }
+        } else {
+            $related_content = $rule_manager->get_content_by_rule($topic['rule_id'], 5);
+        }
+        
+        // --- AI Metadata Completion for URL Rewrite ---
+        // 如果是仿写任务，且缺失关键元数据（分类或关键词），尝试AI补全
+        if ($is_rewrite && (empty($topic['matched_category']) || empty($topic['seo_keywords']))) {
+            // 将原始内容暂时放入 original_content 供分析 (如果 related_content 有提取到内容)
+            if (!empty($related_content) && isset($related_content[0]['content'])) {
+                 $topic['original_content'] = $related_content[0]['content'];
+                 // 尝试补全
+                 $metadata_result = $this->auto_complete_topic_metadata($topic);
+                 if ($metadata_result) {
+                     if (!empty($metadata_result['matched_category'])) {
+                         $topic['matched_category'] = $metadata_result['matched_category'];
+                     }
+                     if (!empty($metadata_result['seo_keywords'])) {
+                         $topic['seo_keywords'] = $metadata_result['seo_keywords'];
+                     }
+                 }
+            }
+        }
+        // ----------------------------------------------
         
         // 如果启用了文章内链功能，获取相似文章
         $similar_articles = array();
         if (isset($publish_rules['enable_internal_linking']) && $publish_rules['enable_internal_linking'] == 1) {
             $similar_articles = $this->get_similar_published_articles($topic['title']);
+        }
+        
+        // 验证：如果启用了自动配图，但未配置图像API，则强制关闭自动配图
+        if (isset($publish_rules['auto_image_insertion']) && $publish_rules['auto_image_insertion'] == 1) {
+            if (!$this->is_image_api_configured()) {
+                $publish_rules['auto_image_insertion'] = 0;
+                error_log('ContentAuto: 检测到图像API未配置或密钥为空，已强制关闭自动配图功能 (Topic: ' . $topic['title'] . ')');
+            }
         }
         
         // 生成文章内容（传递task_id用于批量追踪）
@@ -66,15 +149,30 @@ class ContentAuto_ArticleGenerator {
             // 根据是否启用自动配图决定创建策略
             if (isset($publish_rules['auto_image_insertion']) && $publish_rules['auto_image_insertion'] == 1) {
                 // 启用自动配图：先创建草稿，处理图片后再设置正确状态
-                $post_id = $this->create_wordpress_post_with_images($topic['title'], $article_content, $publish_rules, $topic);
+                $content_text = is_array($article_content) ? $article_content['content'] : $article_content;
+                $post_id = $this->create_wordpress_post_with_images($topic['title'], $content_text, $publish_rules, $topic);
             } else {
                 // 未启用自动配图：直接创建并发布
-                $post_id = $this->create_wordpress_post($topic['title'], $article_content, $publish_rules, $topic);
+                $content_text = is_array($article_content) ? $article_content['content'] : $article_content;
+                $post_id = $this->create_wordpress_post($topic['title'], $content_text, $publish_rules, $topic);
             }
             
             if ($post_id) {
                 // 保存文章记录到数据库
-                $this->save_article_record($topic, $post_id, $article_content, time());
+                // 从 prompt_data 中获取 template_name，这里无法直接获取，需要重构 generate_article 返回值
+                // 暂时方案：从 generate_article 返回结果中由上层获取不到，因为 generate_article 只返回 content
+                // 修正：generate_article 生成的 content 是纯文本，元数据丢失。
+                // 必须修改 generate_article 返回值，包含 template_name
+                if (is_array($article_content)) {
+                    $content_text = $article_content['content'];
+                    $template_name = $article_content['template_name'] ?? null;
+                } else {
+                    $content_text = $article_content;
+                    $template_name = null;
+                }
+
+                $this->save_article_record($topic, $post_id, $content_text, time(), $template_name);
+
                 // 验证主题状态，只有从queued状态才能更新为used
                 if ($topic['status'] === CONTENT_AUTO_TOPIC_QUEUED) {
                     $this->database->update('content_auto_topics', array('status' => CONTENT_AUTO_TOPIC_USED), array('id' => $topic['id']));
@@ -116,12 +214,22 @@ class ContentAuto_ArticleGenerator {
             $xml_processor->set_task_id($task_id);
         }
         
-        $prompt = $xml_processor->generate_prompt($topic, $publish_rules, $related_content, $similar_articles);
+        $prompt_data = $xml_processor->generate_prompt($topic, $publish_rules, $related_content, $similar_articles);
+        
+        // 解析提示词数据
+        if (is_array($prompt_data)) {
+            $prompt = $prompt_data['prompt'];
+            $template_name = $prompt_data['template_name'] ?? 'unknown';
+        } else {
+            $prompt = $prompt_data;
+            $template_name = 'unknown'; // 旧版本兼容
+        }
         
         // 记录生成的提示词（仅在调试模式下）
         if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
             $logger->debug('GENERATED_PROMPT', '生成的文章提示词', array_merge($base_context, array(
                 'prompt_length' => strlen($prompt),
+                'template_name' => $template_name,
                 'prompt_preview' => substr($prompt, 0, 1000) . (strlen($prompt) > 1000 ? '...' : ''),
                 'publish_rules' => $publish_rules
             )));
@@ -208,7 +316,10 @@ class ContentAuto_ArticleGenerator {
             'publish_rules' => $publish_rules
         ));
 
-        return $final_content;
+        return array(
+            'content' => $final_content,
+            'template_name' => $template_name
+        );
     }
 
     private function insert_brand_profile($html_content, $topic, $publish_rules) {
@@ -754,7 +865,7 @@ class ContentAuto_ArticleGenerator {
         return array();
     }
 
-    private function save_article_record($topic, $post_id, $article_content, $start_time) {
+    private function save_article_record($topic, $post_id, $article_content, $start_time, $template_name = null) {
         $article_data = [
             'topic_id' => $topic['id'],
             'post_id' => $post_id,
@@ -764,7 +875,8 @@ class ContentAuto_ArticleGenerator {
             'processing_time' => time() - $start_time,
             'word_count' => content_auto_manager_word_count($article_content),
             'api_config_id' => $topic['api_config_id'],
-            'api_config_name' => $topic['api_config_name']
+            'api_config_name' => $topic['api_config_name'],
+            'prompt_template' => $template_name
         ];
         $this->database->insert('content_auto_articles', $article_data);
     }
@@ -916,5 +1028,141 @@ class ContentAuto_ArticleGenerator {
             error_log('ContentAuto: 自动配图处理失败 - Post ID: ' . $post_id . ', Error: ' . $e->getMessage());
         }
     }
+
+    /**
+     * 检查图像API是否已有效配置
+     * 
+     * @return bool
+     */
+    private function is_image_api_configured() {
+        if (!class_exists('CAM_Image_API_Admin_Page')) {
+            $admin_page_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-api-settings/class-image-api-admin-page.php';
+            if (file_exists($admin_page_file)) {
+                require_once $admin_page_file;
+            } else {
+                return false;
+            }
+        }
+        
+        if (!class_exists('CAM_Image_API_Admin_Page')) {
+            return false;
+        }
+        
+        $settings = CAM_Image_API_Admin_Page::get_settings();
+        $provider = isset($settings['provider']) ? $settings['provider'] : '';
+        
+        if (empty($provider)) {
+            return false;
+        }
+        
+        // 检查选中的提供商是否有API Key（如果该提供商需要API Key）
+        if (isset($settings[$provider]) && array_key_exists('api_key', $settings[$provider])) {
+             return !empty($settings[$provider]['api_key']);
+        }
+        
+        return true; 
+    }
+    /**
+     * AI 自动补全主题元数据 (分类和SEO关键词)
+     * 
+     * @param array $topic 主题数据 (需包含 title 和 original_content)
+     * @return array|false 包含 matched_category, seo_keywords 的数组，或失败返回 false
+     */
+    private function auto_complete_topic_metadata($topic) {
+        if (empty($topic['original_content'])) {
+            return false;
+        }
+
+        // 1. 获取站点现有分类
+        $categories = get_categories(array('hide_empty' => false));
+        $category_list = array();
+        foreach ($categories as $cat) {
+            $category_list[] = $cat->name;
+        }
+        
+        if (empty($category_list)) {
+            return false;
+        }
+        
+        $category_str = implode(', ', $category_list);
+        
+        // 2. 构建 Prompt
+        // 限制内容长度以分析
+        $content_snippet = mb_substr(strip_tags($topic['original_content']), 0, 1000);
+        
+        $prompt = "请分析以下文章内容，完成两个任务：\n";
+        $prompt .= "1. 从给定的分类列表中选择最匹配的一个分类。\n";
+        $prompt .= "2. 提取 3-5 个最重要的 SEO 关键词。\n\n";
+        $prompt .= "文章标题：{$topic['title']}\n";
+        $prompt .= "文章内容摘要：" . $content_snippet . "...\n\n";
+        $prompt .= "可选分类列表：[{$category_str}]\n\n";
+        $prompt .= "请严格按照以下 JSON 格式输出，不要包含任何其他说明：\n";
+        $prompt .= "{\n";
+        $prompt .= '  "matched_category": "分类名称",' . "\n";
+        $prompt .= '  "seo_keywords": "关键词1, 关键词2, 关键词3"' . "\n";
+        $prompt .= "}";
+
+        // 3. 调用 AI
+        // 实例化一个新的 API Handler 避免状态干扰
+        if (!class_exists('ContentAuto_UnifiedApiHandler')) {
+            // 确保类已加载，虽然通常应该已经加载了
+             $file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+             if (file_exists($file)) require_once $file;
+        }
+        
+        $unified_api_handler = new ContentAuto_UnifiedApiHandler(); 
+        
+        // 使用自定义任务类型 'metadata_completion'
+        $response = $unified_api_handler->generate_content($prompt, 'metadata_completion', ['timeout' => 45]);
+        
+        if (empty($response) || (is_array($response) && isset($response['error']))) {
+            error_log('ContentAuto: Metadata completion failed');
+            return false;
+        }
+        
+        // 4. 解析 JSON
+        // 尝试提取 JSON 部分（如果 AI 返回了 Markdown 代码块）
+        if (preg_match('/\{[\s\S]*\}/', $response, $matches)) {
+            $json_str = $matches[0];
+        } else {
+            $json_str = $response;
+        }
+        
+        $data = json_decode($json_str, true);
+        
+        if (empty($data) || !isset($data['matched_category'])) {
+            error_log('ContentAuto: Metadata completion JSON parse failed: ' . $response);
+            return false;
+        }
+        
+        // 5. 更新数据库
+        $update_data = array();
+        $updates_needed = false;
+        
+        // 验证分类是否存在
+        $matched_cat_clean = trim($data['matched_category']);
+        if (in_array($matched_cat_clean, $category_list)) {
+            // 只有当原主题没有分类时，才进行更新（避免覆盖规则中指定的分类）
+            if (empty($topic['matched_category'])) {
+                $update_data['matched_category'] = $matched_cat_clean;
+                $updates_needed = true;
+            }
+        } else {
+             error_log("ContentAuto: AI suggested category '{$matched_cat_clean}' not found in site categories.");
+        }
+        
+        if (!empty($data['seo_keywords'])) {
+            $update_data['seo_keywords'] = sanitize_text_field($data['seo_keywords']);
+            $updates_needed = true;
+        }
+        
+        if ($updates_needed && !empty($topic['id'])) {
+             $this->database->update('content_auto_topics', $update_data, array('id' => $topic['id']));
+             return $update_data;
+        }
+        
+        return false;
+    }
+
 }
 ?>

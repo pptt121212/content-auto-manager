@@ -533,7 +533,7 @@ wp_enqueue_style('content-auto-enhanced-dashboard',
                     <h4>内容质量</h4>
                     <div class="stat-row">
                         <span class="stat-label">平均处理时间</span>
-                        <span class="stat-value"><?php echo round($dashboard_stats['articles']['avg_processing_time']); ?>秒</span>
+                        <span class="stat-value"><?php echo round($dashboard_stats['articles']['avg_processing_time'] ?? 0); ?>秒</span>
                     </div>
                     <div class="stat-row">
                         <span class="stat-label">总字符数</span>

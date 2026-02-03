@@ -30,6 +30,7 @@ if (!defined('ABSPATH')) exit;
                 <input type="password" id="modelscope_api_key" name="modelscope[api_key]" value="<?php echo esc_attr($settings['modelscope']['api_key'] ?? ''); ?>" class="regular-text">
             </td>
         </tr>
+
     </tbody>
 </table>
 <hr>

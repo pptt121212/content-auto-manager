@@ -60,87 +60,128 @@ class ContentAuto_OfficialChannel {
     /**
      * 发送请求到官方API
      */
+    /**
+     * 发送请求到官方API
+     * 已升级为流式 cURL 请求以处理长文章生成导致的 30s 超时 (cURL 56)
+     */
     public function send_request($config, $prompt) {
-        // 获取授权码和域名
         $license_key = $this->get_license_key();
         $domain = $this->get_current_domain();
         
         if (empty($license_key)) {
-            return array(
-                'success' => false, 
-                'message' => '未配置授权码，请在发布规则中设置授权码'
-            );
+            return array('success' => false, 'message' => '未配置授权码');
         }
         
-        if (empty($domain)) {
-            return array(
-                'success' => false, 
-                'message' => '无法获取当前域名'
-            );
-        }
-        
-        // 构建请求数据
         $request_data = array(
             'license_key' => $license_key,
             'domain' => $domain,
             'prompt' => $prompt,
-            'action' => 'generate_content'
+            'action' => 'generate_content',
+            'stream' => true // 启用流式转发模式
         );
         
-        // 构建请求参数
-        $args = array(
-            'headers' => array(
-                'Content-Type' => 'application/x-www-form-urlencoded',
-                'User-Agent' => 'ContentAutoManager/1.0 (WordPress Plugin)',
-                'Accept' => 'application/json'
-            ),
-            'body' => http_build_query($request_data),
-            'timeout' => 180,
-            'sslverify' => true
+        $ch = curl_init();
+        $headers = array(
+            'Content-Type: application/json',
+            'User-Agent: ContentAutoManager/1.1 (Streaming; WordPress)',
+            'Accept: text/event-stream'
         );
         
-        // 发送请求
-        $response = wp_remote_post($this->get_api_url(), $args);
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $this->get_api_url(),
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($request_data),
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_RETURNTRANSFER => false, // 使用回调
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_TIMEOUT => 300,          // 5分钟超时
+            CURLOPT_CONNECTTIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        ));
         
-        // 检查响应
-        if (is_wp_error($response)) {
-            return array(
-                'success' => false, 
-                'message' => '请求失败: ' . $response->get_error_message()
-            );
+        $accumulated_content = '';
+        $usage = array();
+        $buffer = '';
+        $stream_error = null;
+        
+        // SSE 解析回调
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error, &$usage) {
+            $buffer .= $chunk;
+            while (($pos = strpos($buffer, "\n")) !== false) {
+                $line = substr($buffer, 0, $pos);
+                $buffer = substr($buffer, $pos + 1);
+                $line = trim($line);
+                
+                if (empty($line)) continue;
+                
+                // 1. 忽略 SSE 注释（心跳包，以 : 开头）
+                if (strpos($line, ':') === 0) continue;
+                
+                // 2. 处理错误事件
+                if (strpos($line, 'event: error') === 0) {
+                    $stream_error = 'Proxy reported error event';
+                    continue;
+                }
+                
+                // 3. 解析数据行 - 兼容两种格式
+                // "data: {...}" (标准格式，有空格) 和 "data:{...}" (非标准格式，无空格)
+                $json_str = null;
+                if (strpos($line, 'data: ') === 0) {
+                    $json_str = substr($line, 6);
+                } elseif (strpos($line, 'data:') === 0) {
+                    $json_str = substr($line, 5);
+                }
+                
+                if ($json_str !== null) {
+                    if (trim($json_str) === '[DONE]') break;
+                    
+                    $data = json_decode($json_str, true);
+                    if ($data) {
+                        if (isset($data['choices'][0]['delta']['content'])) {
+                            $accumulated_content .= $data['choices'][0]['delta']['content'];
+                        } elseif (isset($data['usage'])) {
+                            $usage = $data['usage'];
+                        } elseif (isset($data['status']) && $data['status'] === 'error') {
+                            $stream_error = $data['message'] ?? 'Unknown Error in Stream';
+                        } elseif (isset($data['message']) && $stream_error === 'Proxy reported error event') {
+                            // 这种情况下，上一行是 event: error，这一行是具体的错误信息
+                            $stream_error = $data['message'];
+                        }
+                    }
+                }
+            }
+            return strlen($chunk);
+        });
+        
+        // 捕获潜在的实时输出冲突
+        ob_start();
+        $success = curl_exec($ch);
+        ob_end_clean();
+        
+        $curl_error = curl_error($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($stream_error) {
+            return array('success' => false, 'message' => 'API流内部错误: ' . $stream_error);
         }
         
-        $response_code = wp_remote_retrieve_response_code($response);
-        $response_body = wp_remote_retrieve_body($response);
-        
-        if ($response_code !== 200) {
-            return array(
-                'success' => false, 
-                'message' => '服务器响应错误: HTTP ' . $response_code
-            );
+        if ($curl_error) {
+            return array('success' => false, 'message' => '请求失败 (cURL): ' . $curl_error);
         }
         
-        // 解析响应
-        $data = json_decode($response_body, true);
-        
-        if (!$data) {
-            return array(
-                'success' => false, 
-                'message' => '响应数据格式错误'
-            );
+        if ($http_code !== 200) {
+            return array('success' => false, 'message' => '服务器响应错误: HTTP ' . $http_code);
         }
         
-        if ($data['status'] !== 'success') {
-            return array(
-                'success' => false, 
-                'message' => isset($data['message']) ? $data['message'] : '请求失败'
-            );
+        if (empty($accumulated_content) && $success) {
+            return array('success' => false, 'message' => 'API未返回任何有效内容');
         }
         
         return array(
             'success' => true,
-            'data' => isset($data['content']) ? $data['content'] : '',
-            'usage' => isset($data['usage']) ? $data['usage'] : array()
+            'data' => $accumulated_content,
+            'usage' => $usage
         );
     }
     
@@ -305,7 +346,7 @@ class ContentAuto_OfficialChannel {
                 'Accept' => 'application/json'
             ),
             'body' => http_build_query($request_data),
-            'timeout' => 30,
+            'timeout' => 120,
             'sslverify' => true
         );
         

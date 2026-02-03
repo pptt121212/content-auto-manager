@@ -81,6 +81,28 @@ class ContentAuto_ArticleQueueProcessor {
             }
             $this->logger->log_info('TOPIC_FETCH_SUCCESS', "主题信息获取成功: {$topic['title']}", $context);
             
+            // 🚀 二次核心修复：兼容对象/数组返回值并彻底净化素材
+            $rule_manager = new ContentAuto_RuleManager();
+            $rule = $rule_manager->get_rule($topic['rule_id']);
+            
+            // 兼容性判断：rule 有可能是对象也有可能是数组
+            $rule_type = '';
+            if (is_object($rule)) {
+                $rule_type = $rule->rule_type ?? '';
+            } elseif (is_array($rule)) {
+                $rule_type = $rule['rule_type'] ?? '';
+            }
+            
+            $topic['is_rewrite'] = ($rule_type === 'collect_url_rewrite');
+            
+            if ($topic['is_rewrite']) {
+                $this->logger->log_info('REWRITE_MODE_DETECTED', '确认采集仿写模式，正在净化素材...', $context);
+                // 彻底从参考资料中剔除可能存在的图片标签，防止 AI 模仿
+                if (!empty($topic['reference_material'])) {
+                    $topic['reference_material'] = preg_replace('/<!--\s*image\s+prompt:.*?-->/is', '', $topic['reference_material']);
+                }
+            }
+            
             // 3. 获取发布规则（如果不存在则使用默认配置）
             $this->logger->log_info('PUBLISH_RULES_FETCH', '获取发布规则', $context);
             $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
@@ -90,8 +112,32 @@ class ContentAuto_ArticleQueueProcessor {
             }
             $this->logger->log_info('PUBLISH_RULES_FETCH_SUCCESS', '发布规则获取成功', $context);
             
+            // 验证：如果启用了自动配图，但未配置图像API，则强制关闭自动配图
+            if (isset($publish_rules['auto_image_insertion']) && $publish_rules['auto_image_insertion'] == 1) {
+                if (!$this->is_image_api_configured()) {
+                    $publish_rules['auto_image_insertion'] = 0;
+                    $this->logger->log_warning('AUTO_IMAGE_DISABLED', '检测到图像API未配置或密钥为空，已强制关闭自动配图功能', $context);
+                }
+            }
+            
             // 4. 获取相关内容
-            $related_content = (new ContentAuto_RuleManager())->get_content_by_rule($topic['rule_id'], 5);
+            // 🚀 关键修复：仿写模式下，素材在主题表的 reference_material 字段中，而非 rule_items 表
+            if ($topic['is_rewrite'] && !empty($topic['reference_material'])) {
+                // 仿写模式：直接使用存储在主题中的采集内容
+                $related_content = [
+                    [
+                        'content' => $topic['reference_material'],
+                        'title' => $topic['original_title'] ?? '',
+                        'url' => $topic['source_url'] ?? ''
+                    ]
+                ];
+                $this->logger->log_info('REWRITE_CONTENT_SOURCE', '使用主题 reference_material 作为仿写素材', array_merge($context, [
+                    'material_length' => strlen($topic['reference_material'])
+                ]));
+            } else {
+                // 标准模式：从规则项目表获取内容
+                $related_content = $rule_manager->get_content_by_rule($topic['rule_id'], 5);
+            }
             
             // 5. 生成文章内容
             $result = $this->generate_article_content($topic, $related_content, $publish_rules, $task_id, $subtask_id);
@@ -99,6 +145,13 @@ class ContentAuto_ArticleQueueProcessor {
                 // 确保错误信息格式正确，兼容队列表处理逻辑
                 $error_message = isset($result['error']['message']) ? $result['error']['message'] : '文章内容生成失败';
                 return ['success' => false, 'message' => $error_message, 'error' => $result['error']];
+            }
+            
+            // 获取实际使用的 API 配置并存回 topic 数组，以便 save_article_record 使用
+            $used_api_config = $this->api_handler->get_current_api_config();
+            if ($used_api_config) {
+                $topic['api_config_id'] = $used_api_config['id'];
+                $topic['api_config_name'] = $used_api_config['name'];
             }
             
             // 6. 创建WordPress文章（根据是否启用自动配图选择处理方式）
@@ -214,7 +267,7 @@ class ContentAuto_ArticleQueueProcessor {
      * @param array $publish_rules 发布规则
      * @return string 处理后的HTML内容
      */
-    private function insert_brand_profile($html_content, $topic, $publish_rules) {
+    private function insert_brand_profile($html_content, &$topic, $publish_rules) {
         if (!class_exists('ContentAuto_PluginLogger')) {
             require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
@@ -344,7 +397,7 @@ class ContentAuto_ArticleQueueProcessor {
      * 生成文章内容
      * 复现有的内容生成组件，并实现API轮询和重试机制
      */
-    private function generate_article_content($topic, $related_content, $publish_rules, $task_id = null, $subtask_id = null) {
+    private function generate_article_content(&$topic, $related_content, $publish_rules, $task_id = null, $subtask_id = null) {
         $context = array('topic_id' => $topic['id'], 'topic_title' => $topic['title']);
         $this->performance_monitor->start_timing('generate_article_content', $context);
 
@@ -370,16 +423,27 @@ class ContentAuto_ArticleQueueProcessor {
             // 6. 生成提示词
             $this->logger->log_info('PROMPT_GENERATION', '开始生成提示词', $context);
             $this->performance_monitor->start_timing('prompt_generation', $context);
-            $prompt = $this->xml_processor->generate_prompt($topic, $publish_rules, $related_content, $similar_articles);
-            $this->performance_monitor->end_timing('prompt_generation', !empty($prompt));
+            $prompt_data = $this->xml_processor->generate_prompt($topic, $publish_rules, $related_content, $similar_articles);
+            $this->performance_monitor->end_timing('prompt_generation', !empty($prompt_data));
 
-            if (empty($prompt)) {
+            if (empty($prompt_data)) {
                 $this->logger->log_error('PROMPT_GENERATION_FAILED', '生成提示词失败', $context);
                 $this->performance_monitor->record_error('content_generation', 'PROMPT_GENERATION_FAILED', $context);
                 $this->performance_monitor->end_timing('generate_article_content', false);
                 return ['success' => false, 'error' => ['stage' => '提示词生成', 'message' => '生成提示词失败']];
             }
-            $this->logger->log_success('PROMPT_GENERATION_SUCCESS', '提示词生成成功', array_merge($context, array('prompt_length' => strlen($prompt))));
+
+            // 解析提示词数据
+            if (is_array($prompt_data)) {
+                $prompt = $prompt_data['prompt'];
+                $template_name = $prompt_data['template_name'] ?? 'unknown';
+            } else {
+                $prompt = $prompt_data;
+                $template_name = 'unknown';
+            }
+            $topic['prompt_template'] = $template_name;
+
+            $this->logger->log_success('PROMPT_GENERATION_SUCCESS', "提示词生成成功 (模板: {$template_name})", array_merge($context, array('prompt_length' => strlen($prompt))));
 
             // 记录API请求提示词摘要（仅长度和任务信息）
             $this->logger->log_debug('API_REQUEST_PROMPT', 'API请求提示词摘要', array_merge($context, [
@@ -396,6 +460,9 @@ class ContentAuto_ArticleQueueProcessor {
 
             $raw_content = $result['content'];
             $this->logger->log_success('API_REQUEST_SUCCESS', 'API请求成功', array_merge($context, array('content_length' => strlen($raw_content))));
+            
+            // [优化] API请求可能耗时较长，重置超时时间以确保后续处理（过滤、Markdown转换、配图）有足够时间
+            set_time_limit(300);
 
             // 记录API返回的完整原始内容（仅在调试模式下）
             if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
@@ -472,7 +539,7 @@ class ContentAuto_ArticleQueueProcessor {
     
     /**
      * 执行API请求（带重试机制）
-     * 实现API轮询和指数退避策略
+     * 接入统一 API 处理器，彻底规避 cURL 超时和 SSL 错误
      */
     private function execute_api_request_with_retry($prompt, $topic, $max_retries = 3, $task_id = null, $subtask_id = null) {
         $context = $this->logger->build_context(null, null, array(
@@ -481,104 +548,36 @@ class ContentAuto_ArticleQueueProcessor {
         ));
         
         $this->performance_monitor->start_timing('api_request_with_retry', $context);
-        $last_error = null;
-        $retry_delay = 1; // 初始重试延迟（秒）
-        $last_api_name = ''; // 记录最后使用的API名称
         
-        for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
-            $attempt_context = array_merge($context, array('attempt' => $attempt));
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                $this->logger->log_success('API_ATTEMPT', "开始第 {$attempt} 次API请求尝试", $attempt_context);
-            }
-            $this->performance_monitor->start_timing("api_attempt_{$attempt}", $attempt_context);
-            
-            // 从激活状态的API中轮询请求
-            $api_config = $this->api_config->get_next_active_config($attempt > 1);
-            
-            // 更新队列中的重试次数，确保重试计数正确记录
-            if ($task_id && $subtask_id) {
-                $this->logger->log_info('RETRY_COUNT_UPDATE_ATTEMPT', "准备更新重试次数: task_id={$task_id}, subtask_id={$subtask_id}, attempt={$attempt}");
-                $this->update_subtask_retry_count($task_id, $subtask_id, $attempt);
-            } else {
-                $this->logger->log_error('RETRY_COUNT_UPDATE_ERROR', "无法更新重试次数: task_id或subtask_id为空");
-            }
-            
-            if (!$api_config) {
-                $error_message = '没有可用的API配置';
-                $this->logger->log_error('NO_API_AVAILABLE', $error_message, $attempt_context);
-                $this->performance_monitor->record_error('api_config', 'NO_API_AVAILABLE', $attempt_context);
-                $this->performance_monitor->end_timing("api_attempt_{$attempt}", false);
-                $this->performance_monitor->end_timing('api_request_with_retry', false);
-                
-                // 更新重试次数为最大值
-                if ($task_id && $subtask_id) {
-                    $this->update_subtask_retry_count($task_id, $subtask_id, $max_retries);
-                }
-                
-                return ['success' => false, 'message' => $error_message, 'error' => ['stage' => 'API配置', 'message' => $error_message], 'retry_count' => $max_retries];
-            }
-            
-            $api_context = array_merge($attempt_context, array('api_name' => $api_config['name'], 'api_id' => $api_config['id']));
-            $this->logger->log_success('API_SELECTED', "使用API配置: {$api_config['name']}", $api_context);
-            
-            // 记录最后使用的API名称
-            $last_api_name = $api_config['name'];
-            
-            // 执行API请求
-            $api_start_time = microtime(true);
-            
-            // 检查是否为预置API
-            if (!empty($api_config['predefined_channel'])) {
-                $result = $this->handle_predefined_api_request($api_config, $prompt, $topic, $attempt, $max_retries);
-            } else {
-                $result = $this->make_api_request($api_config, $prompt, $topic, $attempt, $max_retries);
-            }
-            
-            $api_response_time = microtime(true) - $api_start_time;
-            
-            // 记录API统计
-            $this->performance_monitor->record_api_stats($api_config['name'], $api_response_time, $result['success'], $api_context);
-            
-            if ($result['success']) {
-                // 标记API成功
-                $this->api_config->mark_api_success($api_config['id']);
-                
-                $this->performance_monitor->end_timing("api_attempt_{$attempt}", true);
-                $this->performance_monitor->end_timing('api_request_with_retry', true, array('successful_attempt' => $attempt));
-                return $result;
-            }
-            
-            $last_error = $result['error'];
-            
-            // 标记API失败
-            $this->api_config->mark_api_failed($api_config['id']);
-            
-            $this->logger->log_error('API_FAILED', "第 {$attempt} 次API请求失败: " . $last_error['message'], $api_context);
-            $this->performance_monitor->record_error('api_request', 'API_FAILED', array_merge($api_context, array('error_message' => $last_error['message'], 'retry_count' => $attempt)));
-            $this->performance_monitor->end_timing("api_attempt_{$attempt}", false);
-            
-            // 如果不是最后一次尝试，进行指数退避延迟
-            if ($attempt < $max_retries) {
-                $this->logger->log_success('RETRY_DELAY', "等待 {$retry_delay} 秒后重试", $api_context);
-                sleep($retry_delay);
-                $retry_delay *= 2; // 指数退避
-            }
+        // 更新队列中的重试次数（标记为正在进行第1次尝试，实际重试由Handler内部接管）
+        if ($task_id && $subtask_id) {
+            $this->update_subtask_retry_count($task_id, $subtask_id, 1);
         }
         
-        // 所有重试都失败
-        $this->logger->log_error('API_ALL_FAILED', "所有API重试都失败", $context);
-        $this->performance_monitor->record_error('api_request', 'API_ALL_FAILED', $context);
+        // 🚀 核心优化：完全委托给统一 API 处理器
+        // 不再传递 config_id，让 generate_content 自动使用 get_next_active_config 和 try_predefined_api_fallback
+        $result_text = $this->api_handler->generate_content($prompt, 'article', [
+            'rule_id' => $topic['rule_id'],
+            'topic_id' => $topic['id']
+            // 'config_id' => ... // 移除，交给 Handler 自动选择
+        ]);
+        
+        // 检查结果
+        if (!is_array($result_text) || !isset($result_text['error'])) {
+            $this->performance_monitor->end_timing('api_request_with_retry', true);
+            return ['success' => true, 'content' => $result_text];
+        }
+        
+        $last_error = [
+            'stage' => 'API请求',
+            'message' => is_string($result_text['error']) ? $result_text['error'] : json_encode($result_text['error'])
+        ];
+        
+        $this->logger->log_error('API_FAILED', "文章生成API请求失败 (Handler内部重试也失败): " . $last_error['message'], $context);
+
         $this->performance_monitor->end_timing('api_request_with_retry', false);
-        $final_error = $last_error ?: ['stage' => 'API重试', 'message' => '所有API重试都失败'];
-        $error_message = isset($final_error['message']) ? $final_error['message'] : '所有API重试都失败';
-        
-        // 增强错误信息，包含重试详情
-        $api_name = !empty($last_api_name) ? $last_api_name : '未知API';
-        $enhanced_error_message = "API请求失败，使用[{$api_name}]重试{$max_retries}次后仍失败: {$error_message}";
-        
-        return ['success' => false, 'message' => $enhanced_error_message, 'error' => $final_error, 'retry_count' => $max_retries];
+        return ['success' => false, 'message' => 'API请求失败: ' . $last_error['message'], 'error' => $last_error];
     }
-    
     /**
      * 更新子任务重试次数
      */
@@ -615,233 +614,6 @@ class ContentAuto_ArticleQueueProcessor {
         );
         
         return $result;
-    }
-    
-    /**
-     * 处理预置API请求
-     */
-    private function handle_predefined_api_request($api_config, $prompt, $topic, $attempt = 1, $max_retries = 3) {
-        try {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'api-settings/class-predefined-api.php';
-            $predefined_api = new ContentAuto_PredefinedApi();
-
-            // 记录预置API请求详情（仅在调试模式下）
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                $this->logger->log_debug('PREDEFINED_API_REQUEST_DETAILS', '预置API请求详情', array(
-                    'topic_id' => $topic['id'],
-                    'topic_title' => $topic['title'],
-                    'predefined_channel' => $api_config['predefined_channel'],
-                    'api_name' => $api_config['name'],
-                    'prompt_length' => strlen($prompt),
-                    'attempt' => $attempt,
-                    'max_retries' => $max_retries
-                ));
-            }
-
-            // 检查预置API配置是否存在，如果不存在则自动创建
-            $config = $predefined_api->get_config($api_config['predefined_channel']);
-            if (!$config) {
-                $config = $predefined_api->create_config_record($api_config['predefined_channel'], 1);
-                if (!$config) {
-                    // 增强错误信息，包含API名称和重试信息
-                    $api_name = isset($api_config['name']) ? $api_config['name'] : '未知API';
-                    $enhanced_error_message = "使用[{$api_name}]第{$attempt}次预置API请求失败: 预置API配置创建失败，无法使用预置API服务";
-                    return ['success' => false, 'error' => ['stage' => '预置API', 'message' => $enhanced_error_message, 'api_name' => $api_name, 'attempt' => $attempt]];
-                }
-            }
-
-            $response = $predefined_api->send_request($api_config['predefined_channel'], $prompt);
-
-            if ($response['success']) {
-                // 解析预置API响应
-                $api_response_data = json_decode($response['data'], true);
-                $actual_content = '';
-
-                if (json_last_error() === JSON_ERROR_NONE && isset($api_response_data['choices'][0]['message']['content'])) {
-                    $actual_content = $api_response_data['choices'][0]['message']['content'];
-                } else {
-                    $actual_content = $response['data'];
-                }
-
-                // 记录预置API的完整响应内容（仅在调试模式下）
-                if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                    $this->logger->log_debug('PREDEFINED_API_RESPONSE', '预置API完整响应内容', array(
-                        'topic_id' => $topic['id'],
-                        'topic_title' => $topic['title'],
-                        'predefined_channel' => $api_config['predefined_channel'],
-                        'api_name' => $api_config['name'],
-                        'response_data' => $response['data'],
-                        'response_length' => strlen($response['data']),
-                        'json_decode_success' => (json_last_error() === JSON_ERROR_NONE),
-                        'extracted_content_length' => strlen($actual_content),
-                        'extracted_content' => $actual_content,
-                        'response_format' => isset($api_response_data['choices'][0]['message']['content']) ? 'choices[0].message.content' : 'raw_data',
-                        'attempt' => $attempt
-                    ));
-                }
-
-                if (empty($actual_content)) {
-                    // 增强错误信息，包含API名称和重试信息
-                    $api_name = isset($api_config['name']) ? $api_config['name'] : '未知API';
-                    $enhanced_error_message = "使用[{$api_name}]第{$attempt}次预置API请求失败: 预置API返回空内容";
-                    return ['success' => false, 'error' => ['stage' => '预置API', 'message' => $enhanced_error_message, 'api_name' => $api_name, 'attempt' => $attempt]];
-                }
-
-                return ['success' => true, 'content' => $actual_content];
-            } else {
-                // 增强错误信息，包含API名称和重试信息
-                $api_name = isset($api_config['name']) ? $api_config['name'] : '未知API';
-                $enhanced_error_message = "使用[{$api_name}]第{$attempt}次预置API请求失败: {$response['message']}";
-                
-                // 记录预置API失败详情（仅在调试模式下）
-                if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                    $this->logger->log_debug('PREDEFINED_API_ERROR', '预置API请求失败详情', array(
-                        'topic_id' => $topic['id'],
-                        'topic_title' => $topic['title'],
-                        'predefined_channel' => $api_config['predefined_channel'],
-                        'api_name' => $api_config['name'],
-                        'error_message' => $response['message'],
-                        'attempt' => $attempt
-                    ));
-                }
-                
-                return ['success' => false, 'error' => ['stage' => '预置API', 'message' => $enhanced_error_message, 'api_name' => $api_name, 'attempt' => $attempt]];
-            }
-
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => ['stage' => '预置API异常', 'message' => $e->getMessage()]];
-        }
-    }
-    
-    /**
-     * 执行单次API请求
-     */
-    private function make_api_request($api_config, $prompt, $topic, $attempt = 1, $max_retries = 3) {
-        try {
-            // 直接使用单个API配置进行请求，不使用内部重试逻辑
-            // 构建API请求数据
-            $body_data = array(
-                'model' => $api_config['model_name'],
-                'messages' => array(
-                    array('role' => 'user', 'content' => $prompt)
-                ),
-            );
-
-            // 仅在启用时添加温度参数
-            if (!isset($api_config['temperature_enabled']) || $api_config['temperature_enabled']) {
-                $body_data['temperature'] = (float) $api_config['temperature'];
-            }
-
-            // 仅在启用时添加最大Token数参数
-            if (!isset($api_config['max_tokens_enabled']) || $api_config['max_tokens_enabled']) {
-                $body_data['max_tokens'] = (int) $api_config['max_tokens'];
-            }
-
-            // 构建API请求
-            $args = array(
-                'headers' => array(
-                    'Content-Type' => 'application/json',
-                    'Authorization' => 'Bearer ' . $api_config['api_key']
-                ),
-                'body' => json_encode($body_data),
-                'timeout' => 120
-            );
-
-            // 记录API请求详情（仅在调试模式下）
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                $this->logger->log_debug('API_REQUEST_DETAILS', 'API请求详情', array(
-                    'topic_id' => $topic['id'],
-                    'topic_title' => $topic['title'],
-                    'api_url' => $api_config['api_url'],
-                    'model_name' => $api_config['model_name'],
-                    'request_body' => json_encode($body_data, JSON_UNESCAPED_UNICODE),
-                    'prompt_length' => strlen($prompt),
-                    'attempt' => $attempt,
-                    'max_retries' => $max_retries
-                ));
-            }
-
-            // 发送请求
-            $response = wp_remote_post($api_config['api_url'], $args);
-
-            if (is_wp_error($response)) {
-                $error_message = $response->get_error_message();
-                return ['success' => false, 'error' => ['stage' => 'API请求', 'message' => "WordPress请求错误: " . $error_message]];
-            }
-
-            // 处理响应
-            $response_body = wp_remote_retrieve_body($response);
-            $response_data = json_decode($response_body, true);
-            $response_code = wp_remote_retrieve_response_code($response);
-
-            // 记录API原始响应（仅在调试模式下）
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                $this->logger->log_debug('API_RAW_RESPONSE', 'API原始响应内容', array(
-                    'topic_id' => $topic['id'],
-                    'topic_title' => $topic['title'],
-                    'response_code' => $response_code,
-                    'response_body' => $response_body,
-                    'response_length' => strlen($response_body),
-                    'response_type' => gettype($response_data),
-                    'attempt' => $attempt,
-                    'api_name' => $api_config['name']
-                ));
-            }
-
-            // 检查HTTP状态码
-            if ($response_code >= 400) {
-                $error_message = "API调用返回错误状态码: " . $response_code;
-                if (isset($response_data['error'])) {
-                    $error_message .= " - " . (isset($response_data['error']['message']) ? $response_data['error']['message'] : (is_string($response_data['error']) ? $response_data['error'] : json_encode($response_data['error'])));
-                }
-
-                // 增强错误信息，包含API名称和重试信息
-                $api_name = isset($api_config['name']) ? $api_config['name'] : '未知API';
-                $enhanced_error_message = "使用[{$api_name}]第{$attempt}次API请求失败: {$error_message}";
-
-                return ['success' => false, 'error' => ['stage' => 'API请求', 'message' => $enhanced_error_message, 'api_name' => $api_name, 'attempt' => $attempt]];
-            }
-
-            // 检查是否有错误信息
-            if (isset($response_data['error'])) {
-                $error_message = "API返回错误: ";
-                if (is_string($response_data['error'])) {
-                    $error_message .= $response_data['error'];
-                } elseif (is_array($response_data['error'])) {
-                    $error_message .= isset($response_data['error']['message']) ? $response_data['error']['message'] : json_encode($response_data['error']);
-                }
-                return ['success' => false, 'error' => ['stage' => 'API请求', 'message' => $error_message]];
-            }
-
-            // 处理API响应内容
-            if (isset($response_data['choices'][0]['message']['content'])) {
-                $raw_content = $response_data['choices'][0]['message']['content'];
-                
-                // 记录提取的原始内容（仅在调试模式下）
-                if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                    $this->logger->log_debug('API_EXTRACTED_CONTENT', 'API提取的原始内容', array(
-                        'topic_id' => $topic['id'],
-                        'topic_title' => $topic['title'],
-                        'content_length' => strlen($raw_content),
-                        'raw_content' => $raw_content,
-                        'response_format' => 'choices[0].message.content',
-                        'attempt' => $attempt,
-                        'api_name' => $api_config['name']
-                    ));
-                }
-
-                if (empty($raw_content)) {
-                    return ['success' => false, 'error' => ['stage' => 'API请求', 'message' => 'API返回空内容']];
-                }
-
-                return ['success' => true, 'content' => $raw_content];
-            }
-
-            return ['success' => false, 'error' => ['stage' => 'API请求', 'message' => 'API响应格式不正确']];
-
-        } catch (Exception $e) {
-            return ['success' => false, 'error' => ['stage' => 'API请求异常', 'message' => $e->getMessage()]];
-        }
     }
     
     /**
@@ -1168,7 +940,8 @@ class ContentAuto_ArticleQueueProcessor {
             'processing_time' => time() - $start_time,
             'word_count' => content_auto_manager_word_count($article_content),
             'api_config_id' => $topic['api_config_id'] ?? null,
-            'api_config_name' => $topic['api_config_name'] ?? null
+            'api_config_name' => $topic['api_config_name'] ?? null,
+            'prompt_template' => $topic['prompt_template'] ?? null
         ];
         return $this->database->insert('content_auto_articles', $article_data);
     }
@@ -1342,5 +1115,41 @@ class ContentAuto_ArticleQueueProcessor {
             'integration_rate' => round(($successful_components / $total_components) * 100, 2) . '%',
             'details' => $results
         );
+    }
+
+    /**
+     * 检查图像API是否已有效配置
+     * 
+     * @return bool
+     */
+    private function is_image_api_configured() {
+        if (!class_exists('CAM_Image_API_Admin_Page')) {
+            $admin_page_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-api-settings/class-image-api-admin-page.php';
+            if (file_exists($admin_page_file)) {
+                require_once $admin_page_file;
+            } else {
+                return false;
+            }
+        }
+        
+        if (!class_exists('CAM_Image_API_Admin_Page')) {
+            return false;
+        }
+        
+        $settings = CAM_Image_API_Admin_Page::get_settings();
+        $provider = isset($settings['provider']) ? $settings['provider'] : '';
+        
+        if (empty($provider)) {
+            return false;
+        }
+        
+        // 检查选中的提供商是否有API Key（如果该提供商需要API Key）
+        // 默认的 modelscope 以及 openai, siliconflow 都需要 api_key
+        if (isset($settings[$provider]) && array_key_exists('api_key', $settings[$provider])) {
+             return !empty($settings[$provider]['api_key']);
+        }
+        
+        // 其他提供商（如 pollinations）可能不需要 api_key，如果选中则视为已配置
+        return true; 
     }
 }

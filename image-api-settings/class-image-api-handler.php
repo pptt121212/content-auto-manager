@@ -79,6 +79,7 @@ class CAM_Image_API_Handler {
             'model'  => $model_id,
             'prompt' => $prompt,
             'size'   => '1024x576', // Unified size (16:9 aspect ratio)
+            'steps'  => 15, // Hardcoded for speed optimization
         ];
 
         $response = wp_remote_post(self::MODELSCOPE_BASE_URL . 'v1/images/generations', [

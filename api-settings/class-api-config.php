@@ -287,12 +287,20 @@ class ContentAuto_ApiConfig {
 
         if ($is_vector_config) {
             // 向量API配置 - 验证向量字段
+            // 验证向量API类型 (提前验证以便用于Key的校验)
+            $api_type = isset($data['vector_api_type']) ? sanitize_text_field($data['vector_api_type']) : 'openai';
+            if (!in_array($api_type, array('openai', 'jina'))) {
+                $api_type = 'openai'; // 默认为OpenAI
+            }
+            $validated_data['vector_api_type'] = $api_type;
+
             if (empty($data['vector_api_url'])) {
                 return false;
             }
             $validated_data['vector_api_url'] = esc_url_raw($data['vector_api_url']);
 
-            if (empty($data['vector_api_key'])) {
+            // 只有非Jina类型才强制校验Key
+            if ($api_type !== 'jina' && empty($data['vector_api_key'])) {
                 return false;
             }
             $validated_data['vector_api_key'] = sanitize_text_field($data['vector_api_key']);
@@ -301,13 +309,6 @@ class ContentAuto_ApiConfig {
                 return false;
             }
             $validated_data['vector_model_name'] = sanitize_text_field($data['vector_model_name']);
-
-            // 验证向量API类型
-            $api_type = isset($data['vector_api_type']) ? sanitize_text_field($data['vector_api_type']) : 'openai';
-            if (!in_array($api_type, array('openai', 'jina'))) {
-                $api_type = 'openai'; // 默认为OpenAI
-            }
-            $validated_data['vector_api_type'] = $api_type;
 
             // 向量API配置时，传统API字段设为空或默认值
             $validated_data['api_url'] = '';
@@ -407,88 +408,149 @@ class ContentAuto_ApiConfig {
     }
     
     /**
-     * 测试API连接
+     * 测试API连接 (增强版: 标准 + 流式压缩测试)
      */
     public function test_connection($config_id) {
         $config = $this->get_config($config_id);
         if (!$config) {
-            return false;
+            return array('success' => false, 'message' => '配置不存在');
         }
 
-        // 构建测试请求
+        $results = [];
+
+        // 获取用户配置的流式开关 (默认为开启)
+        $use_stream = isset($config['stream']) ? (bool)$config['stream'] : true;
+
         $body_data = array(
             'model' => $config['model_name'],
             'messages' => array(
-                array('role' => 'user', 'content' => 'Hello, this is a test message.')
+                array('role' => 'user', 'content' => 'Hello')
             ),
-            'max_tokens' => 10,
-            'temperature' => 0.7
+            'max_tokens' => 5,
+            'temperature' => 0.7,
         );
 
-        // 将stream写死设为false，确保测试稳定性
-        $body_data['stream'] = false;
-
-        // 添加top_p参数支持
         if (isset($config['top_p_enabled']) && $config['top_p_enabled']) {
             $body_data['top_p'] = (float) $config['top_p'];
-        } else {
-            $body_data['top_p'] = 1.0;
         }
 
-        // 构建请求参数 - 增加超时时间以支持思考模型测试
-        $args = array(
-            'headers' => array(
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $config['api_key'],
-                'User-Agent' => 'ContentAutoManager/1.0 (WordPress Plugin)',
-                'Accept' => 'application/json',
-                'Accept-Language' => 'en-US,en;q=0.9',
-                'Cache-Control' => 'no-cache',
-                'Pragma' => 'no-cache'
-            ),
-            'body' => json_encode($body_data),
-            'timeout' => 180, // 增加到3分钟，测试连接时需要考虑思考模型响应时间
-            'user-agent' => 'ContentAutoManager/1.0 (WordPress Plugin)',
-            'sslverify' => false // 如果遇到SSL问题可以临时禁用，但生产环境建议启用
-        );
+        // ---------------------------------------------------------
+        // 分支 A: 如果关闭了流式，仅执行标准测试 (Standard Request)
+        // ---------------------------------------------------------
+        if (!$use_stream) {
+            $body_data['stream'] = false;
+            
+            $args = array(
+                'headers' => array(
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $config['api_key'],
+                    'User-Agent' => 'ContentAutoManager/1.0 (WordPress Plugin)',
+                ),
+                'body' => json_encode($body_data),
+                'timeout' => 60,
+                'sslverify' => false 
+            );
 
-        // 发送请求
-        $response = wp_remote_post($config['api_url'], $args);
+            $response = wp_remote_post($config['api_url'], $args);
 
-        // 检查响应
-        if (is_wp_error($response)) {
-            return array('success' => false, 'message' => $response->get_error_message());
-        }
-
-        $response_code = wp_remote_retrieve_response_code($response);
-        $response_body = wp_remote_retrieve_body($response);
-
-        if ($response_code === 200) {
-            return array('success' => true, 'message' => '连接成功');
-        } else {
-            $error_message = '连接失败';
-
-            // 检查是否是HTML响应（错误页面）
-            if (strpos($response_body, '<!DOCTYPE html') === 0 || strpos($response_body, '<html') === 0) {
-                // 尝试提取HTML标题中的错误信息
-                if (preg_match('/<title>(.*?)<\/title>/i', $response_body, $matches)) {
-                    $error_message .= ': ' . strip_tags($matches[1]);
-                } else {
-                    $error_message .= ': API返回HTML错误页面，请检查API地址和配置';
-                }
-            } else {
-                // 尝试解析JSON错误
-                $json_data = json_decode($response_body, true);
-                if ($json_data && isset($json_data['error']['message'])) {
-                    $error_message .= ': ' . $json_data['error']['message'];
-                } elseif ($json_data && isset($json_data['error'])) {
-                    $error_message .= ': ' . (is_string($json_data['error']) ? $json_data['error'] : json_encode($json_data['error']));
-                } else {
-                    $error_message .= ': HTTP ' . $response_code . ' - ' . substr($response_body, 0, 200);
-                }
+            if (is_wp_error($response)) {
+                return array('success' => false, 'message' => 'Standard Request Failed: ' . $response->get_error_message());
             }
 
-            return array('success' => false, 'message' => $error_message);
+            $response_code = wp_remote_retrieve_response_code($response);
+            
+            if ($response_code === 200) {
+                $results[] = "Standard (Non-Stream): OK";
+            } else {
+                return array('success' => false, 'message' => "Standard Request HTTP $response_code");
+            }
         }
+        
+        // ---------------------------------------------------------
+        // 分支 B: 如果开启了流式，仅执行流式测试 (Stream Request)
+        // ---------------------------------------------------------
+        else {
+             // Gemini 是个特例，它的流式比较特殊，暂不在此通用测试覆盖范围内
+             if (strpos($config['model_name'], 'gemini') !== false) {
+                  // 对于 Gemini, 即使开启 Stream 也暂时先跑标准测试验证连通性
+                  // (为保持兼容性，Gemini 用户通常不会遇到超时问题)
+                  $body_data['stream'] = false; // Gemini REST API 实际上不支持 stream=true 参数，它有专门的 streamGenerateContent 端点
+                                                // 这里简化处理，Gemini 先测标准
+                  $args = array(
+                    'headers' => array(
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $config['api_key'],
+                        'User-Agent' => 'ContentAutoManager/1.0 (WordPress Plugin)',
+                    ),
+                    'body' => json_encode($body_data),
+                    'timeout' => 60,
+                    'sslverify' => false 
+                  );
+                  
+                  $response = wp_remote_post($config['api_url'], $args);
+                  
+                  if (is_wp_error($response)) {
+                       return array('success' => false, 'message' => 'Gemini Request Failed: ' . $response->get_error_message());
+                  }
+                  $response_code = wp_remote_retrieve_response_code($response);
+                  if ($response_code === 200) {
+                      $results[] = "Gemini Connectivity: OK";
+                  } else {
+                      return array('success' => false, 'message' => "Gemini HTTP $response_code");
+                  }
+                  
+             } else {
+                 // 通用流式测试 (OpenAI Compatible)
+                 $stream_data = $body_data;
+                 $stream_data['stream'] = true;
+                 
+                 $ch = curl_init();
+                 $headers = [
+                     'Content-Type: application/json',
+                     'Authorization: Bearer ' . $config['api_key'],
+                     'User-Agent: ContentAutoManager/1.0 (WordPress Plugin)',
+                     'Accept: text/event-stream' // [关键] 添加 SSE Accept Header
+                 ];
+                 
+                 $received_data = false;
+                 
+                 // [修复] 将 WRITEFUNCTION 从 curl_setopt_array 中提取出来
+                 // 使用 curl_setopt_array 内联闭包会导致 5-10 倍性能下降 (PHP cURL quirk)
+                 curl_setopt_array($ch, [
+                     CURLOPT_URL => $config['api_url'],
+                     CURLOPT_POST => true,
+                     CURLOPT_POSTFIELDS => json_encode($stream_data),
+                     CURLOPT_HTTPHEADER => $headers,
+                     CURLOPT_RETURNTRANSFER => false, // 手动处理
+                     CURLOPT_TIMEOUT => 60, 
+                     CURLOPT_SSL_VERIFYPEER => false,
+                     CURLOPT_ENCODING => '', // [关键] 启用 gzip/br 自动解压
+                 ]);
+                 
+                 // [关键] 单独设置 WRITEFUNCTION，避免性能问题
+                 curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$received_data) {
+                     if (trim($chunk) !== '') {
+                         $received_data = true;
+                     }
+                     return strlen($chunk);
+                 });
+                 
+                 $curl_success = curl_exec($ch);
+                 $curl_error = curl_error($ch);
+                 curl_close($ch);
+                 
+                 if ($curl_success && $received_data) {
+                     $results[] = "Stream: OK";
+                 } else {
+                     if (!$curl_success) {
+                          return array('success' => false, 'message' => "Stream Check Failed: $curl_error");
+                     } else {
+                          return array('success' => false, 'message' => "Stream Check Failed: No Data Received");
+                     }
+                 }
+             }
+        }
+        
+        return array('success' => true, 'message' => implode(' | ', $results));
     }
 }

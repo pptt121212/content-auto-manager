@@ -30,8 +30,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
         
         // 定义超时阈值
-        $normal_timeout = 180;    // 常规超时: 3分钟
-        $absolute_timeout = 600;  // 绝对超时: 10分钟（无论如何都标记为超时）
+        $normal_timeout = 360;    // 常规超时: 6分钟 (给长文生成留出足够时间)
+        $absolute_timeout = 900;  // 绝对超时: 15分钟
         
         // 获取当前WordPress时间，确保与updated_at（使用current_time('mysql')保存）时区一致
         $current_wp_time = current_time('mysql');
