@@ -135,6 +135,7 @@ class ContentAuto_License_Manager {
             'body' => array(
                 'license_key' => $license_key,
                 'domain'      => $domain,
+                'version'     => defined('CONTENT_AUTO_MANAGER_VERSION') ? CONTENT_AUTO_MANAGER_VERSION : '1.0.0',
             ),
         ));
         
