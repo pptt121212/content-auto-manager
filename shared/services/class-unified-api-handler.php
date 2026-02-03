@@ -41,12 +41,31 @@ class ContentAuto_UnifiedApiHandler {
         $this->log_success('METHOD_START', 'generate_content', $context);
         
         try {
-            // 首先尝试轮询机制
-            $api_config = $this->api_config->get_next_active_config();
+            // 检查是否指定了具体的 API ID
+            if (isset($additional_params['config_id'])) {
+                $api_config = $this->api_config->get_config($additional_params['config_id']);
+            } else {
+                // 否则使用标准的 轮询/备选 机制获取下一个可用的 API
+                $api_config = $this->api_config->get_next_active_config();
+            }
             
             if ($api_config) {
                 $this->current_api_config = $api_config;
                 $this->last_api_error = null;
+                
+                // ✅ 关键加固：不仅使用API，还需同步更新主题表的API关联快照
+                // 这确保了如果请求失败，后续的超时处理器或重试逻辑能看到真实使用的API，而不是过时的记录
+                if (isset($additional_params['topic_id'])) {
+                    global $wpdb;
+                    $wpdb->update(
+                        $wpdb->prefix . 'content_auto_topics',
+                        array(
+                            'api_config_id' => $api_config['id'],
+                            'api_config_name' => $api_config['name']
+                        ),
+                        array('id' => $additional_params['topic_id'])
+                    );
+                }
                 
                 // 检查API类型
                 if (!empty($api_config['predefined_channel'])) {
@@ -113,29 +132,62 @@ class ContentAuto_UnifiedApiHandler {
             $body_data['max_tokens'] = (int) $api_config['max_tokens'];
         }
 
+        // 添加top_p参数支持 (Restored Business Logic)
+        if (isset($api_config['top_p_enabled']) && $api_config['top_p_enabled']) {
+            $body_data['top_p'] = (float) $api_config['top_p'];
+        } else {
+            // 默认添加top_p: 1.0以确保兼容性
+            $body_data['top_p'] = 1.0;
+        }
+
         // 构建API请求
         $args = array(
             'headers' => array(
                 'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . $api_config['api_key']
+                'Authorization' => 'Bearer ' . $api_config['api_key'],
+                'User-Agent' => 'ContentAutoManager/1.0 (WordPress Plugin)',
+                'Accept' => 'application/json',
+                'Accept-Language' => 'en-US,en;q=0.9',
+                'Cache-Control' => 'no-cache',
+                'Pragma' => 'no-cache'
             ),
             'body' => json_encode($body_data),
             // 允许通过 additional_params 覆盖默认超时时间
-            'timeout' => isset($additional_params['timeout']) ? (int)$additional_params['timeout'] : 180,
-            'httpversion' => '1.1', // 强制使用 HTTP 1.1 避免部分服务器的 HTTP2 兼容性问题导致 Reset
+            // 用户设定：3分钟 (180s) 足够
+            'timeout' => isset($additional_params['timeout']) ? (int)$additional_params['timeout'] : 300,
+            'httpversion' => '1.1', // 强制使用 HTTP 1.1 分块传输
             'sslverify' => true, 
         );
+
+        // 如果 additional_params 中通过，则显式传递 stream 参数给 API Provider
+        // 如果用户在后台显式禁用了流式，则尊重用户选择；否则默认开启流式以避免超时
+        // 我们只认 'stream' 这个字段，它对应 UI 里的下拉框
+        $user_stream_setting = isset($api_config['stream']) ? (bool)$api_config['stream'] : true; 
+        
+        $use_streaming = $user_stream_setting; 
+        
+        if ($use_streaming) {
+            $body_data['stream'] = true;
+            $args['body'] = json_encode($body_data);
+            // [关键修复] 流式请求需要使用 SSE 的 Accept Header
+            $args['headers']['Accept'] = 'text/event-stream';
+        }
         
         // 记录完整的API请求参数（仅在调试模式下）
         if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
             $this->log_debug('API_REQUEST_DETAILS', 'API请求详情', array_merge($context, array(
                 'request_url' => $api_config['api_url'],
-                'request_body' => json_encode($body_data, JSON_UNESCAPED_UNICODE)
+                'request_body' => json_encode($body_data, JSON_UNESCAPED_UNICODE),
+                'stream_mode' => $use_streaming ? 'enabled' : 'disabled'
             )));
         }
         
-        // 发送请求
-        $response = wp_remote_post($api_config['api_url'], $args);
+        // 发送请求: 根据是否启用流式选择不同的发送方式
+        if ($use_streaming) {
+            $response = $this->send_streaming_request($api_config['api_url'], $args);
+        } else {
+            $response = wp_remote_post($api_config['api_url'], $args);
+        }
         
         if (is_wp_error($response)) {
             $error_message = $response->get_error_message(); // 这里捕获的通常就是 cURL error 56
@@ -150,6 +202,18 @@ class ContentAuto_UnifiedApiHandler {
 
             // 如果自定义API失败，尝试预置API作为备选
             return $this->try_predefined_api_fallback($prompt, $task_type, $additional_params, $method_start_time, $start_memory);
+        }
+        
+        // 对于流式请求，send_streaming_request 返回的已经是 string content 了，或者 error array
+        if ($use_streaming) {
+             if (is_array($response) && isset($response['error'])) {
+                 // 处理流式请求返回的错误
+                 $this->last_api_error = $response['error'];
+                 $this->log_error('API_STREAM_ERROR', '流式请求失败: ' . $response['error'], $context);
+                 return $this->try_predefined_api_fallback($prompt, $task_type, $additional_params, $method_start_time, $start_memory);
+             }
+             // 成功获取内容
+             return $this->process_streaming_response($response, $context);
         }
         
         return $this->process_api_response($response, $prompt, $task_type, $additional_params, $method_start_time, $start_memory);
@@ -335,6 +399,10 @@ class ContentAuto_UnifiedApiHandler {
             return $final_content;
         }
         
+        // 更新最后请求时间（恢复频率限制）
+        update_option('content_auto_last_api_request', time());
+
+        
         $this->log_error('API_NO_CONTENT', 'API响应中未找到有效内容', $context);
         return $this->try_predefined_api_fallback($prompt, $task_type, $additional_params, $method_start_time, $start_memory);
     }
@@ -371,6 +439,10 @@ class ContentAuto_UnifiedApiHandler {
                 if (!isset($result['error'])) {
                     // 标记API成功
                     $this->api_config->mark_api_success($api_config['id']);
+                    
+                    // 更新最后请求时间（恢复频率限制）
+                    update_option('content_auto_last_api_request', time());
+                    
                     return $result;
                 } else {
                     // 标记API失败
@@ -484,5 +556,149 @@ class ContentAuto_UnifiedApiHandler {
         if ($this->logger) {
             $this->logger->log_error($code, $message, $context, $suggestions, $performance_data);
         }
+    }
+    /* ==========================================================================
+     * SSE 流式客户端实现
+     * ========================================================================== */
+
+    /**
+     * 发送流式请求 (客户端)
+     * 替代 wp_remote_post，使用底层 cURL 实现实时接收
+     */
+    private function send_streaming_request($url, $args) {
+        $ch = curl_init();
+        
+        $headers = [];
+        if (isset($args['headers'])) {
+            foreach ($args['headers'] as $k => $v) {
+                $headers[] = "$k: $v";
+            }
+        }
+        
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $args['body']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false); // 关键：禁用自动返回，改用 WriteFunction
+        curl_setopt($ch, CURLOPT_TIMEOUT, $args['timeout']);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $args['sslverify']);
+        if (isset($args['httpversion']) && $args['httpversion'] === '1.1') {
+             curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        }
+        
+        // [关键修复] 自动处理 gzip/deflate/br 响应压缩
+        curl_setopt($ch, CURLOPT_ENCODING, '');
+        
+        $accumulated_content = '';
+        $buffer = '';
+        
+        // 用于在闭包中捕获流式错误
+        $stream_error = null;
+        
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error) {
+            // 如果已经发生了错误，直接返回0中断传输
+            if ($stream_error) return 0;
+            
+            $buffer .= $chunk;
+            
+            while (($pos = strpos($buffer, "\n")) !== false) {
+                $line = substr($buffer, 0, $pos);
+                $buffer = substr($buffer, $pos + 1);
+                $line = trim($line);
+                
+                if (empty($line)) continue;
+                
+                // 1. 处理标准 SSE 数据行 - 兼容两种格式
+                // "data: {...}" (标准格式，有空格) 和 "data:{...}" (非标准格式，无空格，如iFlow)
+                $content_str = null;
+                if (strpos($line, 'data: ') === 0) {
+                    $content_str = substr($line, 6);
+                } elseif (strpos($line, 'data:') === 0) {
+                    $content_str = substr($line, 5);
+                }
+                
+                if ($content_str !== null) {
+                    if (trim($content_str) === '[DONE]') continue;
+                    
+                    $json = json_decode($content_str, true);
+                    
+                    // 正常内容
+                    if (isset($json['choices'][0]['delta']['content'])) {
+                        $accumulated_content .= $json['choices'][0]['delta']['content'];
+                    }
+                    // 流内嵌错误 (OpenAI/Proxy 格式)
+                    elseif (isset($json['error'])) {
+                        $error_msg = is_array($json['error']) ? ($json['error']['message'] ?? json_encode($json['error'])) : $json['error'];
+                        $stream_error = "Stream API Error: " . $error_msg;
+                        return 0; // 中断 cURL
+                    }
+                    // 兼容 DeepSeek/Other 的用法字段 (可选处理)
+                    elseif (isset($json['usage'])) {
+                        // 可以选择存储 token usage
+                    }
+                }
+                // 2. 处理 SSE 事件类型错误 (event: error)
+                elseif (strpos($line, 'event: error') === 0) {
+                     $stream_error = "Stream Event Error detected"; 
+                     // 下一行通常是 data: {"message": "..."}，会在下一次循环或下个chunk捕获到
+                     // 但为了保险，我们在这里标记，等待下一行 data 解析出具体信息，或者直接中断
+                }
+            }
+            return strlen($chunk);
+        });
+        
+        ob_start();
+        $success = curl_exec($ch);
+        $output = ob_get_clean(); // 捕获可能泄漏的输出
+        
+        $error = curl_error($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        // 优先处理流内部捕获的业务错误
+        if ($stream_error) {
+             return new WP_Error('api_stream_error', $stream_error);
+        }
+        
+        if ($error) {
+            return new WP_Error('http_request_failed', 'Stream cURL error: ' . $error);
+        }
+        if ($http_code >= 400) {
+            // 这里可能在 header 阶段就失败了，还没进流
+            return new WP_Error('http_request_failed', 'Stream HTTP error: ' . $http_code);
+        }
+        
+        return $accumulated_content;
+    }
+    
+    /**
+     * 处理流式响应结果
+     * 将纯文本结果包装为标准处理流程可用的格式
+     */
+    private function process_streaming_response($content, $context) {
+        // ✅ 移除 AI 思考标签
+        $final_content = $this->strip_think_tags($content);
+        
+        if (empty($final_content)) {
+            $this->log_error('API_NO_CONTENT', '流式API响应中未找到有效内容', $context);
+             return array('error' => 'API response was empty');
+        }
+
+        // 记录最终提取的内容（仅在调试模式下）
+        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            $this->log_debug('API_FINAL_CONTENT', 'API流式最终提取内容', array_merge($context, array(
+                'content_length' => strlen($final_content),
+                'final_content' => $final_content
+            )));
+        }
+        
+        $this->log_success('API_RESPONSE_SUCCESS', 'API流式响应处理成功', array_merge($context, array(
+            'content_length' => strlen($final_content)
+        )));
+        
+        // 更新最后请求时间（恢复频率限制）
+        update_option('content_auto_last_api_request', time());
+
+        return $final_content;
     }
 }

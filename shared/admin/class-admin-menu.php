@@ -201,13 +201,15 @@ class ContentAuto_AdminMenu {
 
         // 智能结构优化页面（隐藏菜单，通过文章结构页面的标签访问）
         add_submenu_page(
-            null, // 设置为 null 隐藏菜单项
+            'content-auto-manager', // 暂时挂载到主菜单下，随后立即移除以实现隐藏
             __('智能优化', 'content-auto-manager'),
             __('智能优化', 'content-auto-manager'),
             'manage_options',
             'content-auto-manager-smart-optimization',
             array($this, 'render_smart_optimization_page')
         );
+        // 立即从菜单中移除（但保留路由访问权限）
+        remove_submenu_page('content-auto-manager', 'content-auto-manager-smart-optimization');
 
         // 品牌资料页面
         add_submenu_page(

@@ -1304,10 +1304,22 @@ function content_auto_get_article_task_details() {
                                     <td><?php echo esc_html($subtask['topic_id']); ?></td>
                                     <td>
                                         <strong><?php echo esc_html($subtask['topic_title']); ?></strong>
-                                        <?php if ($subtask['article_post_id']): ?>
+                                        <?php if ($subtask['prompt_template']): ?>
+                                            <div class="template-info" style="margin-top: 4px; font-size: 11px; color: #666;">
+                                                <span class="dashicons dashicons-text" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle;"></span>
+                                                <span title="<?php _e('使用的提示词模板', 'content-auto-manager'); ?>"><?php echo esc_html($subtask['prompt_template']); ?></span>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php 
+                                        $edit_link = get_edit_post_link($subtask['article_post_id']);
+                                        if (!$edit_link && current_user_can('manage_options')) {
+                                            $edit_link = admin_url('post.php?post=' . $subtask['article_post_id'] . '&action=edit');
+                                        }
+                                        if ($edit_link): 
+                                        ?>
                                             <div class="article-link">
-                                                <a href="<?php echo get_edit_post_link($subtask['article_post_id']); ?>" target="_blank">
-                                                    查看生成的文章
+                                                <a href="<?php echo esc_url($edit_link); ?>" target="_blank">
+                                                    <?php _e('查看生成的文章', 'content-auto-manager'); ?>
                                                 </a>
                                             </div>
                                         <?php endif; ?>
@@ -1533,11 +1545,9 @@ function content_auto_get_article_subtasks_info($task_id, $task) {
             $topic_id
         ), ARRAY_A);
         
+        
         // 确定子任务状态 - 优先使用队列状态，如果没有队列项则使用默认值
         $current_subtask_status = $queue_item ? $queue_item['status'] : 'not_queued';
-        
-        // 调试信息：记录每个主题的状态
-        error_log("主题ID: {$topic_id}, 队列状态: " . $current_subtask_status);
         
         $subtasks_info[] = array(
             'topic_id' => $topic_id,
@@ -1548,6 +1558,7 @@ function content_auto_get_article_subtasks_info($task_id, $task) {
             'retry_count' => $queue_item ? intval($queue_item['retry_count']) : 0,
             'article_id' => $article ? $article['id'] : null,
             'article_post_id' => $article ? $article['post_id'] : null,
+            'prompt_template' => $article && isset($article['prompt_template']) ? $article['prompt_template'] : null,
             'error_message' => $queue_item ? $queue_item['error_message'] : ''
         );
     }

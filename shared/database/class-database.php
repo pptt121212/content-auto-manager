@@ -36,6 +36,11 @@ class ContentAuto_Database {
             `vector_api_url` text DEFAULT NULL COMMENT \'向量API地址\',
             `vector_api_key` varchar(255) DEFAULT NULL COMMENT \'向量API密钥\',
             `vector_model_name` varchar(100) DEFAULT NULL COMMENT \'向量模型名称\',
+            `vector_api_type` varchar(20) NOT NULL DEFAULT \'openai\' COMMENT \'向量API类型：openai/jina\',
+            `stream` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'是否启用流式输出\',
+            `top_p` decimal(3,2) NOT NULL DEFAULT \'1.00\' COMMENT \'核采样参数\',
+            `stream_enabled` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'是否启用stream参数控制\',
+            `top_p_enabled` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'是否启用top_p参数控制\',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
@@ -63,6 +68,7 @@ class ContentAuto_Database {
             `rule_conditions` text NOT NULL,
             `item_count` int(11) NOT NULL DEFAULT 0,
             `rule_task_id` varchar(50) NOT NULL,
+            `reference_material` text DEFAULT NULL COMMENT \'参考资料，用于文章生成提示词，最多500字符\',
             `status` tinyint(1) NOT NULL DEFAULT 1,
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -164,6 +170,13 @@ class ContentAuto_Database {
             `vector_status` varchar(20) NOT NULL DEFAULT \'pending\' COMMENT \'向量生成状态\',
             `vector_error` text DEFAULT NULL COMMENT \'向量生成错误信息\',
             `vector_retry_count` tinyint(4) NOT NULL DEFAULT 0 COMMENT \'向量生成重试次数\',
+            `material_search_status` varchar(20) NOT NULL DEFAULT \'none\' COMMENT \'自动素材搜索状态\',
+            `material_search_error` text DEFAULT NULL COMMENT \'自动素材搜索错误信息\',
+            `reference_material` text DEFAULT NULL COMMENT \'主题级参考资料，优先于规则级参考资料，最多500字符\',
+            `source_url` text DEFAULT NULL COMMENT \'主题来源URL，用于采集网址仿写规则，即使规则删除也保留用于去重\',
+            `used_structure_id` bigint(20) unsigned DEFAULT NULL COMMENT \'实际使用的结构ID\',
+            `selection_method` varchar(20) DEFAULT NULL COMMENT \'结构选择方法：exploration/exploitation/fallback\',
+            `selection_weight` decimal(10,4) DEFAULT NULL COMMENT \'选择时的权重值\',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
@@ -174,7 +187,8 @@ class ContentAuto_Database {
             KEY `priority_score` (`priority_score`),
             KEY `api_config_id` (`api_config_id`),
             KEY `vector_cluster_id` (`vector_cluster_id`),
-            KEY `vector_status` (`vector_status`)
+            KEY `vector_status` (`vector_status`),
+            KEY `idx_used_structure_id` (`used_structure_id`)
         ) ' . $charset_collate . ';';
         
         $result = dbDelta($sql);
@@ -234,13 +248,17 @@ class ContentAuto_Database {
             `word_count` int(11) NOT NULL DEFAULT \'0\' COMMENT \'文章字数\',
             `api_config_id` bigint(20) DEFAULT NULL,
             `api_config_name` varchar(255) DEFAULT NULL,
+            `prompt_template` varchar(255) DEFAULT NULL COMMENT \'使用的提示词模板名称\',
+            `auto_images_processed` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'是否已处理自动配图\',
+            `auto_images_count` int(11) NOT NULL DEFAULT \'0\' COMMENT \'生成的图片数量\',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
             KEY `job_id` (`job_id`),
             KEY `topic_id` (`topic_id`),
             KEY `status` (`status`),
-            KEY `api_config_id` (`api_config_id`)
+            KEY `api_config_id` (`api_config_id`),
+            KEY `idx_auto_images` (`auto_images_processed`)
         ) ' . $charset_collate . ';';
         
         $result = dbDelta($sql);
@@ -265,6 +283,7 @@ class ContentAuto_Database {
             `retry_count` int(11) DEFAULT 0,
             `status` varchar(20) NOT NULL DEFAULT \'' . CONTENT_AUTO_STATUS_PENDING . '\',
             `error_message` text NOT NULL DEFAULT \'\',
+            `scheduled_at` datetime NULL DEFAULT NULL COMMENT \'计划执行时间\',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
@@ -272,7 +291,8 @@ class ContentAuto_Database {
             KEY `job_type` (`job_type`),
             KEY `status` (`status`),
             KEY `job_id` (`job_id`),
-            KEY `reference_id` (`reference_id`)
+            KEY `reference_id` (`reference_id`),
+            KEY `scheduled_at` (`scheduled_at`)
         ) ' . $charset_collate . ';';
 
         $result = dbDelta($sql);
@@ -307,9 +327,12 @@ class ContentAuto_Database {
             `brand_profile_position` varchar(50) NOT NULL DEFAULT \'before_second_paragraph\' COMMENT \'品牌资料插入位置\',
             `enable_reference_material` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用参考资料功能\',
             `enable_ai_reference_select` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用大模型精选召回\',
+            `enable_auto_material_search` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用自动素材搜索功能\',
+            `material_collection_mode` varchar(20) NOT NULL DEFAULT \'none\' COMMENT \'素材收集模式：none/search_engine/extension_rag\',
             `enable_intent_inference` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'启用搜索意图推断，生成更符合用户搜索意图的主题标题\',
             `publish_language` varchar(10) NOT NULL DEFAULT \'zh-CN\' COMMENT \'发布语言，影响内容生成的输出语言\',
             `role_description` text NOT NULL COMMENT \'AI角色描述，用于文章生成的提示词模板\',
+            `image_prompt_template` text NOT NULL COMMENT \'图片提示词模板\',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`)
@@ -334,10 +357,15 @@ class ContentAuto_Database {
             `structure` text NOT NULL,
             `title_vector` longtext,
             `usage_count` bigint(20) unsigned NOT NULL DEFAULT 0,
+            `source_type` enum(\'ai_generated\',\'data_driven\') NOT NULL DEFAULT \'ai_generated\' COMMENT \'结构来源类型\',
+            `source_article_id` bigint(20) unsigned DEFAULT NULL COMMENT \'来源文章ID（数据驱动结构）\',
+            `extracted_at` datetime DEFAULT NULL COMMENT \'结构提取时间\',
             `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
-            KEY `idx_content_angle` (`content_angle`)
+            KEY `idx_content_angle` (`content_angle`),
+            KEY `idx_source_type` (`source_type`),
+            KEY `idx_source_article_id` (`source_article_id`)
         ) ' . $charset_collate . ';';
 
         $result = dbDelta($sql);
@@ -355,13 +383,16 @@ class ContentAuto_Database {
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $brand_profiles_table . '` (
             `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             `title` text NOT NULL,
-            `image_url` text NOT NULL,
+            `image_url` text DEFAULT NULL COMMENT \'图片URL，标准样式必填，自定义HTML可选\',
+            `type` varchar(20) NOT NULL DEFAULT \'standard\' COMMENT \'物料类型：standard标准样式，custom_html自定义HTML，reference参考资料\',
+            `custom_html` longtext DEFAULT NULL COMMENT \'自定义HTML代码\',
             `description` text,
             `link` text,
             `vector` longtext,
             `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`)
+            PRIMARY KEY (`id`),
+            KEY `idx_type` (`type`)
         ) ' . $charset_collate . ';';
 
         $result = dbDelta($sql);
@@ -448,6 +479,9 @@ class ContentAuto_Database {
 
         // 更新数据库结构以支持自动素材搜索
         $this->update_database_for_auto_material_search();
+
+        // 更新文章表结构，添加提示词模板字段
+        $this->update_articles_table_for_template_tracking();
 
         // 更新提示词模板表结构
         $this->update_prompt_templates_table_structure($prompt_templates_table);
@@ -1285,7 +1319,7 @@ class ContentAuto_Database {
         // 系统统计
         $stats['system'] = array(
             'total_generated_content' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics") + $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles"),
-            'last_activity' => $wpdb->get_var("SELECT MAX(updated_at) FROM {$prefix}content_auto_job_queue UNION SELECT MAX(updated_at) FROM {$prefix}content_auto_topics UNION SELECT MAX(updated_at) FROM {$prefix}content_auto_articles ORDER BY MAX(updated_at) DESC LIMIT 1"),
+            'last_activity' => $wpdb->get_var("SELECT MAX(updated_at) as latest_ts FROM {$prefix}content_auto_job_queue UNION SELECT MAX(updated_at) FROM {$prefix}content_auto_topics UNION SELECT MAX(updated_at) FROM {$prefix}content_auto_articles ORDER BY latest_ts DESC LIMIT 1"),
             'success_rate' => $this->calculate_success_rate(),
             'avg_daily_output' => $this->calculate_daily_output_average()
         );
@@ -1616,6 +1650,26 @@ class ContentAuto_Database {
     }
 
     /**
+     * 更新文章表结构，添加提示词模板字段
+     */
+    public function update_articles_table_for_template_tracking() {
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'content_auto_articles';
+
+        // 检查表是否存在
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+            return;
+        }
+
+        // 检查 prompt_template 字段是否存在
+        $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $table_name LIKE 'prompt_template'");
+        if (!$column_exists) {
+            $wpdb->query("ALTER TABLE $table_name ADD COLUMN `prompt_template` varchar(255) DEFAULT NULL COMMENT '使用的提示词模板名称' AFTER `api_config_name`");
+        }
+    }
+
+    /**
      * 为现有模板填充 source_file 值
      */
     private function populate_source_file_for_existing_templates($table_name) {
@@ -1666,26 +1720,31 @@ class ContentAuto_Database {
 
         // 定义要导入的模板文件及其名称和类型
         $templates_to_seed = [
-            // 文章生成模板 - 核心版本（默认启用）
+            // 文章生成模板 - 核心版本
+            'article-generation-prompt-humanized-pro.xml' => [
+                'name' => '文章生成 - 拟人化 Pro（V3.1）',
+                'type' => 'article_generation',
+                'is_active' => false
+            ],
             'article-generation-prompt-optimized-v12.xml' => [
                 'name' => '文章生成 - V12优化版（反AI检测+E-E-A-T优化）',
                 'type' => 'article_generation',
-                'is_active' => true
+                'is_active' => false
             ],
             'article-generation-prompt.xml' => [
                 'name' => '文章生成 - 默认版（基础通用）',
                 'type' => 'article_generation',
-                'is_active' => true
+                'is_active' => false
             ],
             'article-generation-prompt1.xml' => [
                 'name' => '文章生成 - 变体1（详尽版）',
                 'type' => 'article_generation',
-                'is_active' => true
+                'is_active' => false
             ],
             'article-generation-prompt2.xml' => [
                 'name' => '文章生成 - 变体2（精简版）',
                 'type' => 'article_generation',
-                'is_active' => true
+                'is_active' => false
             ],
             // 文章生成模板 - 风格专用版本（默认禁用，需手动启用）
             'article-generation-prompt-technical.xml' => [
@@ -1723,16 +1782,16 @@ class ContentAuto_Database {
                 'type' => 'article_generation',
                 'is_active' => false
             ],
-            // 主题生成模板（默认启用）
+            // 主题生成模板
             'topic-generation-prompt.xml' => [
                 'name' => '主题生成 - 默认版（标准生成）',
                 'type' => 'topic_generation',
-                'is_active' => true
+                'is_active' => false
             ],
             'topic1-generation-prompt.xml' => [
                 'name' => '主题生成 - 变体1（创意发散）',
                 'type' => 'topic_generation',
-                'is_active' => true
+                'is_active' => false
             ],
             'topic-generation-prompt-entity.xml' => [
                 'name' => '主题生成 - 术语实体型（百科词条式）',

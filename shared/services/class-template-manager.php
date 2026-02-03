@@ -76,12 +76,21 @@ class ContentAuto_TemplateManager {
      * Get active template content by type (randomly selected if multiple active)
      * This mimics the existing file-based random selection
      */
-    public function get_active_template_content($type) {
+    public function get_active_template($type) {
         global $wpdb;
         $sql = $wpdb->prepare(
-            "SELECT content FROM {$this->table_name} WHERE template_type = %s AND is_active = 1 ORDER BY RAND() LIMIT 1",
+            "SELECT * FROM {$this->table_name} WHERE template_type = %s AND is_active = 1 ORDER BY RAND() LIMIT 1",
             $type
         );
-        return $wpdb->get_var($sql);
+        return $wpdb->get_row($sql, ARRAY_A);
+    }
+
+    /**
+     * Get active template content by type (randomly selected if multiple active)
+     * This mimics the existing file-based random selection
+     */
+    public function get_active_template_content($type) {
+        $template = $this->get_active_template($type);
+        return $template ? $template['content'] : null;
     }
 }

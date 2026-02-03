@@ -14,6 +14,8 @@ class ContentAuto_JobQueue {
     private $article_generator;
     private $topic_task_manager;
     private $article_queue_processor;
+    private $article_task_manager;
+    private $vector_generator;
     
     /**
      * 获取全局任务锁
@@ -248,7 +250,7 @@ class ContentAuto_JobQueue {
             }
             
             // 构建查询条件，避免相同规则的任务并发执行
-            $where_clause = "status IN ('pending', 'processing')";
+            $where_clause = "status IN (%s, %s)";
             if (!empty($processing_rule_ids)) {
                 $rule_ids_placeholders = implode(',', array_fill(0, count($processing_rule_ids), '%d'));
                 $where_clause .= " AND rule_id NOT IN ({$rule_ids_placeholders})";
