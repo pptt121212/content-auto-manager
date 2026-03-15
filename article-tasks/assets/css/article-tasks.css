@@ -1,0 +1,153 @@
+/**
+ * 重构后的文章任务管理样式
+ * 依赖 yali-ui-kit.css 提供基础组件样式
+ */
+
+/* 详情表格样式 */
+.task-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.task-details-table th,
+.task-details-table td {
+    border: 1px solid #ddd;
+    padding: 12px 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.task-details-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    width: 30%;
+}
+
+.subtasks-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.subtasks-table th,
+.subtasks-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 13px;
+}
+
+.subtasks-table th {
+    background-color: #f1f1f1;
+    font-weight: 600;
+}
+
+.subtask-status {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.subtask-status.completed {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.subtask-status.failed {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.subtask-status.pending {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.subtask-status.processing {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+/* 通知样式 */
+.notice {
+    margin: 15px 0;
+    padding: 12px;
+    border-left: 4px solid #0073aa;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.notice-success {
+    border-left-color: #00a32a;
+}
+
+.notice-error {
+    border-left-color: #dc3232;
+}
+
+.notice p {
+    margin: 0;
+    font-size: 14px;
+}
+
+@media screen and (max-width: 480px) {
+    .progress-stats {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .progress-details {
+        justify-content: flex-start;
+    }
+
+    .time-info strong {
+        width: auto;
+        margin-right: 5px;
+    }
+
+    .modal-content {
+        width: 98%;
+        margin: 5px;
+    }
+
+    .subtasks-table {
+        font-size: 12px;
+    }
+
+    .subtasks-table th,
+    .subtasks-table td {
+        padding: 6px 4px;
+    }
+}
+
+/* 加载动画 */
+.content-auto-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* WordPress Spinner 样式覆盖 */
+.spinner.is-active {
+    visibility: visible;
+    opacity: 1;
+}

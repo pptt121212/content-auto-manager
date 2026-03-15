@@ -1,0 +1,49 @@
+/* Tab Navigation Styles Removed - Using Yali UI Kit */
+
+/* Article Structures Page Layout */
+/* Article Structures Page Layout */
+/* Using yali-grid-layout directly */
+
+/* Angle List Styles */
+.angle-list .angle-item {
+    transition: all 0.2s;
+}
+
+.angle-list .angle-item:hover {
+    background-color: #f0f6fc !important;
+}
+
+.angle-list .angle-item.active {
+    background-color: #e5f3ff !important;
+    border-left: 3px solid #007cba;
+    padding-left: 17px !important;
+    /* Adjust for border */
+}
+
+/* Modal Styles override (if needed) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#modal-close {
+    margin-top: 20px;
+}

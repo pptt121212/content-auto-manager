@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Deep, Rich Body Gradient (Bottom-Right to Top-Left) -->
+    <linearGradient id="bodyGrad" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#4338ca" />   <!-- Deep Indigo Shadow -->
+      <stop offset="50%" stop-color="#6366f1" />   <!-- Primary Indigo -->
+      <stop offset="100%" stop-color="#818cf8" />  <!-- Lighter Top -->
+    </linearGradient>
+
+    <!-- Leaf Gradient -->
+    <linearGradient id="leafGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0891b2" />
+      <stop offset="100%" stop-color="#22d3ee" />
+    </linearGradient>
+
+    <!-- Diagonal Highlight Gradient (Transparent to White to Transparent) -->
+    <linearGradient id="shineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="30%" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.3" /> <!-- Subtle Shine -->
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(0, 20)">
+    <!-- 1. The Pear Body -->
+    <!-- Full, rounded, organic shape -->
+    <path d="M 256 80 
+             C 310 80 340 130 360 180 
+             C 390 255 420 280 420 350 
+             C 420 440 360 490 256 490 
+             C 152 490 92 440 92 350 
+             C 92 280 122 255 152 180 
+             C 172 130 202 80 256 80 Z" 
+          fill="url(#bodyGrad)" />
+
+    <!-- 2. Diagonal Lighting / Highlight (Volume) -->
+    <!-- A sleek diagonal cut that mimics a light reflection hitting the rounded surface -->
+    <path d="M 256 80 
+             C 202 80 172 130 152 180 
+             C 134 225 118 250 108 300
+             L 340 85 
+             Q 290 75 256 80 Z" 
+             fill="#ffffff" fill-opacity="0.15" />
+             
+    <!-- Primary Specular Highlight (The "Gloss") -->
+    <!-- A soft oval on the upper-left "shoulder" of the pear -->
+    <ellipse cx="180" cy="200" rx="30" ry="50" transform="rotate(-30 180 200)" fill="#ffffff" fill-opacity="0.25" />
+
+    <!-- 3. The Stem -->
+    <path d="M 256 85 Q 260 50 290 30" stroke="#4338ca" stroke-width="12" stroke-linecap="round" fill="none" />
+
+    <!-- 4. The Leaf -->
+    <!-- Connected to the stem, lively and upward facing -->
+    <path d="M 290 30 
+             Q 340 10 390 40 
+             Q 420 80 380 120 
+             Q 320 130 290 30 Z" 
+          fill="url(#leafGrad)" />
+          
+    <!-- Leaf Detail (Vein) -->
+    <path d="M 290 30 Q 340 60 380 120" stroke="#ffffff" stroke-width="4" stroke-opacity="0.3" fill="none" />
+  </g>
+</svg>

@@ -1,0 +1,183 @@
+/* Legacy Tab Navigation Removed */
+
+/* Buttons - Delegated to yali-ui-kit.css */
+
+/* Standard WordPress Overrides - Handled by yali-ui-kit.css */
+.form-table th {
+    font-weight: 700 !important;
+    color: var(--yali-text) !important;
+    padding: 20px 10px 20px 0 !important;
+    width: 220px !important;
+}
+
+.form-table td {
+    padding: 15px 10px !important;
+}
+
+/* Typography - Delegated to yali-ui-kit.css */
+.description {
+    font-style: italic;
+    /* Specific italicization for API settings descriptions */
+}
+
+/* Secondary Buttons - Base Styles inherited from yali-ui-kit.css */
+.button-secondary,
+#refresh-pollinations-models,
+#btn_test_search,
+.test-api-connection {
+    text-decoration: none !important;
+}
+
+/* Base Buttons */
+
+/* Config List Table */
+/* Styles delegated to .yali-table in yali-ui-kit.css */
+
+/* Badges - Delegated to yali-ui-kit.css */
+.status-active,
+.status-enabled,
+.status-inactive,
+.status-disabled {
+    font-weight: 700;
+}
+
+.config-type-predefined {
+    color: var(--yali-accent);
+    font-weight: 600;
+}
+
+.config-type-vector {
+    color: var(--yali-primary);
+    font-weight: 600;
+}
+
+.config-type-custom {
+    color: var(--yali-text-muted);
+    font-weight: 600;
+}
+
+/* Collapsible Guide Section - Container handled by .yali-accordion in yali-ui-kit.css */
+
+/* yali-api-guide-content padding is handled by .yali-accordion-content */
+
+.yali-api-guide-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.yali-api-guide-item h4 {
+    margin: 0 0 8px 0 !important;
+    font-size: 1em !important;
+    color: var(--yali-text) !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.yali-api-guide-item p {
+    margin: 0 !important;
+    font-size: 0.85em !important;
+    color: var(--yali-text-muted) !important;
+    line-height: 1.5 !important;
+}
+
+/* Responsive Grid 2 for stats */
+.status-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.test-result,
+.quota-result {
+    margin-left: 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.test-result.success,
+.quota-result.success {
+    color: var(--yali-success);
+}
+
+.test-result.error,
+.quota-result.error {
+    color: var(--yali-error);
+}
+
+/* Quota Info Display Refinement */
+#quota-info-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Pollinations Account Stats Display */
+.pollinations-account-stats {
+    background: rgba(99, 102, 241, 0.03);
+    border: 1px solid var(--yali-border);
+    border-radius: var(--yali-radius);
+    padding: 16px;
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.pollinations-stat-card {
+    background: var(--yali-card);
+    padding: 12px;
+    border-radius: calc(var(--yali-radius) - 4px);
+    border: 1px solid var(--yali-border);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* UI Utility Classes */
+
+/* Robust Disabled State */
+.yali-input:disabled,
+.yali-input.yali-input-disabled,
+.form-table input:disabled,
+.form-table select:disabled {
+    background-color: #f0f0f1 !important;
+    color: #a7aaad !important;
+    border-color: #dcdcde !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    /* Ensure iOS/Webkit doesn't dim it further or differently */
+}
+
+.yali-primary-link {
+    color: var(--yali-primary) !important;
+    text-decoration: none !important;
+    font-weight: 700 !important;
+    transition: var(--yali-transition) !important;
+    border-bottom: 1px solid transparent !important;
+}
+
+.yali-primary-link:hover {
+    color: var(--yali-primary-dark) !important;
+    border-bottom-color: var(--yali-primary) !important;
+}
+
+.pollinations-stat-card .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--yali-primary);
+}
+
+.pollinations-stat-card .stat-unit {
+    font-size: 12px;
+    font-weight: normal;
+    color: var(--yali-text-muted);
+    margin-left: 2px;
+}
+
+.stats-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 10px 0;
+    color: var(--yali-text-muted);
+}

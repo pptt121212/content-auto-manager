@@ -1,0 +1,211 @@
+/**
+ * 鸭梨AI助手 — Gutenberg 工具栏弹出面板样式
+ */
+
+/* Popover 面板容器 */
+.yali-ai-popover-panel {
+    width: 300px;
+    max-height: 480px;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    user-select: none;
+}
+
+/* ——— 顶部文字输入区（PRO 版等价功能：有无选中均可使用）——— */
+.yali-ai-input-area {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
+}
+
+.yali-ai-input-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 状态指示点 */
+.yali-ai-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.yali-ai-dot.selected {
+    background: #22c55e;
+    box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
+.yali-ai-dot.empty {
+    background: #f59e0b;
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.5);
+}
+
+.yali-ai-input-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: none;
+    color: #1e293b;
+    background: #fff;
+    transition: border-color 0.15s;
+    outline: none;
+    font-family: inherit;
+}
+
+.yali-ai-input-textarea:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.yali-ai-input-textarea.has-selection {
+    background: #f0fdf4;
+    border-color: #86efac;
+    color: #166534;
+}
+
+.yali-ai-input-textarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ——— 搜索框 ——— */
+.yali-ai-search {
+    padding: 8px 12px 6px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
+}
+
+.yali-ai-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 12px;
+    outline: none;
+    color: #1e293b;
+}
+
+.yali-ai-search-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* ——— 状态信息行 ——— */
+.yali-ai-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.yali-ai-status.generating {
+    color: #4f46e5;
+    background: #eef2ff;
+    border-bottom: 1px solid #c7d2fe;
+}
+
+.yali-ai-status.error {
+    color: #b91c1c;
+    background: #fef2f2;
+    border-bottom: 1px solid #fecaca;
+}
+
+/* ——— 提示词滚动列表 ——— */
+.yali-ai-prompt-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 0;
+}
+
+.yali-ai-prompt-item {
+    padding: 8px 14px;
+    cursor: pointer;
+    color: #1e293b;
+    transition: background 0.1s, color 0.1s;
+    line-height: 1.4;
+}
+
+.yali-ai-prompt-item:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.yali-ai-prompt-item.disabled {
+    opacity: 0.5;
+    cursor: wait;
+    pointer-events: none;
+}
+
+/* ——— 分组标题（多语言时显示，与原插件 category_heading 对应）——— */
+.yali-ai-group-header {
+    padding: 6px 14px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 2px;
+}
+
+.yali-ai-group-header:first-child {
+    border-top: none;
+    margin-top: 0;
+}
+
+/* ——— 无结果提示 ——— */
+.yali-ai-empty {
+    padding: 16px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+/* ——— 文档内加载动画块（与原插件 .aich-loading 对应）——— */
+@keyframes yali-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.yali-ai-loading {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #c7d2fe;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: yali-spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+.wp-block p:has(.yali-ai-loading),
+p.yali-ai-spinner-block {
+    color: #6366f1;
+    font-style: italic;
+    opacity: 0.8;
+}
