@@ -1,0 +1,35 @@
+/**
+ * Yali AI Brand Design Tokens
+ * Centralized variables for colors, spacing, and elevation.
+ */
+
+:root {
+    /* Brand Colors - Synced with yali-ai-theme */
+    --yali-primary: #6366f1;
+    --yali-primary-dark: #4f46e5;
+    --yali-primary-light: rgba(99, 102, 241, 0.1);
+    --yali-secondary: #0f172a;
+    --yali-accent: #22d3ee;
+    --yali-accent-light: rgba(34, 211, 238, 0.1);
+
+    /* UI Neutrals */
+    --yali-bg: #f8fafc;
+    --yali-card: #ffffff;
+    --yali-border: #cbd5e1;
+    --yali-text: #1e293b;
+    --yali-text-muted: #64748b;
+
+    /* Functional */
+    --yali-success: #22c55e;
+    --yali-warning: #f59e0b;
+    --yali-error: #ef4444;
+
+    /* Elevation */
+    --yali-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --yali-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --yali-radius: 12px;
+    --yali-radius-sm: 8px;
+
+    /* Motion */
+    --yali-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

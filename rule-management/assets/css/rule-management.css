@@ -1,0 +1,286 @@
+/* 网址采集功能样式 */
+.url-fetch-section {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.url-fetch-section h4 {
+    margin: 0 0 12px 0;
+    color: #2c3e50;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.url-fetch-section .url-input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.url-fetch-section #content_url {
+    flex: 1;
+    max-width: 400px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.url-fetch-section #content_url:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+.url-fetch-section #fetch_content_btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    height: auto;
+    line-height: 1.4;
+}
+
+.url-fetch-section #fetch_content_btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.url-fetch-section #fetch_status {
+    font-size: 12px;
+    margin-top: 5px;
+    min-height: 16px;
+    transition: color 0.3s ease;
+}
+
+.url-fetch-section #fetch_status.success {
+    color: #46b450;
+}
+
+.url-fetch-section #fetch_status.error {
+    color: #dc3232;
+}
+
+.url-fetch-section #fetch_status.warning {
+    color: #ffb900;
+}
+
+.url-fetch-section #fetch_status.loading {
+    color: #666;
+}
+
+/* 文本计数器样式 */
+#text-count {
+    font-size: 12px;
+    color: #666;
+    margin-top: 8px;
+}
+
+#current-count {
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+#current-count.warning {
+    color: #ffb900;
+}
+
+#current-count.error {
+    color: #dc3232;
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 768px) {
+    .url-fetch-section .url-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .url-fetch-section #content_url {
+        max-width: none;
+    }
+}
+
+/* Category Checklist Styles */
+.category-checklist-actions {
+    margin-bottom: 5px;
+}
+
+.category-checklist-container {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--yali-border);
+    padding: 10px;
+    background-color: var(--yali-background);
+    border-radius: var(--yali-radius);
+}
+
+.category-checklist-container ul {
+    padding-left: 0;
+    margin: 0;
+}
+
+.category-checklist-container ul.children {
+    padding-left: 20px;
+    /* Indent child categories */
+    margin-top: 5px;
+}
+
+.category-checklist-container li {
+    list-style-type: none;
+}
+
+/* Article Search Styles */
+.search-box-wrapper {
+    display: flex;
+    gap: 5px;
+}
+
+.search-results {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--yali-border);
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: var(--yali-radius);
+    background: var(--yali-background);
+}
+
+.search-result-item {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.search-result-item:hover {
+    background-color: #f0f0f0;
+}
+
+.search-result-item.selected {
+    background-color: #ddd;
+    color: #555;
+    cursor: not-allowed;
+}
+
+.selected-articles-container {
+    border: 1px solid var(--yali-border);
+    padding: 10px;
+    margin-top: 10px;
+    background-color: var(--yali-background);
+    max-height: 300px;
+    /* Fixed height */
+    overflow-y: auto;
+    /* Scroll if overflow */
+    border-radius: var(--yali-radius);
+}
+
+.selected-articles-container ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.selected-articles-container li {
+    margin-bottom: 5px;
+}
+
+/* Character Count Styles */
+#text-count {
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+#text-count span {
+    font-weight: bold;
+}
+
+/* Hierarchical Category Checklist Styles */
+.category-checklist {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
+.category-checklist li {
+    margin: 3px 0;
+    list-style: none;
+}
+
+.category-checklist .children {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 2px solid #ddd;
+    margin-top: 5px;
+}
+
+.category-checklist .children li {
+    margin-left: 15px;
+    position: relative;
+}
+
+.category-checklist .children li:before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: 10px;
+    width: 12px;
+    height: 1px;
+    background: #ddd;
+}
+
+.category-checklist label {
+    display: block;
+    padding: 2px 5px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.category-checklist label:hover {
+    background-color: #e0e0e0;
+}
+
+.category-checklist input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+/* Disabled Category Styles */
+.category-checklist li.disabled {
+    /* No opacity change, just text color */
+}
+
+.category-checklist .disabled-category {
+    color: #999 !important;
+    cursor: not-allowed;
+}
+
+.category-checklist .disabled-category:hover {
+    background-color: transparent !important;
+}
+
+.category-checklist .disabled-category input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.category-checklist .disabled-hint {
+    font-size: 0.85em;
+    color: #999;
+    font-style: italic;
+}
+
+/* Allowed Category Styles - Keep normal black */
+.category-checklist li.allowed {
+    /* No opacity change, keep normal display */
+}
+
+.category-checklist li.allowed label {
+    color: #333 !important;
+    cursor: pointer;
+}
+
+.category-checklist li.allowed label:hover {
+    background-color: #e0e0e0;
+}

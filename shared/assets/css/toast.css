@@ -1,0 +1,50 @@
+/* Toast Notification */
+.yali-toast {
+    position: fixed;
+    top: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    min-width: 300px;
+    max-width: 90vw;
+    border-left: 4px solid var(--yali-primary);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--yali-text);
+}
+
+.yali-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.yali-toast-success {
+    border-left-color: var(--yali-success);
+}
+
+.yali-toast-error {
+    border-left-color: var(--yali-error);
+}
+
+.yali-toast-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+}
+
+.yali-toast-success .yali-toast-icon {
+    color: var(--yali-success);
+}
+
+.yali-toast-error .yali-toast-icon {
+    color: var(--yali-error);
+}

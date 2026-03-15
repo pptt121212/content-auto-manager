@@ -1,0 +1,1013 @@
+/**
+ * Yali AI Unified UI Kit
+ * Base components for consistent design across all plugin pages.
+ * Extends brand-tokens.css.
+ */
+
+/* 1. Buttons - Base Styles and Variants */
+.yali-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    transition: var(--yali-transition) !important;
+    border-radius: var(--yali-radius-sm) !important;
+    text-decoration: none !important;
+    border: none !important;
+    line-height: 1 !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+}
+
+/* Disabled State - High Specificity to override variants */
+.yali-btn:disabled,
+.yali-btn.disabled,
+button:disabled,
+.yali-btn-small:disabled,
+.yali-btn-primary:disabled,
+.yali-btn-secondary:disabled,
+.yali-btn-danger:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    box-shadow: none !important;
+    filter: grayscale(0.2) !important;
+    background-image: none !important;
+    /* Remove gradients if any */
+}
+
+/* Fix for disabled primary/danger buttons becoming invisible due to background-image: none */
+.yali-btn-primary:disabled,
+.yali-btn-primary.disabled {
+    background-color: var(--yali-primary) !important;
+    color: white !important;
+}
+
+.yali-btn-danger:disabled,
+.yali-btn-danger.disabled {
+    background-color: var(--yali-error) !important;
+    color: white !important;
+}
+
+/* Primary - Rich Gradient */
+.yali-btn-primary {
+    background: linear-gradient(135deg, var(--yali-primary), var(--yali-primary-dark)) !important;
+    color: white !important;
+    padding: 8px 20px !important;
+    height: 38px !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+.yali-btn-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25) !important;
+    background: linear-gradient(135deg, var(--yali-primary-dark), #4338ca) !important;
+}
+
+/* Secondary - Standard Bordered */
+.yali-btn-secondary {
+    background: white !important;
+    border: 1px solid var(--yali-border) !important;
+    color: var(--yali-text) !important;
+    padding: 8px 20px !important;
+    height: 38px !important;
+}
+
+.yali-btn-secondary:hover {
+    border-color: var(--yali-primary) !important;
+    color: var(--yali-primary) !important;
+    background: white !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12) !important;
+}
+
+/* Small - Table Operations */
+/* Small - Table Operations */
+/* Small - Table Operations */
+.yali-btn-small {
+    padding: 3px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    margin: 0 4px !important;
+    box-sizing: border-box !important;
+    line-height: 1 !important;
+    /* Use 1 for flex centering, api-settings has 26px which is effectively 1 with border */
+    background: white !important;
+    border: 1px solid var(--yali-border) !important;
+    color: var(--yali-text) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    vertical-align: middle !important;
+    transition: var(--yali-transition) !important;
+}
+
+.yali-btn-small:hover {
+    border-color: var(--yali-primary) !important;
+    color: var(--yali-primary) !important;
+    background: #f8fafc !important;
+    text-decoration: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Danger Variant */
+.yali-btn-danger {
+    background: var(--yali-error) !important;
+    color: white !important;
+    padding: 8px 20px !important;
+    height: 38px !important;
+}
+
+.yali-btn-danger:hover {
+    background: white !important;
+    color: var(--yali-error) !important;
+    border: 1px solid var(--yali-error) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Specific Overrides for Small Variants */
+/* Specific Overrides for Small Variants */
+.yali-btn-small.yali-btn-primary,
+.yali-btn-small.yali-btn-danger,
+.yali-btn-small.yali-btn-secondary {
+    padding: 3px 12px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    line-height: 1 !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+}
+
+.yali-btn-small.yali-btn-danger:hover {
+    background: white !important;
+    color: var(--yali-error) !important;
+    border: 1px solid var(--yali-error) !important;
+}
+
+.yali-btn-small.yali-btn-primary:hover {
+    background: linear-gradient(135deg, var(--yali-primary-dark), #4338ca) !important;
+    color: white !important;
+}
+
+
+/* 2. Badges - Soft Badge System */
+.yali-badge {
+    padding: 3px 12px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+}
+
+.yali-badge-success {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #15803d !important;
+    border-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+.yali-badge-warning {
+    background: rgba(245, 158, 11, 0.12) !important;
+    color: #92400e !important;
+    border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.yali-badge-error {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #b91c1c !important;
+    border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+.yali-badge-neutral {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Card Footer */
+.yali-card-footer {
+    padding: 16px 20px;
+    background: transparent;
+    border-top: 1px solid var(--yali-border);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+}
+
+/* 3. Cards & Sections */
+.yali-card {
+    background: var(--yali-card) !important;
+    border: 1px solid var(--yali-border) !important;
+    border-radius: var(--yali-radius) !important;
+    box-shadow: var(--yali-shadow) !important;
+    padding: 24px !important;
+    margin-bottom: 24px !important;
+}
+
+.yali-card-header {
+    margin-top: 0 !important;
+    padding-bottom: 15px !important;
+    border-bottom: 1px solid var(--yali-border) !important;
+    margin-bottom: 20px !important;
+    font-size: 1.3em !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+.yali-panel {
+    background: #f8fafc !important;
+    padding: 20px !important;
+    border-radius: var(--yali-radius) !important;
+    border: 1px solid var(--yali-border) !important;
+}
+
+.yali-divider-dashed {
+    margin-top: 15px !important;
+    padding-top: 15px !important;
+    border-top: 1px dashed var(--yali-border) !important;
+    width: 100% !important;
+}
+
+.yali-flex-row {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: center !important;
+}
+
+.yali-flex-between {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+}
+
+.yali-flex-wrap {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 15px !important;
+}
+
+
+/* 4. Form Elements - Standardized Controls */
+.yali-input,
+.yali-select,
+.yali-textarea {
+    background: white !important;
+    border: 1px solid var(--yali-border) !important;
+    border-radius: var(--yali-radius-sm) !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    color: var(--yali-text) !important;
+    transition: var(--yali-transition) !important;
+    width: 100% !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.yali-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    padding-right: 36px !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 20px 20px !important;
+}
+
+select.yali-select[multiple] {
+    background-image: none !important;
+    padding-right: 12px !important;
+    height: auto !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-position: initial !important;
+    background-size: initial !important;
+}
+
+.yali-input:focus,
+.yali-select:focus,
+.yali-textarea:focus {
+    border-color: var(--yali-primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px var(--yali-primary-light) !important;
+}
+
+.yali-textarea {
+    min-height: 100px !important;
+    line-height: 1.6 !important;
+}
+
+.yali-textarea-code {
+    font-family: 'Fira Code', 'Roboto Mono', monospace !important;
+    font-size: 13px !important;
+    background: #f1f5f9 !important;
+    border: 1px solid var(--yali-border) !important;
+    border-radius: var(--yali-radius-sm) !important;
+    line-height: 1.5 !important;
+    padding: 15px !important;
+}
+
+/* 5. Typography & Helpers */
+.yali-desc {
+    font-size: 13px !important;
+    color: var(--yali-text-muted) !important;
+    line-height: 1.6 !important;
+    margin-top: 8px !important;
+    display: block !important;
+}
+
+.yali-link {
+    color: var(--yali-primary) !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    transition: var(--yali-transition) !important;
+}
+
+.yali-link:hover {
+    color: var(--yali-primary-dark) !important;
+    text-decoration: underline !important;
+}
+
+
+/* 6. Info Boxes & Status Indicator */
+.yali-notice {
+    padding: 16px 20px !important;
+    border-radius: var(--yali-radius-sm) !important;
+    border-left: 5px solid var(--yali-border) !important;
+    background: white !important;
+    margin: 20px 0 !important;
+    box-shadow: var(--yali-shadow) !important;
+}
+
+.yali-checkbox-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    color: var(--yali-text) !important;
+}
+
+.yali-checkbox-label input[type="checkbox"] {
+    margin: 0 !important;
+    vertical-align: middle !important;
+}
+
+/* 6.1 Modern Switch & Switch Groups */
+.yali-switch {
+    position: relative !important;
+    display: inline-block !important;
+    width: 44px !important;
+    height: 24px !important;
+    margin: 0 !important;
+}
+
+.yali-switch input {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.yali-switch-slider {
+    position: absolute !important;
+    cursor: pointer !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background-color: #e2e8f0 !important;
+    transition: .3s !important;
+    border-radius: 24px !important;
+}
+
+.yali-switch-slider:before {
+    position: absolute !important;
+    content: "" !important;
+    height: 18px !important;
+    width: 18px !important;
+    left: 3px !important;
+    bottom: 3px !important;
+    background-color: white !important;
+    transition: .3s !important;
+    border-radius: 50% !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+}
+
+.yali-switch input:checked+.yali-switch-slider {
+    background-color: var(--yali-primary) !important;
+}
+
+.yali-switch input:checked+.yali-switch-slider:before {
+    transform: translateX(20px) !important;
+}
+
+.yali-switch-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 2px 0 !important;
+}
+
+.yali-switch-group .yali-input {
+    width: 100px !important;
+    margin: 0 !important;
+}
+
+.yali-switch-label {
+    font-size: 13px !important;
+    color: var(--yali-text-muted) !important;
+    font-weight: 500 !important;
+    user-select: none !important;
+}
+
+/* Page Layout Grid */
+.yali-grid-layout {
+    display: grid !important;
+    grid-template-columns: 1fr 300px !important;
+    gap: 24px !important;
+    align-items: stretch !important;
+}
+
+.yali-grid-layout>div {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.yali-grid-layout>div>.yali-card {
+    flex: 1 !important;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 960px) {
+    .yali-grid-layout {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+.yali-grid-col-4 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+}
+
+@media (max-width: 1200px) {
+    .yali-grid-col-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+.yali-gap-10 {
+    gap: 10px !important;
+}
+
+.yali-form-group {
+    margin-bottom: 20px !important;
+}
+
+.yali-form-label {
+    display: block !important;
+    font-weight: 500 !important;
+    margin-bottom: 8px !important;
+    color: var(--yali-text) !important;
+    white-space: nowrap !important;
+}
+
+.yali-notice-info {
+    border-left-color: var(--yali-primary) !important;
+}
+
+.yali-notice-success {
+    border-left-color: var(--yali-success) !important;
+}
+
+.yali-notice-warning {
+    border-left-color: var(--yali-warning) !important;
+}
+
+.yali-notice-error {
+    border-left-color: var(--yali-error) !important;
+}
+
+.yali-notice h4 {
+    margin: 0 0 8px 0 !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: var(--yali-text) !important;
+}
+
+.yali-notice p {
+    margin: 0 0 12px 0 !important;
+    color: var(--yali-text) !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+
+.yali-notice p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Notice Dismiss Button */
+.yali-notice .notice-dismiss {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    padding: 16px !important;
+    border: none !important;
+    margin: 0 !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    color: var(--yali-text-muted) !important;
+    transition: color 0.2s ease !important;
+}
+
+.yali-notice .notice-dismiss:before {
+    content: "\f153" !important;
+    font-family: "Dashicons" !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+.yali-notice .notice-dismiss:hover {
+    color: var(--yali-text) !important;
+}
+
+.yali-notice.is-dismissible {
+    position: relative !important;
+    padding-right: 50px !important;
+}
+
+/* Progress Bar */
+.yali-progress-container {
+    background: #f1f5f9 !important;
+    border-radius: var(--yali-radius-sm) !important;
+    overflow: hidden !important;
+    height: 20px !important;
+    margin-top: 8px !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.yali-progress-bar {
+    background: linear-gradient(135deg, var(--yali-primary), var(--yali-primary-dark)) !important;
+    height: 100% !important;
+    width: 0%;
+    transition: width 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+
+/* 7. Tables & Lists */
+.yali-table {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: 1px solid var(--yali-border) !important;
+    border-radius: var(--yali-radius) !important;
+    overflow: hidden !important;
+    background: white !important;
+    margin-bottom: 20px !important;
+    table-layout: auto !important;
+}
+
+.yali-table thead th {
+    background: #f8fafc !important;
+    padding: 10px 12px !important;
+    text-align: left;
+    /* No !important here to allow overrides */
+    font-weight: 700 !important;
+    color: var(--yali-text-muted) !important;
+    font-size: 13px !important;
+    border-bottom: 1px solid var(--yali-border) !important;
+    white-space: nowrap !important;
+}
+
+.yali-table tbody td {
+    padding: 12px !important;
+    border-bottom: 1px solid var(--yali-border) !important;
+    color: var(--yali-text) !important;
+    font-size: 14px !important;
+    vertical-align: middle !important;
+    position: relative !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+
+.yali-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+
+.yali-table tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+/* Helper Utilities */
+.yali-text-center {
+    text-align: center !important;
+}
+
+.yali-text-right {
+    text-align: right !important;
+}
+
+.yali-btn-group-center {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.yali-btn-small {
+    padding: 3px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    max-height: 24px !important;
+    margin: 0 4px !important;
+    box-sizing: border-box !important;
+    line-height: 1 !important;
+    background: white;
+    /* Removed !important to allow overrides */
+    border: 1px solid var(--yali-border) !important;
+    color: var(--yali-text);
+    /* Removed !important */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    vertical-align: middle !important;
+    transition: var(--yali-transition) !important;
+    float: none !important;
+}
+
+.yali-btn-small.yali-btn-danger {
+    background: var(--yali-error) !important;
+    color: white !important;
+    border: 1px solid var(--yali-error) !important;
+}
+
+
+/* 8. Pagination */
+.yali-pagination {
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 20px !important;
+    justify-content: flex-end !important;
+}
+
+.yali-pagination .page-numbers {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    padding: 0 6px !important;
+    border-radius: var(--yali-radius-sm) !important;
+    border: 1px solid var(--yali-border) !important;
+    background: white !important;
+    color: var(--yali-text) !important;
+    text-decoration: none !important;
+    font-size: 13px !important;
+    transition: var(--yali-transition) !important;
+}
+
+.yali-pagination .page-numbers:hover {
+    border-color: var(--yali-primary) !important;
+    color: var(--yali-primary) !important;
+}
+
+.yali-pagination .page-numbers.current {
+    background: var(--yali-primary) !important;
+    border-color: var(--yali-primary) !important;
+    color: white !important;
+}
+
+
+/* 10. Page Titles - Standardized Headers */
+.yali-page-title {
+    font-size: 2em !important;
+    font-weight: 800 !important;
+    color: var(--yali-text) !important;
+    margin-bottom: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+/* 9. Tabs - Standard Segmented Control */
+.yali-tabs {
+    display: inline-flex !important;
+    gap: 4px !important;
+    background: rgba(15, 23, 42, 0.05) !important;
+    padding: 5px !important;
+    border-radius: var(--yali-radius) !important;
+    margin-bottom: 28px !important;
+    border: 1px solid var(--yali-border) !important;
+}
+
+.yali-tab-item {
+    padding: 10px 22px !important;
+    text-decoration: none !important;
+    color: var(--yali-text-muted) !important;
+    font-weight: 600 !important;
+    border-radius: calc(var(--yali-radius) - 2px) !important;
+    transition: var(--yali-transition) !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: pointer !important;
+    font-size: 0.9em !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+}
+
+.yali-tab-item .dashicons {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    line-height: 18px !important;
+    color: inherit !important;
+    opacity: 0.7 !important;
+}
+
+.yali-tab-item:hover {
+    color: var(--yali-primary) !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+}
+
+.yali-tab-item.active,
+.yali-tab-item.nav-tab-active {
+    /* Compatibility with WP classes if needed */
+    background: var(--yali-card) !important;
+    color: var(--yali-primary) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+
+.yali-tab-item.active .dashicons {
+    opacity: 1 !important;
+}
+
+/* Tab Content Container */
+.yali-tab-content {
+    display: none;
+}
+
+.yali-tab-content.active {
+    display: block;
+}
+
+
+/* 11. Page Wrapper - Standardized Fonts & Layout */
+/* 12. Accordion / Collapsible Sections */
+.yali-accordion {
+    background: var(--yali-card) !important;
+    border: 1px solid var(--yali-border) !important;
+    border-radius: var(--yali-radius) !important;
+    box-shadow: var(--yali-shadow) !important;
+    margin-bottom: 24px !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+}
+
+.yali-accordion summary {
+    list-style: none !important;
+    padding: 20px 24px !important;
+    cursor: pointer !important;
+    background: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    font-size: 1.3em !important;
+    font-weight: 600 !important;
+    color: var(--yali-text) !important;
+    user-select: none !important;
+}
+
+.yali-accordion summary::-webkit-details-marker {
+    display: none !important;
+}
+
+.yali-accordion summary:focus {
+    outline: none !important;
+}
+
+.yali-accordion summary:hover {
+    background: #f8fafc !important;
+}
+
+/* Arrow Icon Handling */
+.yali-accordion summary::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: transform 0.2s ease !important;
+}
+
+.yali-accordion[open] summary {
+    border-bottom: 1px solid var(--yali-border) !important;
+}
+
+.yali-accordion[open] summary::after {
+    transform: rotate(180deg) !important;
+}
+
+/* Add an inner wrapper for padding to avoid layout jump */
+.yali-accordion-content {
+    padding: 24px !important;
+    background: white !important;
+}
+
+/* 13. Modals - Standardized Overlay & Container */
+.yali-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 100005;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.yali-modal-overlay.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.yali-modal {
+    background: white;
+    border-radius: var(--yali-radius, 8px);
+    box-shadow: var(--yali-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06));
+    border: 1px solid var(--yali-border, #e2e8f0);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.2s ease-out;
+}
+
+.yali-modal-overlay.active .yali-modal {
+    transform: scale(1);
+}
+
+.yali-modal.small {
+    max-width: 400px;
+}
+
+.yali-modal.large {
+    max-width: 900px;
+}
+
+.yali-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--yali-border, #e2e8f0);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    border-radius: var(--yali-radius, 8px) var(--yali-radius, 8px) 0 0;
+}
+
+.yali-modal-header h3,
+.yali-modal-header h2 {
+    margin: 0 !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    color: var(--yali-text, #1e293b) !important;
+    line-height: 1.2 !important;
+}
+
+.yali-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--yali-text-muted, #64748b);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.yali-modal-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--yali-error, #ef4444);
+}
+
+.yali-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.yali-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--yali-border, #e2e8f0);
+    background: #f8fafc;
+    border-radius: 0 0 var(--yali-radius, 8px) var(--yali-radius, 8px);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Toast Notification */
+.yali-toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 999999 !important;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    min-width: 300px;
+    max-width: 90vw;
+    border-left: 4px solid var(--yali-primary);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--yali-text);
+}
+
+.yali-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.yali-toast-success {
+    border-left-color: var(--yali-success) !important;
+}
+
+.yali-toast-error {
+    border-left-color: var(--yali-error) !important;
+}
+
+.yali-toast-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+}
+
+.yali-toast-success .yali-toast-icon {
+    color: var(--yali-success) !important;
+}
+
+.yali-toast-error .yali-toast-icon {
+    color: var(--yali-error) !important;
+}

@@ -1,0 +1,204 @@
+/**
+ * 内容自动生成管家插件样式
+ */
+
+/* 通用样式 */
+.content-auto-dashboard {
+    margin-top: 20px;
+}
+
+.content-auto-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 统计卡片 */
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.card .count {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 10px 0;
+    color: #0073aa;
+}
+
+.card .description {
+    color: #666;
+    margin: 0;
+}
+
+/* 队列状态 */
+.queue-status {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.queue-status p {
+    margin: 5px 0;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 3px;
+}
+
+/* 快捷操作 */
+.quick-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.quick-actions .button {
+    margin-bottom: 10px;
+}
+
+/* 状态标签 */
+.status-pending {
+    color: #0073aa;
+    font-weight: bold;
+}
+
+.status-running {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.status-completed {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.status-failed {
+    color: #dc3232;
+    font-weight: bold;
+}
+
+.status-paused {
+    color: #ffb900;
+    font-weight: bold;
+}
+
+.status-unused {
+    color: #0073aa;
+    font-weight: bold;
+}
+
+.status-used {
+    color: #666;
+}
+
+.status-active {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.status-inactive {
+    color: #666;
+}
+
+.status-success {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+/* 表格样式 */
+.wp-list-table td .status-pending,
+.wp-list-table td .status-running,
+.wp-list-table td .status-completed,
+.wp-list-table td .status-failed,
+.wp-list-table td .status-paused,
+.wp-list-table td .status-unused,
+.wp-list-table td .status-used,
+.wp-list-table td .status-active,
+.wp-list-table td .status-inactive,
+.wp-list-table td .status-success {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.05);
+}
+
+/* 按钮样式 */
+.button-small {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.button-link-delete {
+    color: #dc3232;
+}
+
+.button-link-delete:hover {
+    color: #dc3232;
+    background: rgba(220, 50, 50, 0.1);
+}
+
+/* 表单样式 */
+.form-table th {
+    width: 200px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .queue-status {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+    }
+    
+    .form-table th {
+        width: 120px;
+    }
+}
+
+/* 通知样式 */
+.notice {
+    margin: 10px 0;
+}
+
+/* 加载动画 */
+.content-auto-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #0073aa;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
