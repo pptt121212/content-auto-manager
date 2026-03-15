@@ -1,0 +1,80 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "失败: ": [
+                "Failed: "
+            ],
+            "失败": [
+                "Failed"
+            ],
+            "请求失败: ": [
+                "Request failed: "
+            ],
+            "保存失败": [
+                "Save Failed"
+            ],
+            "请求失败": [
+                "Request failed"
+            ],
+            "保存失败: ": [
+                "Save failed: "
+            ],
+            "保存失败:": [
+                "Save failed:"
+            ],
+            "任务状态": [
+                "Task Status"
+            ],
+            "保存请求失败: ": [
+                "Save request failed: "
+            ],
+            "保存请求失败": [
+                "Save request failed"
+            ],
+            "取消": [
+                "Cancel"
+            ],
+            "已保存": [
+                "Saved"
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "全选": [
+                "Select All"
+            ],
+            "未知": [
+                "Unknown"
+            ],
+            "设置已保存": [
+                "Settings saved"
+            ],
+            "取消全选": [
+                "Deselect All"
+            ],
+            "请填写所有必填字段。": [
+                "Please fill in all required fields."
+            ],
+            "条": [
+                "item(s)"
+            ],
+            "进度": [
+                "Progress"
+            ],
+            "。": [
+                "."
+            ],
+            "状态": [
+                "Status"
+            ]
+        }
+    }
+}

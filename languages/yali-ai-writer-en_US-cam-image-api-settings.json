@@ -1,0 +1,299 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "API密钥": [
+                "API Key"
+            ],
+            "API Key": [
+                "API Key"
+            ],
+            "模型名称": [
+                "Model name"
+            ],
+            "可用模型": [
+                "Available Models"
+            ],
+            "自定义 API": [
+                "Custom API"
+            ],
+            "轮询超时 (5分钟)，任务可能仍在处理中。您可以稍后手动检查任务状态或尝试使用处理速度更快的模型。": [
+                "Polling timed out (5 mins). Task might still be processing. Check later or try a faster model."
+            ],
+            "默认模型": [
+                "Default Model"
+            ],
+            "输入一段英文提示词来测试上面的配置。": [
+                "Enter an English prompt to test the configuration above."
+            ],
+            "部分模型（如Qwen\/Qwen-Image）处理时间可能较长，请耐心等待结果。如需快速测试，可尝试使用响应更快的模型。": [
+                "Some models (e.g., Qwen\/Qwen-Image) may take longer to process. Please be patient. For quick testing, try more responsive models."
+            ],
+            "硅基流动": [
+                "SiliconFlow"
+            ],
+            "硅基流动 (Silicon Flow) 设置": [
+                "SiliconFlow Settings"
+            ],
+            "ModelScope (魔搭)": [
+                "ModelScope"
+            ],
+            "配图 API 设置": [
+                "Image API Settings"
+            ],
+            "配置不同的图像生成API供应商。点击下方的“保存设置”时，当前激活的选项卡对应的供应商将被设为默认图像生成器。": [
+                "Configure different image generation API providers. When clicking 'Save Settings', the provider corresponding to the currently active tab will be set as the default generator."
+            ],
+            "ModelScope 设置": [
+                "ModelScope Settings"
+            ],
+            "模型 (Model ID)": [
+                "Model ID"
+            ],
+            "API Key (MODELSCOPE_SDK_TOKEN)": [
+                "API Key (MODELSCOPE_SDK_TOKEN)"
+            ],
+            "OpenAI 设置": [
+                "OpenAI Settings"
+            ],
+            "使用 DALL·E 3 或 DALL·E 2 模型生成图像。您需要一个有效的OpenAI API密钥。": [
+                "Use DALL-E 3 or DALL-E 2 models. A valid OpenAI API Key is required."
+            ],
+            "Pollinations.AI 设置": [
+                "Pollinations.AI Settings"
+            ],
+            "可用模型：flux (默认), turbo, gptimage, kontext, seedream": [
+                "Available models: flux (default), turbo, gptimage, kontext, seedream"
+            ],
+            "API Token (必填)": [
+                "API Token (Required)"
+            ],
+            "从 enter.pollinations.ai 获取的新密钥。必须填写才能使用服务。": [
+                "New key from enter.pollinations.ai. Required to use the service."
+            ],
+            "模型": [
+                "Model"
+            ],
+            "失败": [
+                "Failed"
+            ],
+            "请求失败": [
+                "Request failed"
+            ],
+            "生成失败:": [
+                "Generation failed:"
+            ],
+            "生成失败": [
+                "Generation failed"
+            ],
+            "提交任务失败:": [
+                "Failed to submit task:"
+            ],
+            "未知任务状态:": [
+                "Unknown task status:"
+            ],
+            "AJAX请求失败": [
+                "AJAX request failed"
+            ],
+            "测试失败:": [
+                "Test failed:"
+            ],
+            "轮询请求失败:": [
+                "Polling request failed:"
+            ],
+            "任务状态": [
+                "Task Status"
+            ],
+            "测试失败": [
+                "Test failed"
+            ],
+            "成功": [
+                "Success"
+            ],
+            "已保存": [
+                "Saved"
+            ],
+            "处理中": [
+                "Processing"
+            ],
+            "测试": [
+                "Test"
+            ],
+            "测试结果": [
+                "Test Result"
+            ],
+            "请输入测试提示词。": [
+                "Please enter a test prompt."
+            ],
+            "生成测试图像": [
+                "Generate Test Image"
+            ],
+            "测试提示词": [
+                "Test Prompt"
+            ],
+            "测试成功": [
+                "Test Successful"
+            ],
+            "接口测试": [
+                "API Test"
+            ],
+            "提示词": [
+                "Prompt"
+            ],
+            "保存设置": [
+                "Save Settings"
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "例如：Qwen\/Qwen-Image": [
+                "Example: Qwen\/Qwen-Image"
+            ],
+            "例如：gpt-image-1, dall-e-3, dall-e-2": [
+                "Example: gpt-image-1, dall-e-3, dall-e-2"
+            ],
+            "例如：Qwen\/Qwen-Image, Kwai-Kolors\/Kolors": [
+                "Example: Qwen\/Qwen-Image, Kwai-Kolors\/Kolors"
+            ],
+            "您可以在 <a href=\"https:\/\/www.modelscope.cn\/aigc\/models\" target=\"_blank\">ModelScope AIGC模型<\/a> 页面查找可用的模型ID，并确保您的 ModelScope 账号已绑定阿里云账号。": [
+                "You can find available model IDs on the <a href=\"https:\/\/www.modelscope.cn\/aigc\/models\" target=\"_blank\">ModelScope AIGC Models<\/a> page, and ensure your ModelScope account is bound to an Alibaba Cloud account."
+            ],
+            "提示：": [
+                "Tip:"
+            ],
+            "由于 Pollinations.AI 免费版接口目前服务不可用，<strong>必须提供 API Token 才能生成图像<\/strong>。请前往 <a href=\"https:\/\/enter.pollinations.ai\" target=\"_blank\">enter.pollinations.ai<\/a> 获取新版 API Key。": [
+                "The Pollinations.AI free API is currently unavailable. <strong>An API Token is required<\/strong> to generate images. Please obtain a new API Key from <a href=\"https:\/\/enter.pollinations.ai\" target=\"_blank\">enter.pollinations.ai<\/a>."
+            ],
+            "火山引擎": [
+                "Volcano Engine"
+            ],
+            "火山引擎 (豆包) 设置": [
+                "Volcano Engine (Doubao) Settings"
+            ],
+            "配置火山引擎图像 API。": [
+                "Configure Volcano Engine image API."
+            ],
+            "火山引擎的 API 密钥。": [
+                "Volcano Engine API key."
+            ],
+            "在此输入模型名，如：doubao-seedream-4-5-251128 或 doubao-seedream-5-0-260128": [
+                "Enter model name here, e.g.: doubao-seedream-4-5-251128 or doubao-seedream-5-0-260128"
+            ],
+            "豆包": [
+                "Doubao"
+            ],
+            "自定义 (OpenAI 兼容) 设置": [
+                "Custom (OpenAI Compatible) Settings"
+            ],
+            "配置任意支持 OpenAI 图像生成标准 ( \/v1\/images\/generations ) 的第三方 API。": [
+                "Configure any third-party API supporting OpenAI image generation standard (\/v1\/images\/generations)."
+            ],
+            "接口地址 (Base URL)": [
+                "Endpoint (Base URL)"
+            ],
+            "请输入含协议 (http\/https) 和路径的完整生成端点地址。": [
+                "Enter the full generation endpoint address with protocol (http\/https) and path."
+            ],
+            "调用该接口的授权密钥 (Bearer Token)。": [
+                "Authorization key (Bearer Token) for this API."
+            ],
+            "模型名称 (Model)": [
+                "Model Name"
+            ],
+            "需要调用的目标模型名称。": [
+                "Target model name to call."
+            ],
+            "输入一段提示词来测试上面的配置，例如：星际穿越，黑洞，黑洞里冲出一辆快支离破碎的复古列车...": [
+                "Enter a prompt to test the configuration above, e.g.: interstellar travel, black hole, a retro train bursting out of the black hole..."
+            ],
+            "正在生成图像，请稍候...": [
+                "Generating image, please wait..."
+            ],
+            "任务已提交，正在等待结果...": [
+                "Task submitted, waiting for results..."
+            ],
+            "状态: ": [
+                "Status: "
+            ],
+            "注意: 某些模型可能需要较长时间处理，请耐心等待...": [
+                "Note: Some models may take longer to process. Please be patient..."
+            ],
+            "最后更新: ": [
+                "Last updated: "
+            ],
+            "检查任务状态失败:": [
+                "Failed to check task status:"
+            ],
+            "测试成功但未返回图像:": [
+                "Test successful but no image returned:"
+            ],
+            "提交任务的AJAX请求失败:": [
+                "AJAX request to submit task failed:"
+            ],
+            "AJAX 请求失败:": [
+                "AJAX request failed:"
+            ],
+            "发生未知错误。": [
+                "An unknown error occurred."
+            ],
+            "支持": [
+                "Yes"
+            ],
+            "结果": [
+                "Results"
+            ],
+            "名称": [
+                "Name"
+            ],
+            "未知": [
+                "Unknown"
+            ],
+            "更新:": [
+                "Updated:"
+            ],
+            "时间": [
+                "Time"
+            ],
+            "超时": [
+                "Timeout"
+            ],
+            "处理时间": [
+                "Processing time"
+            ],
+            "英文": [
+                "English"
+            ],
+            "设置已保存": [
+                "Settings saved"
+            ],
+            "中": [
+                "Medium"
+            ],
+            "分钟": [
+                "minutes"
+            ],
+            "自定义": [
+                "Custom"
+            ],
+            "ID": [
+                "ID"
+            ],
+            "，": [
+                ", "
+            ],
+            "。": [
+                "."
+            ],
+            "状态": [
+                "Status"
+            ]
+        }
+    }
+}

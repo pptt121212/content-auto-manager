@@ -1,0 +1,242 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "关闭": [
+                "Close"
+            ],
+            "失败: ": [
+                "Failed: "
+            ],
+            "失败": [
+                "Failed"
+            ],
+            "加载失败": [
+                "Failed to load."
+            ],
+            "请求失败": [
+                "Request failed"
+            ],
+            "关键数据加载失败，插件无法正常工作。请联系管理员。\\n\\n请在浏览器控制台查看详细错误信息。": [
+                "Key data failed to load, plugin cannot work properly. Please contact the administrator.\\n\\nPlease check the browser console for details."
+            ],
+            "正在初始化挖掘任务 [{dataSourcesText}]...": [
+                "Initializing mining task [{dataSourcesText}]..."
+            ],
+            "初始化挖掘任务失败: ": [
+                "Failed to initialize mining task: "
+            ],
+            "初始化挖掘任务时请求失败。请检查网络。": [
+                "Request failed during mining task initialization. Please check your network."
+            ],
+            "执行步骤失败: ": [
+                "Step execution failed: "
+            ],
+            "合并结果失败: ": [
+                "Merge results failed: "
+            ],
+            "合并结果请求失败。请检查网络。": [
+                "Merge results request failed. Please check your network."
+            ],
+            "获取失败": [
+                "Fetch Failed"
+            ],
+            "网络请求失败": [
+                "Network request failed"
+            ],
+            "取消": [
+                "Cancel"
+            ],
+            "成功": [
+                "Success"
+            ],
+            "是": [
+                "Yes"
+            ],
+            "谷歌": [
+                "Google"
+            ],
+            "百度": [
+                "Baidu"
+            ],
+            "DuckDuckGo": [
+                "DuckDuckGo"
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "深度挖掘": [
+                "Deep Mine"
+            ],
+            "关键词": [
+                "Keyword"
+            ],
+            "请输入一个基础关键词。": [
+                "Please enter a base keyword."
+            ],
+            "基础关键词挖掘": [
+                "Base Keyword Mining"
+            ],
+            "空格扩展挖掘": [
+                "Space Extension Mining"
+            ],
+            "没有可以复制的关键词。": [
+                "No keywords available to copy."
+            ],
+            "未找到相关关键词。": [
+                "No related keywords found."
+            ],
+            "分析趋势": [
+                "Analyze Trend"
+            ],
+            "关键词挖掘": [
+                "Keyword Mining"
+            ],
+            "正在执行": [
+                "Executing"
+            ],
+            "错误信息": [
+                "Error message"
+            ],
+            "结果": [
+                "Results"
+            ],
+            "复制": [
+                "Copy"
+            ],
+            "全选": [
+                "Select All"
+            ],
+            "未知": [
+                "Unknown"
+            ],
+            "推荐": [
+                "Recommended"
+            ],
+            "平均": [
+                "Avg"
+            ],
+            "共 ": [
+                "Total "
+            ],
+            "共": [
+                "Total"
+            ],
+            "请至少选择一个数据源。": [
+                "Please select at least one data source."
+            ],
+            "购物": [
+                "Shopping"
+            ],
+            "维基百科": [
+                "Wikipedia"
+            ],
+            "淘宝": [
+                "Taobao"
+            ],
+            "如何": [
+                "How"
+            ],
+            "什么": [
+                "What"
+            ],
+            "为什么": [
+                "Why"
+            ],
+            "哪里": [
+                "Where"
+            ],
+            "什么时候": [
+                "When"
+            ],
+            "哪个": [
+                "Which"
+            ],
+            "最佳": [
+                "Best"
+            ],
+            "对比": [
+                "Compare"
+            ],
+            "价格": [
+                "Price"
+            ],
+            "购买": [
+                "Buy"
+            ],
+            "评测": [
+                "Review"
+            ],
+            "问题前缀-": [
+                "Question Prefix - "
+            ],
+            "字母后缀-": [
+                "Letter Suffix - "
+            ],
+            "正在合并结果并去重...": [
+                "Merging results and deduplicating..."
+            ],
+            "(共 {count} 个)": [
+                "(Total {count})"
+            ],
+            "平均热度: ": [
+                "Average Interest: "
+            ],
+            "请求错误": [
+                "Request Error"
+            ],
+            "已成功复制到剪贴板！": [
+                "Successfully copied to clipboard!"
+            ],
+            "中": [
+                "Medium"
+            ],
+            "取消全选": [
+                "Deselect All"
+            ],
+            "日语": [
+                "Japanese"
+            ],
+            "韩语": [
+                "Korean"
+            ],
+            "法语": [
+                "French"
+            ],
+            "德语": [
+                "German"
+            ],
+            "西班牙语": [
+                "Spanish"
+            ],
+            "阿拉伯语": [
+                "Arabic"
+            ],
+            "ID": [
+                "ID"
+            ],
+            "无": [
+                "None"
+            ],
+            "查看": [
+                "View"
+            ],
+            "，": [
+                ", "
+            ],
+            "。": [
+                "."
+            ],
+            "状态": [
+                "Status"
+            ]
+        }
+    }
+}

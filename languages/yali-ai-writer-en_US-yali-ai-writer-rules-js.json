@@ -1,0 +1,113 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "失败": [
+                "Failed"
+            ],
+            "重试": [
+                "Retry"
+            ],
+            "采集失败：": [
+                "Fetch failed: "
+            ],
+            "采集失败：网络错误": [
+                "Fetch failed: Network error"
+            ],
+            "系统错误: 缺少必要组件 (contentAutoManager)，请刷新页面重试。": [
+                "System Error: Missing required component (contentAutoManager). Please refresh the page."
+            ],
+            "请求超时，请检查网络或稍后重试": [
+                "Request timed out, please check your network or try again later."
+            ],
+            "恢复": [
+                "Resume"
+            ],
+            "成功": [
+                "Success"
+            ],
+            "操作": [
+                "Actions"
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "未知": [
+                "Unknown"
+            ],
+            "刷新": [
+                "Refresh"
+            ],
+            "超时": [
+                "Timeout"
+            ],
+            "错误: ": [
+                "Error: "
+            ],
+            "错误:": [
+                "Error:"
+            ],
+            "网络错误": [
+                "Network error"
+            ],
+            "中": [
+                "Medium"
+            ],
+            "操作成功": [
+                "Operation successful"
+            ],
+            "采集内容": [
+                "Fetch Content"
+            ],
+            "正在采集内容，请稍候...": [
+                "Fetching content, please wait..."
+            ],
+            "内容采集成功！已截取前3000个字符": [
+                "Content fetched successfully! Truncated to the first 3000 characters"
+            ],
+            "采集的内容为空": [
+                "Fetched content is empty"
+            ],
+            "操作成功，但无法自动跳转。请手动刷新页面。": [
+                "Operation successful, but could not redirect automatically. Please refresh the page manually."
+            ],
+            "系统错误: ": [
+                "System Error: "
+            ],
+            "服务器响应格式错误": [
+                "Server response format error"
+            ],
+            "无": [
+                "None"
+            ],
+            "组": [
+                "Groups"
+            ],
+            "，": [
+                ", "
+            ],
+            "。": [
+                "."
+            ],
+            "状态": [
+                "Status"
+            ],
+            "网址内容采集": [
+                "URL Content Fetching"
+            ],
+            "请输入网址": [
+                "Please enter a URL"
+            ],
+            "请输入有效的网址": [
+                "Please enter a valid URL"
+            ]
+        }
+    }
+}

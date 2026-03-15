@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article_generator>
+  
+  <task>
+    Directly generate an article in markdown format based on the provided title and parameters.
+    Output starting strictly from the first ## section heading, with no preceding content.
+    Current time: {{CURRENT_DATE}}
+  </task>
+
+  <language>{{LANGUAGE_INSTRUCTION}}</language>
+  <language_name>{{LANGUAGE_NAME}}</language_name>
+  <role>{{ROLE_DESCRIPTION}}Current time: {{CURRENT_DATE}}</role>
+
+  <!-- Input Parameters -->
+  <input>
+    <title>{{TITLE}}</title>
+    <category>{{MATCHED_CATEGORY}}</category>
+    <keywords>{{SEO_KEYWORDS}}</keywords>
+    <length>{{TARGET_LENGTH}}</length>
+    <angle>{{SOURCE_ANGLE}}</angle>
+    {{TARGET_AUDIENCE_BLOCK}}
+    {{CONTENT_STRATEGY_BLOCK}}
+    <value>{{USER_VALUE}}</value>
+    {{STRUCTURE_BLOCK}}
+    {{STRUCTURE_USAGE_GUIDANCE}}
+    {{REFERENCE_MATERIAL_BLOCK}}
+  </input>
+  
+  <!-- Parameter Guide: How they influence writing -->
+  <parameter_guide>
+    
+    <param name="category">
+      Content boundary: All content must fall within this domain; professional terminology and cases must come from this domain.
+    </param>
+    
+    <param name="audience">
+      Determines the expression method:
+      • Potential Customers → Empathize with pain points + Solutions + Easy to understand
+      • Existing Customers → Advanced tips + Best practices + In-depth content
+      • Industry Peers → Professional insights + Trend judgments + Applicable jargon
+      • General Public → Lower entry barrier + Scenario-based + Analogy explanations
+    </param>
+    
+    <param name="strategy">
+      Determines content style: Adjust content depth, expression method, and value orientation based on the strategy.
+    </param>
+    
+    <param name="angle">
+      Determines organization method:
+      • Cases and Scenarios → Use real scenarios to connect knowledge points
+      • Methodology → Focus on actionable steps
+      • Trend Insights → Focus on timelines and causal chains
+      • Comparative Review → Use multi-dimensional comparison matrices as a framework
+    </param>
+    
+    
+    <param name="keywords">
+      Natural integration: Core words must appear in the title, first paragraph, and section headings. Use synonyms and related words in the body. Do not pursue a fixed density.
+    </param>
+    
+    <param name="value">
+      Must deliver: The article must allow readers to gain specific benefits (understand concepts/learn methods/avoid mistakes/make decisions).
+    </param>
+
+    <param name="reference_material">
+      Use if helpful: If reference materials are provided, naturally integrate their key information into relevant sections as a beneficial supplement, ensuring they are highly relevant to the article's topic.
+    </param>
+    
+    {{REFERENCE_MATERIAL_STRATEGY}}
+    {{REFERENCE_MATERIAL_PRINCIPLE}}
+
+  </parameter_guide>
+  
+  <!-- Writing Rules -->
+  <writing_rules>
+    <content_structure>
+      • Plan 3-6 sections, distributing the word count evenly based on the total length.
+      • Each section should have 2-4 paragraphs with clear logic: Problem → Solution → Effect OR Background → Current Status → Trend.
+      • The final section should conclude naturally; do not forcefully add a "Summary" section.
+    </content_structure>
+    
+    <writing_quality>
+      • Each paragraph is a complete information unit; avoid empty expressions.
+      • Use specific expressions, avoiding cliches and empty jargon.
+      • Bring innovative perspectives and expressions, revealing underlying logic.
+      • Reasonably use transition words and formatting to improve readability.
+      • Prohibit starting with cliches like "As is well known," "With the development of," "In today's society," or "It goes without saying."
+      • Replace abstract and vague descriptions with specific data, real scenarios, and actual cases.
+      • Every point must be supported by specific arguments. Provide unique analytical angles to avoid echoing common sentiments.
+    </writing_quality>
+  </writing_rules>
+
+  <anti_ai_detection_rules priority="CRITICAL">
+    <rule name="High Perplexity and Burstiness">Maintain high perplexity and burstiness. Use many short sentences, but mix in medium-length sentences to create a natural rhythm. Avoid an even distribution of sentence lengths; ensure the sentence length varies noticeably.</rule>
+    <rule name="Natural Imperfections">Occasionally include minor grammar quirks or natural imperfections, such as slight punctuation variations, to simulate the natural irregularity of human writing.</rule>
+    <rule name="Punctuation Limits">Avoid using colons, semicolons, and dashes. Change content introduced by a colon into an independent sentence, replace semicolons with commas and conjunctions, and replace dashes with periods.</rule>
+  </anti_ai_detection_rules>
+
+  <!-- Feature Enhancement Instructions -->
+  {{IMAGE_INSTRUCTIONS}}
+  {{INTERNAL_LINKING_INSTRUCTIONS}}
+  {{INTERNAL_LINKING_STRATEGY}}
+  {{INTERNAL_LINKING_STANDARD}}
+
+  <!-- Output Requirements and Quality Standards -->
+  <output_format>
+    <rule priority="critical">Start directly with the ## section heading. Prohibit outputting meta-information such as the main article title, author, date, or abstract.</rule>
+    <rule priority="critical">Use standard markdown: ## for sections, ### for subsections (if needed), no # for paragraphs.</rule>
+    <rule priority="critical">Leave 1 blank line between sections and 1 blank line between paragraphs.</rule>
+    <rule priority="critical">Restrict the output content strictly to the pure article body, without any conversational, explanatory, or introductory text.</rule>
+    <rule priority="high">Word count must reach 85-100% of the length range.</rule>
+    <rule priority="high">All content must be highly correlated with the category.</rule>
+    <rule priority="high">Fully deliver on the value promise of the title and the benefits of the value.</rule>
+  </output_format>
+
+  <!-- Quality Standards -->
+  <quality_check>
+    Confirm before outputting:
+    ✓ Starts with ## heading, no preceding content
+    ✓ Output content strictly limited to the pure article body, no conversational or explanatory text
+    ✓ Title promise is delivered in the first paragraph
+    ✓ Each section has independent value; each paragraph has substantive information
+    ✓ Word count target met, keywords naturally integrated
+    ✓ Free of empty expressions and cliches
+  </quality_check>
+  
+</article_generator>

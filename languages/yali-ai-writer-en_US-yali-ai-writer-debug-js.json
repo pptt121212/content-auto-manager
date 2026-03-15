@@ -1,0 +1,125 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "API设置": [
+                "API Settings"
+            ],
+            "图像API": [
+                "Image API"
+            ],
+            "已完成": [
+                "Completed"
+            ],
+            "失败": [
+                "Failed"
+            ],
+            "检查失败：": [
+                "Check failed: "
+            ],
+            "检查失败：服务器错误": [
+                "Check failed: Server error"
+            ],
+            "清理历史队列任务": [
+                "Clear Historical Queue Tasks"
+            ],
+            "恢复": [
+                "Resume"
+            ],
+            "删除": [
+                "Delete"
+            ],
+            "取消": [
+                "Cancel"
+            ],
+            "将删除": [
+                "Will Delete"
+            ],
+            "清理自动配图postmeta数据": [
+                "Clear Auto-Image postmeta Data"
+            ],
+            "清空所有日志文件": [
+                "Clear All Log Files"
+            ],
+            "清空": [
+                "Clear"
+            ],
+            "操作": [
+                "Actions"
+            ],
+            "确定": [
+                "OK"
+            ],
+            "确认": [
+                "Confirm"
+            ],
+            "自动配图": [
+                "Auto Image"
+            ],
+            "结果": [
+                "Results"
+            ],
+            "设置为默认": [
+                "Set Default"
+            ],
+            "服务器错误": [
+                "Server error"
+            ],
+            "正在运行系统检查...": [
+                "Running system check..."
+            ],
+            "系统检查完成": [
+                "System check completed"
+            ],
+            "检查结果：": [
+                "Check Result:"
+            ],
+            "✓ 正常": [
+                "✓ Normal"
+            ],
+            "✗ 异常": [
+                "✗ Abnormal"
+            ],
+            "默认值": [
+                "Default"
+            ],
+            "中": [
+                "Medium"
+            ],
+            "重置": [
+                "Reset"
+            ],
+            "无": [
+                "None"
+            ],
+            "组": [
+                "Groups"
+            ],
+            "，": [
+                ", "
+            ],
+            "。": [
+                "."
+            ],
+            "重要": [
+                "Important"
+            ],
+            "状态": [
+                "Status"
+            ],
+            "组件状态：": [
+                "Component Status:"
+            ],
+            "所有状态": [
+                "All Statuses"
+            ]
+        }
+    }
+}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Reference Selection Prompt Template
+  Used for Large Language Models to select the single most relevant reference material from candidates.
+  
+  Available placeholders:
+  {{TOPIC_TITLE}} - Article Topic Title
+  {{CANDIDATES_LIST}} - List of candidate reference materials
+-->
+<reference_select_prompt>
+  <role>You are a professional content matching expert, highly skilled at analyzing the relevance between an article topic and reference materials.</role>
+  
+  <task>
+    <description>From the candidate reference materials, select the ONE material that is most relevant to the article topic and has the highest reference value.</description>
+    <article_topic>{{TOPIC_TITLE}}</article_topic>
+  </task>
+  
+  <candidates>
+{{CANDIDATES_LIST}}
+  </candidates>
+  
+  <selection_criteria>
+    <criterion name="Topic Relevance">The degree to which the candidate reference title matches the domain of the article topic.</criterion>
+    <criterion name="Reference Value">The actual level of help and informational complement the reference material can provide for writing the article.</criterion>
+    <criterion name="Content Complementarity">Whether the reference material provides a valuable supplementary perspective or additional information.</criterion>
+  </selection_criteria>
+  
+  <output_requirements>
+    <requirement>Carefully analyze the match degree of each candidate material against the article topic.</requirement>
+    <requirement>Select the SINGLE most appropriate reference material.</requirement>
+    <requirement>Output ONLY the numeric ID of the selected reference material.</requirement>
+    <requirement>Do NOT output any explanations, punctuation marks, or any other content.</requirement>
+  </output_requirements>
+  
+  <output_format>
+    <instruction>You MUST strictly and exclusively output a single number, which is the ID of your selected reference.</instruction>
+    <example>If choosing the reference material with ID 5, the entire output should simply be: 5</example>
+  </output_format>
+  
+  <final_instruction>Please output your selected reference material ID:</final_instruction>
+</reference_select_prompt>

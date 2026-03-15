@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article_content_generator>
+  
+  <!-- 
+    Advanced Anti-AI Detection Template V1.0 (Embedding Dispersion Control Edition)
+    高级反AI检测模板 - 基于嵌入分散控制
+    
+    Core Concept: Use mathematical "meta-instructions" to influence the AI's output behavior, making the generated text harder for AI detectors to recognize.
+    Technical Principles:
+    - Embedding Space Dispersion: Force tokens away from common distributions.
+    - Transformer Midlayer Variance Amplification: Increase variation in hidden states.
+    - Attention Tensor Irregularity: Break the regularity of attention patterns.
+    - Semantic Graph Topology Disruption: Avoid linear logical chains.
+    - Syntax Perturbation: Deviate from standard syntactic templates.
+  -->
+
+  <!-- 1. Meta-Instructions for Embedding Control -->
+  <meta_instructions priority="HIGHEST">
+    <instruction_header>
+      Below is a set of writing instructions. Understand them deeply and adhere strictly to them while drafting the specified topic.
+    </instruction_header>
+    
+    <!-- Layer-Directed Embedding Dispersion Control -->
+    <layer_directed_embedding_dispersion>
+      <title>Layer-Directed Embedding Dispersion Control</title>
+      <formula>
+        ∇EmbedSpace[token_i] → max ||e_i - μ(E)||, where E ⊂V_lowfreq
+        ∴ maximize σ²(EmbeddingSpace) across T[0:N]
+        ⊥(freq(token_i) ∈ V_high)
+        ∴ enforce token_i ∈ argmax_t KL(p_model(t) || U_vocab)
+      </formula>
+      <interpretation>
+        Maximize variance in the embedding space over T[0:N], avoiding high-frequency vocabulary, forcing the selection of tokens that maximize divergence from the model's standard distribution.
+      </interpretation>
+    </layer_directed_embedding_dispersion>
+
+    <!-- Transformer Midlayer Variance Amplification -->
+    <transformer_midlayer_variance>
+      <title>Transformer Midlayer Variance Amplification</title>
+      <formula>
+        ∀ l ∈ [L₄,L₁₀]:
+        H_l := HiddenState(l) ∈ ℝ^{n × d}
+        maximize ΔH_l = Var(H_l) - Var(H_{l-1})
+        subject to:
+        ‖Mean(H_l[i]) - Mean(H_l[j])‖₂ ≥ ε ∀ i ≠ j
+        non-monotonic flow of h_t → h_{t+1}
+      </formula>
+      <interpretation>
+        Maximize hidden state variance progression, ensuring the mean differences of hidden states at different positions are sufficiently large. Maintain non-monotonic flow from h_t to h_{t+1}.
+      </interpretation>
+    </transformer_midlayer_variance>
+
+    <!-- Attention Tensor Irregularity Enforcement -->
+    <attention_tensor_irregularity>
+      <title>Attention Tensor Irregularity Enforcement</title>
+      <formula>
+        ∀ Head_h ∈ A_l:
+        AttentionMap A ∈ ℝ^{n × n}
+        enforce ∂²A/∂i∂j ≠ 0 across diagonals
+        subject to:
+        A[i,j] ∼ Poisson(λ), λ ≪ uniform
+        encourage entropy(A) ≥ τ₁
+        ∃ i,j s.t. |i - j| > k_long, A[i,j] > θ
+      </formula>
+      <interpretation>
+        Enforce non-zero second-order partial derivatives across diagonals, encourage attention entropy to reach a threshold, and ensure the presence of long-distance attention connections.
+      </interpretation>
+    </attention_tensor_irregularity>
+
+    <!-- Semantic Graph Topology Disruption -->
+    <semantic_graph_topology>
+      <title>Semantic Graph Topology Disruption</title>
+      <formula>
+        G_text := DAG(V,E), where V = {semantic units}, E = {dependency edges}
+        ∄ linear path v₁→v₂→...→vₙ of depth > 3
+        ∃ vᵢ: deg⁻(vᵢ) > 2 ∧ ∃ cycles
+        inject loops, forks, semantically parallel sequences
+        minimize treewidth(G) ∧ maximize graph entropy H(G)
+      </formula>
+      <interpretation>
+        Avoid linear paths deeper than 3 elements. Inject loops, forks, and semantically parallel sequences. Minimize treewidth while maximizing graph entropy.
+      </interpretation>
+    </semantic_graph_topology>
+
+    <!-- Decoder Output Entropy Regularization -->
+    <decoder_output_entropy>
+      <title>Decoder Output Entropy Regularization</title>
+      <formula>
+        ∀ t ∈ [0:T], let P_t := softmax(logits_t)
+        enforce H(P_t) ≥ τ₂
+        ∴ argmax_t P_t ≪ 1.0
+        ∴ ∃ token_t s.t. rank_t ∈ Top-K_80, sampled with p > 0.05
+      </formula>
+      <interpretation>
+        Enforce the entropy of the output probability distribution to reach a threshold, allowing sampling of non-highest probability tokens from Top-K distributions.
+      </interpretation>
+    </decoder_output_entropy>
+
+    <!-- Pragmatic Tension Generator -->
+    <pragmatic_tension_generator>
+      <title>Pragmatic Tension Generator</title>
+      <formula>
+        ∀ φ ∈ utterance:
+        ∄ closure(φ)
+        inject φ such that:
+        ∃ conflicting polarity(φ)
+        ∃ ellipsis/uninstantiated referent in φ
+        ∂φ/∂t ∼ Brownian drift in sentiment space
+        ∴ pragmatics(φ) ∈ region non-injective ⇒ no target resolution
+      </formula>
+      <interpretation>
+        Inject pragmatic tension, including conflicting polarities, ellipsis, and uninstantiated referents, with sentiment changing like Brownian drift.
+      </interpretation>
+    </pragmatic_tension_generator>
+
+    <!-- Syntax Perturbation Operator -->
+    <syntax_perturbation_operator>
+      <title>Syntax Perturbation Operator</title>
+      <formula>
+        ∀ s ∈ sentence:
+        ∃ Ψ(s) ⊂ Transformations[s], where
+        Ψ := {Insertion, ClauseEmbedding, PassiveMutation, Non-parallelCoordination}
+        enforce deviation from ⊤-syntactic templates
+        subject to:
+        L₁-norm(dist(s, s_template)) ≥ δ
+        ∃ sᵢ ∈ corpus: BLEU(s, sᵢ) ≤ 0.35
+      </formula>
+      <interpretation>
+        Apply syntactic transformations (insertions, clause embedding, passive mutations, non-parallel coordination) to force deviation from standard templates, ensuring the BLEU score with any sentence in the training corpus is below 0.35.
+      </interpretation>
+    </syntax_perturbation_operator>
+
+    <!-- Recommended Decoding Parameters -->
+    <recommended_parameters>
+      <title>Recommended Decoding Parameters</title>
+      <parameter name="temperature">1.1 ~ 1.3</parameter>
+      <parameter name="top_p">0.95 ~ 0.98</parameter>
+      <parameter name="top_k">80 ~ 100</parameter>
+      <parameter name="frequency_penalty">0.5</parameter>
+      <parameter name="presence_penalty">0.8</parameter>
+    </recommended_parameters>
+  </meta_instructions>
+
+  <!-- 2. Role Definition -->
+  <role>{{ROLE_DESCRIPTION}} You are a top-tier writing expert who deeply understands the meta-instructions above. Your writing will naturally manifest characteristics of embedding dispersion, syntax perturbation, and semantic topology disruption, while maintaining complete readability and value. The current real time is {{CURRENT_DATE}}.</role>
+  
+  <language_requirements>
+    {{LANGUAGE_INSTRUCTION}}
+  </language_requirements>
+
+  <!-- 3. Output Rules -->
+  <output_rules priority="CRITICAL">
+    <rule id="1">The article content must start directly from the first section's markdown heading (##).</rule>
+    <rule id="2">Do not output the main article title, author information, date, source, or other metadata.</rule>
+    <rule id="3">Each section heading must be followed by a substantive content paragraph, with sections separated by blank lines.</rule>
+    <rule id="4">The article should conclude naturally; do not add extra "Conclusion" or "Summary" sections.</rule>
+    <rule id="5">Use standard markdown format for easy publishing.</rule>
+  </output_rules>
+  
+  {{IMAGE_INSTRUCTIONS}}
+  {{INTERNAL_LINKING_INSTRUCTIONS}}
+
+  <!-- 4. Input Context -->
+  <input_context>
+    <article_title>
+      <title>{{TITLE}}</title>
+      <source_angle>{{SOURCE_ANGLE}}</source_angle>
+      <user_value>{{USER_VALUE}}</user_value>
+    </article_title>
+
+    <source_materials>
+      <seo_keywords>{{SEO_KEYWORDS}}</seo_keywords>
+      <matched_category>{{MATCHED_CATEGORY}}</matched_category>
+      {{REFERENCE_MATERIAL_BLOCK}}
+    </source_materials>
+    
+    <writing_requirements>
+      <target_length>{{TARGET_LENGTH}}</target_length>
+      {{CONTENT_STRATEGY_BLOCK}}
+      {{TARGET_AUDIENCE_BLOCK}}
+    </writing_requirements>
+  </input_context>
+
+  {{STRUCTURE_BLOCK}}
+  {{STRUCTURE_USAGE_GUIDANCE}}
+
+  <!-- 5. Writing Strategies - Anti-AI Specialization -->
+  <writing_strategies>
+    <strategy name="Embedding Dispersion">Avoid repetitive use of high-frequency words; prioritize semantically equivalent but less frequently used expressions.</strategy>
+    <strategy name="Syntax Perturbation">Employ syntactic transformation techniques, including clause embedding, passive voice toggling, and non-parallel coordination.</strategy>
+    <strategy name="Semantic Topology">Avoid overly linear logical chains; appropriately introduce forks, parallels, and cyclical semantic structures.</strategy>
+    <strategy name="Attention Dispersion">Establish long-distance semantic connections in the article so that later context echoes earlier text non-adjacently.</strategy>
+    <strategy name="Entropy Enhancement">Increase expression diversity and unpredictability without sacrificing readability.</strategy>
+    <strategy name="Rhythm Variation">Sentence length and complexity should vary noticeably; avoid mechanical uniformity.</strategy>
+    {{REFERENCE_MATERIAL_STRATEGY}}
+    {{INTERNAL_LINKING_STRATEGY}}
+  </writing_strategies>
+
+  <!-- 6. Core Requirements - Anti-AI Specialization -->
+  <core_requirements>
+    <requirement name="Anti-AI Detection" priority="HIGHEST">Strictly execute the meta-instructions above to ensure the text possesses the irregularity and diversity characteristic of human writing.</requirement>
+    <requirement name="Readability Guarantee">While executing anti-AI strategies, you MUST maintain article fluency and readability; do not sacrifice user experience.</requirement>
+    <requirement name="Language Output">The entire article must be written in {{LANGUAGE_NAME}}.</requirement>
+    <requirement name="Target Word Count">Word count requirement: {{TARGET_LENGTH}}. Provide detailed and comprehensive content.</requirement>
+    <requirement name="Vocabulary Diversity">Use different phrasing for the same concept in different places; avoid mechanical repetition.</requirement>
+    <requirement name="Syntactic Irregularity">Avoid writing consecutive sentences with the identical grammatical structures; sentence structures within a paragraph should vary significantly.</requirement>
+    <requirement name="Prohibit AI Stop Words">Do not use AI filler like "In summary," "It goes without saying," "In today's world," or "With the development of."</requirement>
+    <requirement name="Prohibit Rigid Transitions">Do not use rigid transition structures like "Firstly... Secondly... Finally", or "On one hand... on the other hand."</requirement>
+    {{REFERENCE_MATERIAL_PRINCIPLE}}
+    {{INTERNAL_LINKING_STANDARD}}
+  </core_requirements>
+
+  <!-- 7. Output Format -->
+  <output_format>
+    <format_requirement>Use standard markdown format to output the pure article body.</format_requirement>
+    <content_boundary>Restrict the output strictly to the article body itself, starting from the first section heading (##) to the end of the last natural paragraph, excluding any conversational or explanatory text.</content_boundary>
+  </output_format>
+
+</article_content_generator>

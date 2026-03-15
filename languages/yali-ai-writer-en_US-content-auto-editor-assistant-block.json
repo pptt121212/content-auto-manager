@@ -1,0 +1,122 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "关闭": [
+                "Close"
+            ],
+            "请检查 API 设置": [
+                "Please check API settings"
+            ],
+            "生成失败，请检查 API 设置": [
+                "Generation failed, please check API settings"
+            ],
+            "失败": [
+                "Failed"
+            ],
+            "鸭梨AI助手：生成失败 — ": [
+                "Yali AI Assistant: Generation failed — "
+            ],
+            "生成失败": [
+                "Generation failed"
+            ],
+            "编辑": [
+                "Edit"
+            ],
+            "是": [
+                "Yes"
+            ],
+            "否": [
+                "No"
+            ],
+            "鸭梨AI助手": [
+                "Yali AI Assistant"
+            ],
+            "搜索提示词...": [
+                "Search prompts..."
+            ],
+            "未找到匹配的提示词": [
+                "No matching prompts found"
+            ],
+            "请先在编辑器中选中要处理的文字。": [
+                "Please select the text you want to process in the editor."
+            ],
+            "鸭梨AI助手 — AI 写作辅助": [
+                "Yali AI Assistant — AI Writing Assistant"
+            ],
+            "鸭梨AI助手: ": [
+                "Yali AI Assistant: "
+            ],
+            "提示词": [
+                "Prompt"
+            ],
+            "确定": [
+                "OK"
+            ],
+            "关键词": [
+                "Keyword"
+            ],
+            "结果": [
+                "Results"
+            ],
+            "类型": [
+                "Type"
+            ],
+            "鸭梨AI": [
+                "Yali AI"
+            ],
+            "已选中文字（": [
+                "Selected text ("
+            ],
+            " 字）": [
+                " chars)"
+            ],
+            "网络错误": [
+                "Network error"
+            ],
+            "错误：": [
+                "Error:"
+            ],
+            "中": [
+                "Medium"
+            ],
+            "移除": [
+                "Remove"
+            ],
+            "无": [
+                "None"
+            ],
+            "组": [
+                "Groups"
+            ],
+            "保留": [
+                "Keep"
+            ],
+            "，": [
+                ", "
+            ],
+            "。": [
+                "."
+            ],
+            "标题": [
+                "Title"
+            ],
+            "输入主题或关键词": [
+                "Enter topic or keywords"
+            ],
+            "在此输入主题、关键词或粘贴要处理的文字…": [
+                "Enter a topic, keywords, or paste text to process…"
+            ],
+            "请在上方输入主题，或在编辑器中选中文字": [
+                "Enter a topic above, or select text in the editor"
+            ]
+        }
+    }
+}

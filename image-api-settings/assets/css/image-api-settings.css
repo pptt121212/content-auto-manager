@@ -1,0 +1,7 @@
+/* CSS for Image API Settings Tabs */
+/* Styles now delegated to yali-ui-kit.css */
+
+/* Hide legacy success notice as we use Toast */
+.yali-notice-success {
+    display: none !important;
+}

@@ -1,0 +1,551 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "关闭": [
+                "Close"
+            ],
+            "失败: ": [
+                "Failed: "
+            ],
+            "失败": [
+                "Failed"
+            ],
+            "保存失败": [
+                "Save Failed"
+            ],
+            "重试": [
+                "Retry"
+            ],
+            "请求失败": [
+                "Request failed"
+            ],
+            "保存失败: ": [
+                "Save failed: "
+            ],
+            "请求失败，请检查网络连接": [
+                "Request failed, please check network connection"
+            ],
+            "保存失败:": [
+                "Save failed:"
+            ],
+            "网络请求失败": [
+                "Network request failed"
+            ],
+            "删除失败": [
+                "Delete failed"
+            ],
+            "删除": [
+                "Delete"
+            ],
+            "编辑": [
+                "Edit"
+            ],
+            "取消": [
+                "Cancel"
+            ],
+            "成功": [
+                "Success"
+            ],
+            "是": [
+                "Yes"
+            ],
+            "否": [
+                "No"
+            ],
+            "刷新数据": [
+                "Refresh"
+            ],
+            "正在拉取数据...": [
+                "Loading data..."
+            ],
+            "正在拉取站点列表...": [
+                "Loading sites..."
+            ],
+            "正在保存...": [
+                "Saving..."
+            ],
+            "正在处理...": [
+                "Processing..."
+            ],
+            "正在初始化...": [
+                "Initializing..."
+            ],
+            "正在导入...": [
+                "Importing..."
+            ],
+            "正在为您生成智能词包建议...": [
+                "Generating keyword packs..."
+            ],
+            "正在深度快挖关键词...": [
+                "Mining keywords..."
+            ],
+            "正在深度查重并合并结果...": [
+                "Merging results..."
+            ],
+            "准备中...": [
+                "Preparing..."
+            ],
+            "刷新中...": [
+                "Refreshing..."
+            ],
+            "点击数": [
+                "Clicks"
+            ],
+            "展示数": [
+                "Impressions"
+            ],
+            "平均排名": [
+                "Avg. Position"
+            ],
+            "平均点击率": [
+                "Avg. CTR"
+            ],
+            "CTR": [
+                "CTR"
+            ],
+            "操作": [
+                "Actions"
+            ],
+            "总点击数": [
+                "Total Clicks"
+            ],
+            "总展示数": [
+                "Total Impressions"
+            ],
+            "已发布 AI 文章": [
+                "AI Articles"
+            ],
+            "产生排名的文章": [
+                "Ranking Articles"
+            ],
+            "带来点击的文章": [
+                "Articles with Clicks"
+            ],
+            "产生展现的文章": [
+                "Articles with Impressions"
+            ],
+            "累计贡献流量": [
+                "Total Traffic"
+            ],
+            "各类词包战略追踪 (ROI)": [
+                "Strategy ROI Tracking"
+            ],
+            "重新同步 AI 效果数据": [
+                "Resync AI Data"
+            ],
+            "暂未发现有流量产生的 AI 文章，建议继续保持发文频率。": [
+                "No AI articles with traffic found yet. Keep publishing!"
+            ],
+            "产出文章": [
+                "Articles"
+            ],
+            "实际展示": [
+                "Impressions"
+            ],
+            "实际点击": [
+                "Clicks"
+            ],
+            "篇": [
+                "articles"
+            ],
+            " 篇": [
+                " articles"
+            ],
+            "未排": [
+                "Unranked"
+            ],
+            "次点击": [
+                "clicks"
+            ],
+            " 次点击": [
+                " clicks"
+            ],
+            "来自词包": [
+                "From Pack"
+            ],
+            "查看页面": [
+                "View"
+            ],
+            "编辑文章": [
+                "Edit"
+            ],
+            "查看线上": [
+                "View Live"
+            ],
+            "落后产能清洗区 (部署超 14 天零流量)": [
+                "Underperforming Content (>14 Days, Zero Traffic)"
+            ],
+            "以下关键词当时是以高潜力词被部署，但发文超过 14 天后依然获取不到任何 GSC 展示。建议对其进行 <strong>重写<\/strong> 或 <strong>301 重定向合并<\/strong> 以回收权重。": [
+                "These keywords were deployed as high-potential but got zero GSC impressions after 14 days. Consider <strong>rewriting<\/strong> or <strong>301 redirecting<\/strong> to reclaim authority."
+            ],
+            "目标核心词": [
+                "Target Keyword"
+            ],
+            "已发文章": [
+                "Published Article"
+            ],
+            "上线时长": [
+                "Days Live"
+            ],
+            "预期日均搜索": [
+                "Expected Daily Searches"
+            ],
+            "建议动作": [
+                "Action"
+            ],
+            "编辑重写": [
+                "Rewrite"
+            ],
+            "暂无可用的推荐词包。": [
+                "No keyword packs available."
+            ],
+            "推荐已全部处理。": [
+                "All recommendations processed."
+            ],
+            "分析完成，但未发现符合特定优化条件的潜力词包。": [
+                "Analysis complete. No keyword packs match optimization criteria."
+            ],
+            "个高潜力词": [
+                "high-potential keywords"
+            ],
+            "查看词单": [
+                "View List"
+            ],
+            "一键规划任务": [
+                "Create Tasks"
+            ],
+            "立即创建": [
+                "Create Now"
+            ],
+            " 个关键词自动创建自动写手规则（循环1次）？包含特殊字符的关键词也已被安全兼容。": [
+                " keywords auto-create writer rules (1 cycle)? Special characters are safely supported."
+            ],
+            "删除推荐": [
+                "Dismiss"
+            ],
+            "确认删除此推荐？": [
+                "Dismiss this recommendation?"
+            ],
+            "已删除": [
+                "Dismissed"
+            ],
+            "确定删除": [
+                "Confirm"
+            ],
+            "深度挖掘长尾词": [
+                "Deep Long-tail Mining"
+            ],
+            "点击挖掘关键词": [
+                "Mine Keywords"
+            ],
+            " 个大流量短词进行裂变挖掘（百度、谷歌API），请耐心等待。": [
+                " high-volume keywords mining long-tail variants (via Baidu & Google APIs). Please wait."
+            ],
+            "将对这些短词进行裂变挖掘，大约需要几十秒，确定开始吗？": [
+                "This will mine long-tail variants and takes ~30 seconds. Start?"
+            ],
+            "谷歌": [
+                "Google"
+            ],
+            "百度": [
+                "Baidu"
+            ],
+            "DuckDuckGo": [
+                "DuckDuckGo"
+            ],
+            "正在挖掘": [
+                "Mining"
+            ],
+            "挖掘结果与复用排查": [
+                "Mining Results & Duplicate Check"
+            ],
+            "所有拓展词均已被部署过，无增量新词！": [
+                "All variants already deployed. No new keywords found!"
+            ],
+            " 个全新长尾词！是否立即将这些词导入规则库？": [
+                " new long-tail keywords found! Import to rule library?"
+            ],
+            "一键规划新任务": [
+                "Create Tasks"
+            ],
+            "我再看看": [
+                "Let me check"
+            ],
+            "本词包已使用": [
+                "Pack Used"
+            ],
+            "已被部署过": [
+                "Deployed"
+            ],
+            "正在模拟真实用户访问搜寻引擎，请勿关闭窗口。": [
+                "Simulating real user search engine visits. Please keep window open."
+            ],
+            "排除关键词设置 (Negative Keywords)": [
+                "Excluded Keywords (Negative Keywords)"
+            ],
+            "输入要排除的关键词（如品牌词），每行一个词。包含这些字符的搜索查询将不会被推荐。": [
+                "Enter keywords to exclude (e.g., brand terms), one per line. Searches containing these won't be recommended."
+            ],
+            "保存设置": [
+                "Save Settings"
+            ],
+            "保存成功": [
+                "Saved successfully"
+            ],
+            "智能词包规则已更新，将在下次刷新数据时生效。": [
+                "Keyword pack rules updated. Takes effect on next refresh."
+            ],
+            "选择要管理的 GSC 站点": [
+                "Select GSC Site"
+            ],
+            "我们在您的 Google 账号下发现了以下已验证站点，请选择其中一个进行数据分析：": [
+                "Select from your verified Google sites:"
+            ],
+            "获取站点失败": [
+                "Failed to load sites"
+            ],
+            "获取指标失败": [
+                "Failed to load metrics"
+            ],
+            "获取指标接口异常": [
+                "Metrics API error"
+            ],
+            "获取数据失败": [
+                "Failed to load data"
+            ],
+            "数据分析接口异常": [
+                "Analytics API error"
+            ],
+            "网络请求失败，请检查网络连接": [
+                "Network error. Check connection."
+            ],
+            "该期间内暂无活跃数据": [
+                "No active data for this period"
+            ],
+            "暂无可用的趋势数据": [
+                "No trend data available"
+            ],
+            "词包生成器报错: ": [
+                "Pack generator error: "
+            ],
+            "词包生成接口通讯异常": [
+                "Pack generator API error"
+            ],
+            "导入成功": [
+                "Import Successful"
+            ],
+            "导入失败": [
+                "Import Failed"
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "挖掘完成": [
+                "Mining Complete"
+            ],
+            "未发现增量新词。": [
+                "No new keywords found."
+            ],
+            "挖掘步骤失败": [
+                "Mining Step Failed"
+            ],
+            "并发请求异常": [
+                "Concurrent Request Error"
+            ],
+            "网络连接超时或服务器繁忙，请稍后重试。": [
+                "Network timeout or server busy. Retry later."
+            ],
+            "收尾失败": [
+                "Finalization Failed"
+            ],
+            "合并结果时发生异常，请检查网络。": [
+                "Error merging results. Check network."
+            ],
+            "确定要断开 Google Search Console 连接吗？": [
+                "Disconnect Google Search Console?"
+            ],
+            "关闭窗口": [
+                "Close"
+            ],
+            "确定": [
+                "OK"
+            ],
+            "由于缺少UI库，只能在控制台打印词表": [
+                "UI library missing. Check console for keyword list."
+            ],
+            "请按F12查看。": [
+                "Press F12 to view."
+            ],
+            "点击量 (Clicks)": [
+                "Clicks"
+            ],
+            "展示量 (Impressions)": [
+                "Impressions"
+            ],
+            "点击率 (CTR %)": [
+                "CTR (%)"
+            ],
+            "平均排名 (Position)": [
+                "Avg. Position"
+            ],
+            "点击量": [
+                "Clicks"
+            ],
+            "展示量": [
+                "Impressions"
+            ],
+            "深度挖掘": [
+                "Deep Mine"
+            ],
+            "ROI 分析失败: ": [
+                "ROI analysis failed: "
+            ],
+            "包含": [
+                "Contains"
+            ],
+            "发现 ": [
+                "Discovered "
+            ],
+            "将为这 ": [
+                "Will create "
+            ],
+            "将对 ": [
+                "Will mine "
+            ],
+            "平均搜索排名": [
+                "Avg. Search Position"
+            ],
+            "排名:": [
+                "Position:"
+            ],
+            "曝光:": [
+                "Impressions:"
+            ],
+            "正在对撞分析中...": [
+                "Analyzing..."
+            ],
+            "此操作将把该词加入已处理列表，以后系统会自动过滤该母词及其卡片，不再重复推荐。": [
+                "This action adds the keyword to the processed list. The system will automatically filter out this parent keyword and its cards in the future."
+            ],
+            "确认": [
+                "Confirm"
+            ],
+            "关联AI文章:": [
+                "Linked Article:"
+            ],
+            "前往规则列表": [
+                "Go to Rules"
+            ],
+            "天": [
+                "days"
+            ],
+            "例如：\\n鸭梨\\nyali\\nkdj": [
+                "Example:\\nBrand\\nbrandname\\nkeywords"
+            ],
+            "关键词": [
+                "Keyword"
+            ],
+            "开始挖掘": [
+                "Start Mining"
+            ],
+            "挖掘结果": [
+                "Mining Results"
+            ],
+            " 个关键词": [
+                " keywords"
+            ],
+            "结果": [
+                "Results"
+            ],
+            "排名": [
+                "Rank"
+            ],
+            "次": [
+                "Times"
+            ],
+            "未知": [
+                "Unknown"
+            ],
+            "刷新": [
+                "Refresh"
+            ],
+            "权重": [
+                "Weight"
+            ],
+            "推荐": [
+                "Recommended"
+            ],
+            "超时": [
+                "Timeout"
+            ],
+            "文章": [
+                "Article"
+            ],
+            "平均": [
+                "Avg"
+            ],
+            "活跃": [
+                "Active"
+            ],
+            "days": [
+                "days"
+            ],
+            "已使用": [
+                "Used"
+            ],
+            "中": [
+                "Medium"
+            ],
+            "高": [
+                "High"
+            ],
+            "重复": [
+                "Duplicate"
+            ],
+            "全部": [
+                "All"
+            ],
+            "条": [
+                "item(s)"
+            ],
+            "ID": [
+                "ID"
+            ],
+            "无": [
+                "None"
+            ],
+            "查看": [
+                "View"
+            ],
+            "建议": [
+                "Suggestion"
+            ],
+            "，": [
+                ", "
+            ],
+            "。": [
+                "."
+            ],
+            "已发布": [
+                "Published"
+            ],
+            "发布": [
+                "Publish"
+            ],
+            "规则": [
+                "Rules"
+            ],
+            "规则列表": [
+                "Rule List"
+            ]
+        }
+    }
+}

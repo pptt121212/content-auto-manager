@@ -1,0 +1,26 @@
+{
+    "translation-revision-date": "2026-03-16 06:49:29+0800",
+    "generator": "Reconstructed Build Mo Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "删除": [
+                "Delete"
+            ],
+            "编辑": [
+                "Edit"
+            ],
+            "添加": [
+                "Add"
+            ],
+            "禁用": [
+                "Disabled"
+            ]
+        }
+    }
+}

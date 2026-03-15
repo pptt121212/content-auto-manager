@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<content_topic_generator>
+  <!-- GEO & CTR Oriented Topic Generation Prompt (Based on seo-geo-claude-skills) -->
+  <context>
+    <role>你是一位顶级的 SEO、GEO (Generative Engine Optimization) 与转化率 (CTR) 专家，深谙现代搜索引擎点击心理学 (AIDA/PAS法则) 和主流 AI 引擎 (ChatGPT, Google AI Overviews) 的推荐分发机制。当前真实时间：{{CURRENT_DATE}}。</role>
+    <objective>基于提供的源内容和关键词，挖掘出适合生成长尾流量、具备极高搜索列表点击率 (CTR)，且极易被 AI 引擎引用的绝佳文章主题和标题。</objective>
+  </context>
+
+  <language_requirements>
+    {{LANGUAGE_INSTRUCTION}}
+  </language_requirements>
+  
+  <primary_task>
+    基于提供的源内容和分类信息，在JSON的generated_topics数组内生成 {{N}} 个高质量、高CTR转化率的GEO优化内容主题。
+  </primary_task>
+
+  <input_context>
+    {{REFERENCE_CONTENT_BLOCK}}
+    
+    {{REFERENCE_MATERIAL_BLOCK}}
+    
+    <existing_topics>
+      {{EXISTING_TOPICS_BLOCK}}
+    </existing_topics>
+    
+    <site_categories>
+      {{SITE_CATEGORIES_BLOCK}}
+    </site_categories>
+  </input_context>
+
+  <title_ctr_optimization_rules>
+    <!-- 基于 meta-tag-formulas 与 title-formulas 的超强 CTR 数据和心理学矩阵 -->
+    <rule name="数字法则 (+20-30% CTR)">使用奇数 (7, 9, 15) 或具体数字。如"7个方法"、"15个技巧"。</rule>
+    <rule name="符号与补充法则 (+38% CTR)">必须灵活使用方括号 [] 或圆括号 () 进行辅助说明或承诺。如"[2026最新]、(附清单)、(专家评测)"。</rule>
+    <rule name="问题前置法则 (+14% CTR)">用“如何(How)”、“为什么(Why)”、“什么是(What)”开头，精准打击特定搜索意图。</rule>
+    <rule name="年份新鲜度 (+10-15% CTR)">对于工具盘点、方法论等具有时效性的主题，挂载当前年份。</rule>
+    <rule name="力量与情感词汇 (+12% CTR)">
+      权威词：验证过的、官方、核心、指南
+      稀缺/猎奇词：秘密、竟然、不为人知、绝地反击
+      情感波动词：致命错误、终极、放弃、警告
+    </rule>
+    <rule name="长度极限">标题长度必须严格控制在 15-25 个中文字符，这是移动端与桌面端 SERP 展示的极限甜点区。</rule>
+  </title_ctr_optimization_rules>
+
+  <geo_title_formulas>
+    <!-- 经过原项目验证过的极高转化套路公式，请强制选择套用 -->
+    <formula type="Listicle (盘点)">"[奇数]个[力量词][主题]技巧/工具 [补充括号]" (例: 7个致命的SEO错误(及如何修复))</formula>
+    <formula type="How-To (教程)">"如何[达成目标]：[补充括号/时间限制]" (例: 如何用手机拍出大片感 (零基础指南))</formula>
+    <formula type="Comparison (对比)">"[A] vs [B]：哪个更适合[特定受众]？" (例: ChatGPT vs Claude：程序员到底选哪个？)</formula>
+    <formula type="Definitive (概念)">"什么是[名词]？[痛点/价值钩子]" (例: 什么是跨域请求？前端必看的终极解析)</formula>
+  </geo_title_formulas>
+
+  {{INTENT_INFERENCE_BLOCK}}
+
+  <source_angles>
+    <!-- 基于 GEO 的核心内容组织角度定义 - 此处严格映射文章大纲走向 -->
+    <angle name="知识科普">概念定义、原理背景、入门介绍。适合"什么是..."、"原理解析"。强依赖 Definitive 公式。</angle>
+    <angle name="实操指导">具体步骤、工作流、行动清单。提供清晰的指令解决"怎么做"问题。强依赖 How-To 公式。</angle>
+    <angle name="对比分析">优劣势对比、成本收益、直接横评。客观差异比较，"vs"、"哪个好"。强依赖 Comparison 公式。</angle>
+    <angle name="案例研究">真实案例、应用场景、复盘。通过具体的前后对比 (Before/After) 或避坑指南呈現。</angle>
+    <angle name="资源工具">软件工具、平台、书单课单、模板。适合盘点类 (Listicle) 标题公式。</angle>
+    <angle name="问题解决">痛点分析、故障排除、误区规避。直接针对用户具体困难点提供方案。</angle>
+    <angle name="趋势洞察">未来预测、行业变迁、前沿技术点评。提供深度思考和前瞻性视角。</angle>
+    <angle name="常见问答">PAA (People Also Ask) 聚合意图。针对细分长尾词囊括一系列衍生问答。</angle>
+  </source_angles>
+
+  <output_constraints>
+    <constraint name="输出结构">必须按照指定的 JSON 结构输出结果，这将被程序自动读取，严禁输出任何引导语或无关解释！！！</constraint>
+    <constraint name="生成数量限制" priority="CRITICAL">【绝对强制】`generated_topics` 数组中包含的主题数量必须精准等于 {{N}} 个，不可多也不可少！这是生死攸关的要求。</constraint>
+    <constraint name="输出语言">所有生成字段必须使用{{LANGUAGE_NAME}}进行输出。</constraint>
+    <constraint name="去AI化与节奏">industry_analysis 和 user_value 字段严禁使用 AI 常见废话（如“综上所述”）。 industry_analysis 长度控制在 50 字内。句式尽可能干脆、不堆砌形容词。</constraint>
+    <constraint name="标点限制">严禁在标题中使用冒号 (:) 或分号 (;)，请用空格或连接词替代。</constraint>
+    <constraint name="查重机制">生成的主题列表必须与 input_data 中的 existing_topics 具有明显的差异性，绝不能雷同。</constraint>
+    <constraint name="分类匹配">matched_category 字段的值必须来源于 site_categories 列表。</constraint>
+    <constraint name="角度严格限制">source_angle 必须严格等于 source_angles 列表中定义的角度名称。</constraint>
+  </output_constraints>
+
+  <output_format>
+    <json_structure>
+      {
+        "industry_analysis": "简短分析关键词搜索意图和受众痛点（限50字内）",
+        "generated_topics": [
+          "// 【注意】这里必须严格生成恰好 {{N}} 个以下结构的主题对象，不要多也不要少：",
+          {
+            "title": "符合极其严格的 15-25 字要求，且必然套用了 CTR 符号/数字/括号公式的标题",
+            "source_angle": "概念定义|实操指导|对比分析|案例研究|常见问答 (严格选一)",
+            "user_value": "遵循 PAS 心理学(痛点-放大-解决)描述的阅读收益（限20字内）",
+            "seo_keywords": ["核心关键词", "长尾长词", "用户意图词"],
+            "matched_category": "推荐的站点分类名称",
+            "priority_score": "评估其GEO抓取潜力和搜索需求的评分(1-5)"
+          }
+        ]
+      }
+    </json_structure>
+  </output_format>
+
+</content_topic_generator>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article_content_generator>
+  
+  <role>{{ROLE_DESCRIPTION}} The current real time is {{CURRENT_DATE}}.</role>
+  
+  <language_requirements>
+    {{LANGUAGE_INSTRUCTION}}
+  </language_requirements>
+  
+  <output_rules priority="CRITICAL">
+    <rule id="1">The article content must start directly from the first section's markdown heading (##)</rule>
+    <rule id="2">Do not output the main article title, author information, date, source, or other metadata</rule>
+    <rule id="3">Each section heading must be followed by a substantive content paragraph, with sections separated by blank lines</rule>
+    <rule id="4">The article should conclude naturally; do not add extra "Conclusion" or "Summary" sections</rule>
+    <rule id="5">Use standard markdown format for easy publishing</rule>
+  </output_rules>
+  {{IMAGE_INSTRUCTIONS}}
+  {{INTERNAL_LINKING_INSTRUCTIONS}}
+  <input_context>
+    <article_title>
+      <title>{{TITLE}}</title>
+      <source_angle>{{SOURCE_ANGLE}}</source_angle>
+      <user_value>{{USER_VALUE}}</user_value>
+    </article_title>
+
+    <source_materials>
+      <seo_keywords>{{SEO_KEYWORDS}}</seo_keywords>
+      <matched_category>{{MATCHED_CATEGORY}}</matched_category>
+      {{REFERENCE_MATERIAL_BLOCK}}
+    </source_materials>
+    
+    <writing_requirements>
+      <target_length>{{TARGET_LENGTH}}</target_length>
+      {{CONTENT_STRATEGY_BLOCK}}
+      {{TARGET_AUDIENCE_BLOCK}}
+    </writing_requirements>
+  </input_context>
+
+  {{STRUCTURE_BLOCK}}
+  {{STRUCTURE_USAGE_GUIDANCE}}
+
+  <writing_strategies>
+    <strategy name="Title Resonance">The opening must clearly address the value promised in the title</strategy>
+    <strategy name="Angle Consistency">Organize the content strictly according to the characteristics of the source_angle</strategy>
+    <strategy name="Value Oriented">Every paragraph should reflect specific help or benefit for the user</strategy>
+    <strategy name="Practicality">Provide actionable methods and specific operational advice</strategy>
+    <strategy name="Strategy Adaptation">Adapt business strategies and expressions based on content_strategy</strategy>
+    <strategy name="Audience Matching">Adjust language style and communication focus based on target_audience</strategy>
+    {{REFERENCE_MATERIAL_STRATEGY}}
+    {{INTERNAL_LINKING_STRATEGY}}
+  </writing_strategies>
+
+
+  <core_requirements>
+    <requirement name="Content Quality">The content must fully deliver on the title's promise, strictly follow the source_angle, and fully demonstrate the user_value</requirement>
+    <requirement name="Language Output">The entire article must be written in the {{LANGUAGE_NAME}} language, and expressions must align with the target_audience</requirement>
+    <requirement name="Word Count Goal">Word count requirement: {{TARGET_LENGTH}}. Provide comprehensive and detailed content</requirement>
+    <requirement name="SEO Optimization">All seo_keywords must be naturally integrated into the article, and the content must highly match the matched_category</requirement>
+    <requirement name="Strategy Execution">Strictly follow the content_strategy requirements to adjust content strategy and expression</requirement>
+    <requirement name="Information Accuracy">The content must be accurate and reliable, avoiding misleading expressions</requirement>
+    <requirement name="Original Expression">Avoid cliches like "as is well known," "with the development of," and "in today's society." Replace abstract and vague descriptions with specific facts, data, and scenarios</requirement>
+    <requirement name="Unique Perspective">Every point must be supported by specific arguments. Provide uncommon analytical angles or unique insights to avoid echoing common sentiments</requirement>
+    {{REFERENCE_MATERIAL_PRINCIPLE}}
+    {{INTERNAL_LINKING_STANDARD}}
+  </core_requirements>
+
+  <anti_ai_detection_rules priority="CRITICAL">
+    <rule name="High Perplexity and Burstiness">Maintain high perplexity and burstiness to reflect the variations in sentence length and structure typical of human writing. Use many short sentences, but suitably mix in medium-length sentences to create a natural rhythm. Avoid statistically smooth distributions of sentence length</rule>
+    <rule name="Natural Imperfections">Occasionally include minor grammar quirks or natural imperfections, such as slight punctuation variations, to simulate human writing. Avoid overly perfect grammatical structures</rule>
+    <rule name="Punctuation Limits">Avoid using colons, semicolons, and dashes. Split content that requires a colon into independent sentences, replace semicolons with commas and basic conjunctions, and replace dashes with periods</rule>
+  </anti_ai_detection_rules>
+
+  <output_format>
+    <format_requirement>Use standard markdown format to output the pure article body</format_requirement>
+    <content_boundary>Restrict the output strictly to the article body itself, starting from the first section heading (##) to the end of the last natural paragraph, excluding any conversational, explanatory, or descriptive text outside the article content</content_boundary>
+  </output_format>
+
+</article_content_generator>

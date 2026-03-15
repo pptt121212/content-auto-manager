@@ -1,0 +1,50 @@
+.trend-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trend-cell .dashicons {
+    cursor: pointer;
+    color: #4a5568;
+    /* Updated to a more neutral dark gray matching Yali styling rather than WP blue */
+}
+
+.trend-cell .dashicons:hover {
+    color: #2b6cb0;
+}
+
+.trend-cell .trend-data {
+    font-size: 13px;
+    color: #555;
+}
+
+@keyframes yali-spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Hide the new spinner span initially */
+.trend-cell .yali-loading-spinner {
+    display: none !important;
+}
+
+/* Show our custom spinner when loading or queued */
+.trend-cell.loading .yali-loading-spinner,
+.trend-cell.queued .yali-loading-spinner {
+    display: inline-block !important;
+}
+
+/* Hide the main button completely */
+.trend-cell.loading .analyze-trend-btn,
+.trend-cell.queued .analyze-trend-btn {
+    display: none !important;
+}
+
+#copy-feedback {
+    display: none;
+    color: green;
+    margin-top: 10px;
+    font-weight: bold;
+}
