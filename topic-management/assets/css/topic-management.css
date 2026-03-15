@@ -1,0 +1,184 @@
+.vector-yes {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.vector-no {
+    color: #6c757d;
+}
+
+.vector-failed {
+    color: #dc3545;
+    font-weight: bold;
+    cursor: help;
+}
+
+/* Fix layout overlap */
+.tablenav {
+    clear: both;
+    margin-bottom: 20px !important;
+    height: auto !important;
+    overflow: hidden;
+    padding-bottom: 10px;
+}
+
+.tablenav .actions {
+    overflow: visible;
+    padding: 2px 0;
+}
+
+/* Filter Group */
+.yali-filter-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.yali-filter-group .yali-select {
+    width: auto !important;
+    min-width: 150px;
+    margin: 0 !important;
+}
+
+.yali-filter-group .yali-btn {
+    margin: 0 !important;
+}
+
+/* 
+ * Topic List Optimiztion 
+ * Inherits .yali-table from yali-ui-kit.css (table-layout: auto)
+ */
+
+/* Column Constraints (Advisory for Auto Layout) */
+.col-id {
+    width: 50px;
+}
+
+.col-task-id {
+    width: 90px;
+}
+
+.col-title {
+    min-width: 120px;
+    width: auto;
+}
+
+.col-angle {
+    width: 90px;
+}
+
+/* ... */
+
+/* Specific tweaks */
+.topic-title-wrapper {
+    max-width: 150px;
+}
+
+.col-value {
+    width: auto;
+    min-width: 80px;
+}
+
+.col-seo {
+    width: auto;
+    min-width: 140px;
+}
+
+.col-category {
+    width: 100px;
+}
+
+.col-priority {
+    width: 90px;
+}
+
+.col-api {
+    width: 90px;
+}
+
+.col-status {
+    width: 90px;
+}
+
+.col-vector {
+    width: 70px;
+}
+
+.col-reference {
+    width: auto;
+    min-width: 140px;
+}
+
+.col-actions {
+    width: 100px;
+}
+
+/* Content Constraints - Prevent infinite widening while allowing wrap */
+/* Uses max-width to force wrapping in the auto-layout table */
+.user-value,
+.topic-title-wrapper {
+    display: block;
+    /* white-space: normal is inherited from yali-table */
+}
+
+/* Specific narrow columns as requested */
+.user-value {
+    max-width: 100px;
+}
+
+.topic-title-wrapper {
+    max-width: 150px;
+}
+
+/* Allow SEO and Reference to fill their columns adaptively */
+.seo-wrapper,
+.topic-reference {
+    max-width: none;
+    display: block;
+}
+
+/* Action Buttons Alignment */
+.row-actions-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: stretch;
+    /* Make buttons full width for perfect alignment */
+}
+
+.row-actions-wrapper .button {
+    margin: 0 !important;
+    text-align: center;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Badges tweaks if needed */
+.keyword-tag {
+    display: inline-block;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin: 2px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Responsive Table Wrapper */
+.yali-table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border: 1px solid var(--yali-border);
+    border-radius: var(--yali-radius);
+    background: white;
+}
+
+/* Remove border from table since wrapper has it */
+.yali-table-responsive .yali-table {
+    margin-bottom: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
