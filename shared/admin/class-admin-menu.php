@@ -202,7 +202,7 @@ class ContentAuto_AdminMenu {
 
         // 搜索物料页面（不再显示在左侧菜单栏，通过仪表盘或URL参数进入）
         add_submenu_page(
-            null, // Hide from menu
+            'yali-hidden-pages', // Hide from menu (cannot be null in PHP 8.1+)
             __('搜索物料', 'yali-ai-writer'),
             __('搜索物料', 'yali-ai-writer'),
             'manage_options',
@@ -224,7 +224,7 @@ class ContentAuto_AdminMenu {
 
         // 调试工具页面（不再显示在左侧菜单栏，通过仪表盘或URL参数进入）
         add_submenu_page(
-            null, // Hide from menu
+            'yali-hidden-pages', // Hide from menu (cannot be null in PHP 8.1+)
             __('调试工具', 'yali-ai-writer'),
             __('调试工具', 'yali-ai-writer'),
             'manage_options',
