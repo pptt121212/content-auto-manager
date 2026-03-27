@@ -1365,7 +1365,9 @@ class FreeKeywordAPIs {
             'baidu' => 'https://www.baidu.com/',
             'duckduckgo' => 'https://duckduckgo.com/',
             'wikipedia' => 'https://www.wikipedia.org/',
-            'taobao' => 'https://www.taobao.com/'
+            'taobao' => 'https://www.taobao.com/',
+            '360' => 'https://www.so.com/',
+            'bing' => 'https://www.bing.com/'
         ];
 
         if (isset($warmupUrls[$dataSource])) {
@@ -1419,6 +1421,12 @@ class FreeKeywordAPIs {
                 break;
             case 'taobao':
                 $raw_suggestions = $this->getTaobaoSuggestions($keyword);
+                break;
+            case '360':
+                $raw_suggestions = $this->get360Suggestions($keyword);
+                break;
+            case 'bing':
+                $raw_suggestions = $this->getBingSuggestions($keyword);
                 break;
         }
 
@@ -1618,6 +1626,77 @@ class FreeKeywordAPIs {
             'searchKeyword' => $searchKeyword,
             'dataSource' => $dataSource
         ];
+    }
+
+    /**
+     * 获取360搜索建议
+     *
+     * @param string $keyword 搜索关键词
+     * @return array 搜索建议列表
+     */
+    public function get360Suggestions($keyword) {
+        $endpoint = 'https://sug.so.360.cn/suggest';
+        $params = [
+            'word' => $keyword,
+            'encodein' => 'utf-8',
+            'encodeout' => 'utf-8',
+            'format' => 'json',
+            'fields' => 'word'
+        ];
+        
+        $url = $endpoint . '?' . http_build_query($params);
+        $headers = [
+            'Referer' => 'https://www.so.com/',
+            'Origin' => 'https://www.so.com'
+        ];
+        
+        $request = $this->makeRequest($url, $headers);
+        
+        if ($request['http_code'] === 200 && $request['body']) {
+            $data = json_decode($request['body'], true);
+            if (isset($data['result']) && is_array($data['result'])) {
+                $suggestions = [];
+                foreach ($data['result'] as $item) {
+                    if (isset($item['word'])) {
+                        $suggestions[] = $item['word'];
+                    }
+                }
+                return $suggestions;
+            }
+        }
+        return [];
+    }
+
+    /**
+     * 获取必应 (Bing) 搜索建议
+     *
+     * @param string $keyword 搜索关键词
+     * @return array 搜索建议列表
+     */
+    public function getBingSuggestions($keyword) {
+        // 使用标准的 OpenSearch JSON 格式 (与谷歌类似)
+        $endpoint = 'https://api.bing.com/osjson.aspx';
+        $params = [
+            'query' => $keyword,
+            'language' => 'zh-CN'
+        ];
+        
+        $url = $endpoint . '?' . http_build_query($params);
+        $headers = [
+            'Referer' => 'https://www.bing.com/',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+        ];
+        
+        $request = $this->makeRequest($url, $headers);
+        
+        if ($request['http_code'] === 200 && $request['body']) {
+            $data = json_decode($request['body'], true);
+            // 格式: ["keyword", ["sug1", "sug2", ...]]
+            if (is_array($data) && isset($data[1]) && is_array($data[1])) {
+                return $data[1];
+            }
+        }
+        return [];
     }
 
     /**

@@ -89,6 +89,8 @@ jQuery(document).ready(function ($) {
                 case 'duckduckgo': return 'DuckDuckGo';
                 case 'wikipedia': return wp.i18n.__('维基百科', 'yali-ai-writer');
                 case 'taobao': return wp.i18n.__('淘宝', 'yali-ai-writer');
+                case '360': return wp.i18n.__('360', 'yali-ai-writer');
+                case 'bing': return wp.i18n.__('必应', 'yali-ai-writer');
                 default: return ds;
             }
         }).join(', ');
