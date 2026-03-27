@@ -3,7 +3,7 @@
  * Plugin Name: 鸭梨AI文章智能写手 (Yali AI Smart Article Writer)
  * Plugin URI: https://github.com/pptt121212/content-auto-manager
  * Description: 一款智能内容生成插件，帮助WordPress管理员自动生成高质量中文文章。支持多API接口、智能内容策略及浏览器扩展集成。
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: 鸭梨AI
  * Author URI: https://www.yaliai.com
  * License: GPL v2 or later
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // 定义插件常量
-define('CONTENT_AUTO_MANAGER_VERSION', '1.1.1');
+define('CONTENT_AUTO_MANAGER_VERSION', '1.1.2');
 define('CONTENT_AUTO_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CONTENT_AUTO_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -396,7 +396,7 @@ function content_auto_manager_init() {
             }
 
             // 如果跟随站点且站点非中文环境，强制回退到英文 UI
-            if (strpos($locale, 'zh') !== 0) {
+            if ($locale && strpos($locale, 'zh') !== 0) {
                 return 'en_US';
             }
         }
@@ -413,7 +413,7 @@ function content_auto_manager_init() {
                 $target_locale = $custom_locale;
             } else {
                 $current_locale = determine_locale();
-                if (strpos($current_locale, 'zh') !== 0) {
+                if ($current_locale && strpos($current_locale, 'zh') !== 0) {
                     $target_locale = 'en_US';
                 }
             }
@@ -434,13 +434,18 @@ function content_auto_manager_init() {
             return $file;
         }
         
+        // 如果 $file 为 null，直接返回
+        if (empty($file)) {
+            return $file;
+        }
+        
         $custom_locale = get_option('yali_ai_writer_locale', 'site_default');
         $site_locale = determine_locale();
         $target_locale = $site_locale;
         
         if ($custom_locale && $custom_locale !== 'site_default') {
             $target_locale = $custom_locale;
-        } elseif (strpos($site_locale, 'zh') !== 0) {
+        } elseif ($site_locale && strpos($site_locale, 'zh') !== 0) {
             $target_locale = 'en_US'; // 非中文环境回退到英文 JS 翻译
         }
         
