@@ -10,35 +10,35 @@ if (!defined('ABSPATH')) {
 /**
  * 获取插件URL
  */
-function content_auto_manager_plugin_url() {
+function yali_ai_writer_manager_plugin_url() {
     return plugin_dir_url(dirname(__FILE__));
 }
 
 /**
  * 获取插件目录路径
  */
-function content_auto_manager_plugin_path() {
+function yali_ai_writer_manager_plugin_path() {
     return plugin_dir_path(dirname(__FILE__));
 }
 
 /**
  * 安全输出HTML
  */
-function content_auto_manager_esc_html($text) {
+function yali_ai_writer_manager_esc_html($text) {
     return esc_html($text);
 }
 
 /**
  * 安全输出URL
  */
-function content_auto_manager_esc_url($url) {
+function yali_ai_writer_manager_esc_url($url) {
     return esc_url($url);
 }
 
 /**
  * 生成随机字符串
  */
-function content_auto_manager_generate_random_string($length = 10) {
+function yali_ai_writer_manager_generate_random_string($length = 10) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $charactersLength = strlen($characters);
     $randomString = '';
@@ -53,23 +53,23 @@ function content_auto_manager_generate_random_string($length = 10) {
 /**
  * 格式化时间
  */
-function content_auto_manager_format_time($timestamp) {
+function yali_ai_writer_manager_format_time($timestamp) {
     return date('Y-m-d H:i:s', strtotime($timestamp));
 }
 
 /**
  * 获取状态标签
  */
-function content_auto_manager_get_status_label($status) {
+function yali_ai_writer_manager_get_status_label($status) {
     $labels = array(
-        CONTENT_AUTO_STATUS_PENDING => __('待处理', 'yali-ai-writer'),
-        CONTENT_AUTO_STATUS_RUNNING => __('进行中', 'yali-ai-writer'),
-        CONTENT_AUTO_STATUS_COMPLETED => __('已完成', 'yali-ai-writer'),
-        CONTENT_AUTO_STATUS_FAILED => __('失败', 'yali-ai-writer'),
-        CONTENT_AUTO_STATUS_PAUSED => __('已暂停', 'yali-ai-writer'),
-        CONTENT_AUTO_STATUS_CANCELLED => __('已取消', 'yali-ai-writer'),
-        CONTENT_AUTO_STATUS_RETRY => __('重试中', 'yali-ai-writer'),
-        CONTENT_AUTO_STATUS_PROCESSING => __('处理中', 'yali-ai-writer')
+        YALI_AI_WRITER_STATUS_PENDING => __('待处理', 'yali-ai-writer'),
+        YALI_AI_WRITER_STATUS_RUNNING => __('进行中', 'yali-ai-writer'),
+        YALI_AI_WRITER_STATUS_COMPLETED => __('已完成', 'yali-ai-writer'),
+        YALI_AI_WRITER_STATUS_FAILED => __('失败', 'yali-ai-writer'),
+        YALI_AI_WRITER_STATUS_PAUSED => __('已暂停', 'yali-ai-writer'),
+        YALI_AI_WRITER_STATUS_CANCELLED => __('已取消', 'yali-ai-writer'),
+        YALI_AI_WRITER_STATUS_RETRY => __('重试中', 'yali-ai-writer'),
+        YALI_AI_WRITER_STATUS_PROCESSING => __('处理中', 'yali-ai-writer')
     );
     
     return isset($labels[$status]) ? $labels[$status] : $status;
@@ -78,16 +78,16 @@ function content_auto_manager_get_status_label($status) {
 /**
  * 获取状态标签类
  */
-function content_auto_manager_get_status_class($status) {
+function yali_ai_writer_manager_get_status_class($status) {
     $classes = array(
-        CONTENT_AUTO_STATUS_PENDING => 'pending',
-        CONTENT_AUTO_STATUS_RUNNING => 'running',
-        CONTENT_AUTO_STATUS_COMPLETED => 'completed',
-        CONTENT_AUTO_STATUS_FAILED => 'failed',
-        CONTENT_AUTO_STATUS_PAUSED => 'paused',
-        CONTENT_AUTO_STATUS_CANCELLED => 'cancelled',
-        CONTENT_AUTO_STATUS_RETRY => 'retry',
-        CONTENT_AUTO_STATUS_PROCESSING => 'processing'
+        YALI_AI_WRITER_STATUS_PENDING => 'pending',
+        YALI_AI_WRITER_STATUS_RUNNING => 'running',
+        YALI_AI_WRITER_STATUS_COMPLETED => 'completed',
+        YALI_AI_WRITER_STATUS_FAILED => 'failed',
+        YALI_AI_WRITER_STATUS_PAUSED => 'paused',
+        YALI_AI_WRITER_STATUS_CANCELLED => 'cancelled',
+        YALI_AI_WRITER_STATUS_RETRY => 'retry',
+        YALI_AI_WRITER_STATUS_PROCESSING => 'processing'
     );
     
     return isset($classes[$status]) ? $classes[$status] : 'default';
@@ -96,7 +96,7 @@ function content_auto_manager_get_status_class($status) {
 /**
  * 显示管理通知
  */
-function content_auto_manager_admin_notice($message, $type = 'info') {
+function yali_ai_writer_manager_admin_notice($message, $type = 'info') {
     ?>
     <div class="notice notice-<?php echo esc_attr($type); ?> is-dismissible">
         <p><?php echo esc_html($message); ?></p>
@@ -107,7 +107,7 @@ function content_auto_manager_admin_notice($message, $type = 'info') {
 /**
  * 验证API密钥格式
  */
-function content_auto_manager_validate_api_key($api_key) {
+function yali_ai_writer_manager_validate_api_key($api_key) {
     // 基本格式验证
     if (empty($api_key) || strlen($api_key) < 10) {
         return false;
@@ -124,7 +124,7 @@ function content_auto_manager_validate_api_key($api_key) {
 /**
  * 截取字符串
  */
-function content_auto_manager_truncate_string($string, $length = 50, $suffix = '...') {
+function yali_ai_writer_manager_truncate_string($string, $length = 50, $suffix = '...') {
     // 使用mb_strlen和mb_substr来正确处理UTF-8字符
     if (mb_strlen($string, 'UTF-8') <= $length) {
         return $string;
@@ -137,7 +137,7 @@ function content_auto_manager_truncate_string($string, $length = 50, $suffix = '
  * 统一字符数统计
  * 使用 mb_strlen() 方法，英文和汉字都算一个字符
  */
-function content_auto_manager_word_count($content) {
+function yali_ai_writer_manager_word_count($content) {
     // 移除HTML标签
     $content = strip_tags($content);
 
@@ -156,12 +156,12 @@ function content_auto_manager_word_count($content) {
 /**
  * 获取主题状态标签
  */
-function content_auto_manager_get_topic_status_label($status) {
+function yali_ai_writer_manager_get_topic_status_label($status) {
     $labels = array(
-        CONTENT_AUTO_TOPIC_UNUSED => __('未使用', 'yali-ai-writer'),
-        CONTENT_AUTO_TOPIC_QUEUED => __('队列中', 'yali-ai-writer'),
-        CONTENT_AUTO_TOPIC_USED => __('已使用', 'yali-ai-writer'),
-        CONTENT_AUTO_TOPIC_EXPIRED => __('已过期', 'yali-ai-writer')
+        YALI_AI_WRITER_TOPIC_UNUSED => __('未使用', 'yali-ai-writer'),
+        YALI_AI_WRITER_TOPIC_QUEUED => __('队列中', 'yali-ai-writer'),
+        YALI_AI_WRITER_TOPIC_USED => __('已使用', 'yali-ai-writer'),
+        YALI_AI_WRITER_TOPIC_EXPIRED => __('已过期', 'yali-ai-writer')
     );
     
     return isset($labels[$status]) ? $labels[$status] : $status;
@@ -170,13 +170,13 @@ function content_auto_manager_get_topic_status_label($status) {
 /**
  * 获取文章状态标签
  */
-function content_auto_manager_get_article_status_label($status) {
+function yali_ai_writer_manager_get_article_status_label($status) {
     $labels = array(
-        CONTENT_AUTO_ARTICLE_PENDING => __('待处理', 'yali-ai-writer'),
-        CONTENT_AUTO_ARTICLE_SUCCESS => __('成功', 'yali-ai-writer'),
-        CONTENT_AUTO_ARTICLE_FAILED => __('失败', 'yali-ai-writer'),
-        CONTENT_AUTO_ARTICLE_DUPLICATE => __('重复', 'yali-ai-writer'),
-        CONTENT_AUTO_ARTICLE_INVALID => __('无效', 'yali-ai-writer')
+        YALI_AI_WRITER_ARTICLE_PENDING => __('待处理', 'yali-ai-writer'),
+        YALI_AI_WRITER_ARTICLE_SUCCESS => __('成功', 'yali-ai-writer'),
+        YALI_AI_WRITER_ARTICLE_FAILED => __('失败', 'yali-ai-writer'),
+        YALI_AI_WRITER_ARTICLE_DUPLICATE => __('重复', 'yali-ai-writer'),
+        YALI_AI_WRITER_ARTICLE_INVALID => __('无效', 'yali-ai-writer')
     );
     
     return isset($labels[$status]) ? $labels[$status] : $status;
@@ -185,12 +185,12 @@ function content_auto_manager_get_article_status_label($status) {
 /**
  * 获取任务类型标签
  */
-function content_auto_manager_get_job_type_label($type) {
+function yali_ai_writer_manager_get_job_type_label($type) {
     $labels = array(
-        CONTENT_AUTO_JOB_TYPE_TOPIC => __('主题任务', 'yali-ai-writer'),
-        CONTENT_AUTO_JOB_TYPE_ARTICLE => __('文章任务', 'yali-ai-writer'),
-        CONTENT_AUTO_JOB_TYPE_BATCH => __('批量任务', 'yali-ai-writer'),
-        CONTENT_AUTO_JOB_TYPE_SCHEDULED => __('定时任务', 'yali-ai-writer')
+        YALI_AI_WRITER_JOB_TYPE_TOPIC => __('主题任务', 'yali-ai-writer'),
+        YALI_AI_WRITER_JOB_TYPE_ARTICLE => __('文章任务', 'yali-ai-writer'),
+        YALI_AI_WRITER_JOB_TYPE_BATCH => __('批量任务', 'yali-ai-writer'),
+        YALI_AI_WRITER_JOB_TYPE_SCHEDULED => __('定时任务', 'yali-ai-writer')
     );
     
     return isset($labels[$type]) ? $labels[$type] : $type;
@@ -199,13 +199,13 @@ function content_auto_manager_get_job_type_label($type) {
 /**
  * 获取规则类型标签
  */
-function content_auto_manager_get_rule_type_label($type) {
+function yali_ai_writer_manager_get_rule_type_label($type) {
     $labels = array(
-        CONTENT_AUTO_RULE_TYPE_CATEGORY => __('分类规则', 'yali-ai-writer'),
-        CONTENT_AUTO_RULE_TYPE_KEYWORD => __('关键词规则', 'yali-ai-writer'),
-        CONTENT_AUTO_RULE_TYPE_TEMPLATE => __('模板规则', 'yali-ai-writer'),
-        CONTENT_AUTO_RULE_TYPE_SCHEDULE => __('定时规则', 'yali-ai-writer'),
-        CONTENT_AUTO_RULE_TYPE_MIXED => __('混合规则', 'yali-ai-writer')
+        YALI_AI_WRITER_RULE_TYPE_CATEGORY => __('分类规则', 'yali-ai-writer'),
+        YALI_AI_WRITER_RULE_TYPE_KEYWORD => __('关键词规则', 'yali-ai-writer'),
+        YALI_AI_WRITER_RULE_TYPE_TEMPLATE => __('模板规则', 'yali-ai-writer'),
+        YALI_AI_WRITER_RULE_TYPE_SCHEDULE => __('定时规则', 'yali-ai-writer'),
+        YALI_AI_WRITER_RULE_TYPE_MIXED => __('混合规则', 'yali-ai-writer')
     );
     
     return isset($labels[$type]) ? $labels[$type] : $type;
@@ -214,13 +214,13 @@ function content_auto_manager_get_rule_type_label($type) {
 /**
  * 获取API类型标签
  */
-function content_auto_manager_get_api_type_label($type) {
+function yali_ai_writer_manager_get_api_type_label($type) {
     $labels = array(
-        CONTENT_AUTO_API_TYPE_OPENAI => 'OpenAI',
-        CONTENT_AUTO_API_TYPE_CUSTOM => __('自定义', 'yali-ai-writer'),
-        CONTENT_AUTO_API_TYPE_PREDEFINED => __('预置', 'yali-ai-writer'),
-        CONTENT_AUTO_API_TYPE_CLAUDE => 'Claude',
-        CONTENT_AUTO_API_TYPE_GEMINI => 'Gemini'
+        YALI_AI_WRITER_API_TYPE_OPENAI => 'OpenAI',
+        YALI_AI_WRITER_API_TYPE_CUSTOM => __('自定义', 'yali-ai-writer'),
+        YALI_AI_WRITER_API_TYPE_PREDEFINED => __('预置', 'yali-ai-writer'),
+        YALI_AI_WRITER_API_TYPE_CLAUDE => 'Claude',
+        YALI_AI_WRITER_API_TYPE_GEMINI => 'Gemini'
     );
     
     return isset($labels[$type]) ? $labels[$type] : $type;
@@ -229,12 +229,12 @@ function content_auto_manager_get_api_type_label($type) {
 /**
  * 获取发布状态标签
  */
-function content_auto_manager_get_publish_status_label($status) {
+function yali_ai_writer_manager_get_publish_status_label($status) {
     $labels = array(
-        CONTENT_AUTO_PUBLISH_STATUS_DRAFT => __('草稿', 'yali-ai-writer'),
-        CONTENT_AUTO_PUBLISH_STATUS_PUBLISH => __('发布', 'yali-ai-writer'),
-        CONTENT_AUTO_PUBLISH_STATUS_SCHEDULE => __('定时发布', 'yali-ai-writer'),
-        CONTENT_AUTO_PUBLISH_STATUS_PENDING_REVIEW => __('待审核', 'yali-ai-writer')
+        YALI_AI_WRITER_PUBLISH_STATUS_DRAFT => __('草稿', 'yali-ai-writer'),
+        YALI_AI_WRITER_PUBLISH_STATUS_PUBLISH => __('发布', 'yali-ai-writer'),
+        YALI_AI_WRITER_PUBLISH_STATUS_SCHEDULE => __('定时发布', 'yali-ai-writer'),
+        YALI_AI_WRITER_PUBLISH_STATUS_PENDING_REVIEW => __('待审核', 'yali-ai-writer')
     );
     
     return isset($labels[$status]) ? $labels[$status] : $status;
@@ -244,8 +244,8 @@ function content_auto_manager_get_publish_status_label($status) {
  * 
  * @return array 更新结果
  */
-function content_auto_manager_update_database_structure() {
-    $database = new ContentAuto_Database();
+function yali_ai_writer_manager_update_database_structure() {
+    $database = new Yali_AI_Writer_Database();
     $errors = array();
     $updates_applied = array();
     
@@ -316,7 +316,7 @@ function content_auto_manager_update_database_structure() {
  * @param string $base64_vector Base64编码的向量字符串
  * @return array|false 解码后的浮点数数组，或在失败时返回false
  */
-function content_auto_decompress_vector_from_base64($base64_vector) {
+function yali_ai_writer_decompress_vector_from_base64($base64_vector) {
     $binary_data = base64_decode($base64_vector, true);
     if ($binary_data === false) {
         return false;
@@ -332,7 +332,7 @@ function content_auto_decompress_vector_from_base64($base64_vector) {
  * @param array $vec2 向量2 (浮点数数组)
  * @return float 余弦相似度分数 (-1.0 to 1.0)
  */
-function content_auto_calculate_cosine_similarity(array $vec1, array $vec2) {
+function yali_ai_writer_calculate_cosine_similarity(array $vec1, array $vec2) {
     $dot_product = 0.0;
     $magnitude1 = 0.0;
     $magnitude2 = 0.0;
@@ -366,10 +366,10 @@ function content_auto_calculate_cosine_similarity(array $vec1, array $vec2) {
  * @param int $clusters_to_search 搜索的候选簇数量
  * @return array 相似主题的列表，每个元素包含 id, title, similarity
  */
-function content_auto_find_similar_titles($topic_id, $num_results = 5, $clusters_to_search = 3) {
+function yali_ai_writer_find_similar_titles($topic_id, $num_results = 5, $clusters_to_search = 3) {
     global $wpdb;
-    $topics_table = $wpdb->prefix . 'content_auto_topics';
-    $articles_table = $wpdb->prefix . 'content_auto_articles';
+    $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+    $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
     $posts_table = $wpdb->posts;
 
     // 1. 获取查询向量
@@ -377,13 +377,13 @@ function content_auto_find_similar_titles($topic_id, $num_results = 5, $clusters
     if (!$query_topic || empty($query_topic->vector_embedding)) {
         return []; // 没有可供查询的向量
     }
-    $query_vector = content_auto_decompress_vector_from_base64($query_topic->vector_embedding);
+    $query_vector = yali_ai_writer_decompress_vector_from_base64($query_topic->vector_embedding);
     if (!$query_vector) {
         return [];
     }
 
     // 2. 获取聚类中心点
-    $centroids = get_option('content_auto_vector_centroids');
+    $centroids = get_option('yali_ai_writer_vector_centroids');
     if (empty($centroids) || !is_array($centroids)) {
         // 尚未执行聚类，无法使用此方法
         return [];
@@ -426,9 +426,9 @@ function content_auto_find_similar_titles($topic_id, $num_results = 5, $clusters
     // 5. 精确计算余弦相似度，添加0.8阈值限制
     $results = [];
     foreach ($candidates as $candidate) {
-        $candidate_vector = content_auto_decompress_vector_from_base64($candidate->vector_embedding);
+        $candidate_vector = yali_ai_writer_decompress_vector_from_base64($candidate->vector_embedding);
         if ($candidate_vector) {
-            $similarity = content_auto_calculate_cosine_similarity($query_vector, $candidate_vector);
+            $similarity = yali_ai_writer_calculate_cosine_similarity($query_vector, $candidate_vector);
             // 添加0.8相似度阈值限制，只保留高度相关的文章
             if ($similarity > 0.8) {
                 $results[] = [
@@ -456,9 +456,9 @@ function content_auto_find_similar_titles($topic_id, $num_results = 5, $clusters
  * @param array $options 可选参数覆盖 ['region', 'time', 'safesearch', 'max_results']
  * @return array|WP_Error 成功返回解码后的JSON数据，失败返回WP_Error
  */
-function content_auto_search($query, $max_results = null) {
+function yali_ai_writer_search($query, $max_results = null) {
     // 1. 获取后台全局配置
-    $settings = get_option('content_auto_search_settings', []);
+    $settings = get_option('yali_ai_writer_search_settings', []);
     
     // 获取当前站点域名
     $domain = parse_url(get_site_url(), PHP_URL_HOST);
@@ -475,7 +475,7 @@ function content_auto_search($query, $max_results = null) {
     // 2. 准备参数 (严格按照保存搜索配置时的配置，不允许调整)
     $params = [
         'q'           => $query,
-        'license_key' => get_option('content_auto_manager_license_key'),
+        'license_key' => get_option('yali_ai_writer_manager_license_key'),
         'domain'      => $domain,
         'region'      => $settings['region'] ?? 'wt-wt',
         'time'        => $settings['time'] ?? '',

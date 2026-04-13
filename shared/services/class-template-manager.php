@@ -7,17 +7,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_TemplateManager {
+class Yali_AI_Writer_TemplateManager {
     
     private $table_name;
     private $db;
     
     public function __construct() {
         global $wpdb;
-        $this->table_name = $wpdb->prefix . 'content_auto_prompt_templates';
+        $this->table_name = $wpdb->prefix . 'yali_ai_writer_prompt_templates';
         
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/database/class-database.php';
-        $this->db = new ContentAuto_Database();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/database/class-database.php';
+        $this->db = new Yali_AI_Writer_Database();
     }
     
     /**

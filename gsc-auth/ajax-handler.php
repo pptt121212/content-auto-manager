@@ -22,7 +22,7 @@ function yali_gsc_ajax_get_metrics() {
 
     $days = isset($_POST['days']) ? intval($_POST['days']) : 30;
     
-    $client = ContentAuto_GSC_API_Client::get_instance();
+    $client = Yali_AI_Writer_GSC_API_Client::get_instance();
     $data = $client->get_metrics($days);
     
     if (isset($data['error'])) {
@@ -60,7 +60,7 @@ function yali_gsc_ajax_get_data() {
     $dimension = isset($_POST['dimension']) ? sanitize_text_field($_POST['dimension']) : 'query';
     $days = isset($_POST['days']) ? intval($_POST['days']) : 30;
 
-    $client = ContentAuto_GSC_API_Client::get_instance();
+    $client = Yali_AI_Writer_GSC_API_Client::get_instance();
     
     // For queries, we need the page URL to match with local articles
     $api_dimension = $dimension === 'query' ? ['query', 'page'] : $dimension;
@@ -147,7 +147,7 @@ function yali_gsc_ajax_get_chart_data() {
     }
 
     $days = isset($_POST['days']) ? intval($_POST['days']) : 28;
-    $client = ContentAuto_GSC_API_Client::get_instance();
+    $client = Yali_AI_Writer_GSC_API_Client::get_instance();
     
     // Request date dimension for the chart
     $data = $client->get_analytics_data('date', $days, 100);
@@ -170,7 +170,7 @@ function yali_gsc_ajax_disconnect() {
     check_ajax_referer('yali_gsc_nonce', 'nonce');
     if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
 
-    ContentAuto_GSC_API_Client::disconnect();
+    Yali_AI_Writer_GSC_API_Client::disconnect();
     wp_send_json_success();
 }
 
@@ -181,7 +181,7 @@ function yali_gsc_ajax_get_sites() {
     check_ajax_referer('yali_gsc_nonce', 'nonce');
     if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
 
-    $client = ContentAuto_GSC_API_Client::get_instance();
+    $client = Yali_AI_Writer_GSC_API_Client::get_instance();
     $sites = $client->get_sites();
     if (!$sites) wp_send_json_error('无法获取站点列表');
 
@@ -226,9 +226,9 @@ function yali_gsc_ajax_create_task() {
     }
 
     global $wpdb;
-    $table_rules = $wpdb->prefix . 'content_auto_rules';
-    $table_items = $wpdb->prefix . 'content_auto_rule_items';
-    $table_keywords = $wpdb->prefix . 'content_auto_gsc_used_keywords';
+    $table_rules = $wpdb->prefix . 'yali_ai_writer_rules';
+    $table_items = $wpdb->prefix . 'yali_ai_writer_rule_items';
+    $table_keywords = $wpdb->prefix . 'yali_ai_writer_gsc_used_keywords';
 
     // Map Pack ID to Human Readable Pack Name
     $pack_name_map = [
@@ -369,7 +369,7 @@ function yali_gsc_ajax_get_keyword_packs() {
     if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
 
     $days = isset($_POST['days']) ? intval($_POST['days']) : 30;
-    $client = ContentAuto_GSC_API_Client::get_instance();
+    $client = Yali_AI_Writer_GSC_API_Client::get_instance();
     // Demand 'query' and 'page' dimensions to record ranking URLs
     $data = $client->get_analytics_data(['query', 'page'], $days, 2000); 
 
@@ -465,7 +465,7 @@ function yali_gsc_ajax_get_keyword_packs() {
     // Fetch User Negative Keywords
     $negative_keywords_raw = get_option('yali_gsc_negative_keywords', '');
     $negative_keywords = array_filter(array_map('trim', explode("\n", strtolower($negative_keywords_raw))));
-    $table_keywords = $wpdb->prefix . 'content_auto_gsc_used_keywords';
+    $table_keywords = $wpdb->prefix . 'yali_ai_writer_gsc_used_keywords';
     $used_hashes = $wpdb->get_col("SELECT keyword_hash FROM {$table_keywords}");
     $used_hashes = array_flip($used_hashes);
 
@@ -572,10 +572,10 @@ function yali_gsc_ajax_segmented_mine() {
     $language = isset($parts[1]) ? $parts[1] : 'zh-CN';
 
     $keyword_tool_dir = dirname(__FILE__) . '/../keyword-research-tool/';
-    if (!class_exists('FreeKeywordAPIs')) {
+    if (!class_exists('Yali_AI_Writer_FreeKeywordAPIs')) {
         require_once $keyword_tool_dir . 'free_keyword_apis.php';
     }
-    $api = new FreeKeywordAPIs();
+    $api = new Yali_AI_Writer_FreeKeywordAPIs();
     
     // For GSC mining from pack cards, we mostly do 'base' mining but for multi-sources
     // The frontend will send step_type='base' for each engine
@@ -609,10 +609,10 @@ function yali_gsc_ajax_finalize_mine() {
     }
 
     $keyword_tool_dir = dirname(__FILE__) . '/../keyword-research-tool/';
-    if (!class_exists('FreeKeywordAPIs')) {
+    if (!class_exists('Yali_AI_Writer_FreeKeywordAPIs')) {
         require_once $keyword_tool_dir . 'free_keyword_apis.php';
     }
-    $api = new FreeKeywordAPIs();
+    $api = new Yali_AI_Writer_FreeKeywordAPIs();
 
     $all_mined_keywords = [];
     $targets = [];
@@ -640,7 +640,7 @@ function yali_gsc_ajax_finalize_mine() {
 
     // Connect to database to check historical usage
     global $wpdb;
-    $table_keywords = $wpdb->prefix . 'content_auto_gsc_used_keywords';
+    $table_keywords = $wpdb->prefix . 'yali_ai_writer_gsc_used_keywords';
     
     // We check usage based on the first target seed (assuming one seed per pack usually)
     $pack_source_prefix = 'gsc_pack_shorttail_';
@@ -692,7 +692,7 @@ function yali_gsc_ajax_discard_pack() {
     }
 
     global $wpdb;
-    $table_keywords = $wpdb->prefix . 'content_auto_gsc_used_keywords';
+    $table_keywords = $wpdb->prefix . 'yali_ai_writer_gsc_used_keywords';
     
     $hash = md5(mb_strtolower(trim($keyword)));
     
@@ -712,7 +712,7 @@ function yali_gsc_ajax_get_ai_roi_data() {
     check_ajax_referer('yali_gsc_nonce', 'nonce');
     if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
 
-    $client = ContentAuto_GSC_API_Client::get_instance();
+    $client = Yali_AI_Writer_GSC_API_Client::get_instance();
     
     // Support dynamic date range from frontend
     $days = isset($_POST['days']) ? intval($_POST['days']) : 28;
@@ -728,8 +728,8 @@ function yali_gsc_ajax_get_ai_roi_data() {
     $gsc_pages = $data['rows'] ?? [];
 
     global $wpdb;
-    $table_articles = $wpdb->prefix . 'content_auto_articles';
-    $table_keywords = $wpdb->prefix . 'content_auto_gsc_used_keywords';
+    $table_articles = $wpdb->prefix . 'yali_ai_writer_articles';
+    $table_keywords = $wpdb->prefix . 'yali_ai_writer_gsc_used_keywords';
 
     // 1. Fetch AI Posts using the internal tracking table
     $ai_post_ids = $wpdb->get_col("

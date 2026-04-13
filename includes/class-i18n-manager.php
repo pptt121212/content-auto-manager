@@ -5,7 +5,7 @@
  * This script helps manage modular JSON translations and converts them to PO format.
  */
 
-class ContentAuto_I18nManager {
+class Yali_AI_Writer_I18nManager {
     private $plugin_dir;
     private $languages_dir;
     private $text_domain = 'yali-ai-writer';

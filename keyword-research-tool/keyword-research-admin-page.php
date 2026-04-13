@@ -92,7 +92,7 @@ require_once plugin_dir_path(__FILE__) . 'free_keyword_apis.php';
                                         <input type="checkbox" name="data_sources[]" value="360"> <?php _e('360', 'yali-ai-writer'); ?>
                                     </label>
                                     <label class="yali-checkbox-label">
-                                        <input type="checkbox" name="data_sources[]" value="bing"> <?php _e('必应', 'yali-ai-writer'); ?>
+                                        <input type="checkbox" name="data_sources[]" value="bing"> <?php _e('Bing', 'yali-ai-writer'); ?>
                                     </label>
                                 </div>
                             </div>

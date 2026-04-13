@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_RuleManager {
+class Yali_AI_Writer_RuleManager {
     
     /**
      * 获取规则类型标签
@@ -34,7 +34,7 @@ class ContentAuto_RuleManager {
     private $database;
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
+        $this->database = new Yali_AI_Writer_Database();
     }
     
     /**
@@ -48,7 +48,7 @@ class ContentAuto_RuleManager {
         }
         
         // 插入数据
-        return $this->database->insert('content_auto_rules', $validated_data);
+        return $this->database->insert('yali_ai_writer_rules', $validated_data);
     }
     
     /**
@@ -79,7 +79,7 @@ class ContentAuto_RuleManager {
         }
 
         // 更新数据
-        $result = $this->database->update('content_auto_rules', $validated_data, array('id' => $id));
+        $result = $this->database->update('yali_ai_writer_rules', $validated_data, array('id' => $id));
 
         if ($result === false) {
             return array(
@@ -113,10 +113,10 @@ class ContentAuto_RuleManager {
         }
 
         // 删除规则项目
-        $rule_items_deleted = $this->database->delete('content_auto_rule_items', array('rule_id' => $id));
+        $rule_items_deleted = $this->database->delete('yali_ai_writer_rule_items', array('rule_id' => $id));
 
         // 删除主规则
-        $result = $this->database->delete('content_auto_rules', array('id' => $id));
+        $result = $this->database->delete('yali_ai_writer_rules', array('id' => $id));
 
         if ($result === false) {
             return array(
@@ -135,14 +135,14 @@ class ContentAuto_RuleManager {
      * 获取单个规则
      */
     public function get_rule($id) {
-        return $this->database->get_row('content_auto_rules', array('id' => $id));
+        return $this->database->get_row('yali_ai_writer_rules', array('id' => $id));
     }
     
     /**
      * 获取所有规则
      */
     public function get_rules() {
-        return $this->database->get_results('content_auto_rules');
+        return $this->database->get_results('yali_ai_writer_rules');
     }
     
     /**
@@ -150,7 +150,7 @@ class ContentAuto_RuleManager {
      */
     public function get_active_rules() {
         global $wpdb;
-        $rules_table = $wpdb->prefix . 'content_auto_rules';
+        $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
         return $wpdb->get_results("SELECT * FROM {$rules_table} WHERE status = 1 ORDER BY created_at DESC");
     }
     
@@ -204,7 +204,7 @@ class ContentAuto_RuleManager {
         global $wpdb;
         
         // 获取规则
-        $rules_table = $wpdb->prefix . 'content_auto_rules';
+        $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
         $rule = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rules_table} WHERE id = %d", $rule_id));
         
         if (!$rule) {
@@ -216,7 +216,7 @@ class ContentAuto_RuleManager {
         // 根据规则类型获取内容
         if ($rule->rule_type === 'random_selection' || $rule->rule_type === 'fixed_articles') {
             // 从规则项目表中获取文章内容
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+            $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
             $items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND post_id > 0 LIMIT %d", $rule_id, $limit));
             
             foreach ($items as $item) {
@@ -230,7 +230,7 @@ class ContentAuto_RuleManager {
             }
         } elseif ($rule->rule_type === 'upload_text') {
             // 从规则项目表中获取上传文本内容
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+            $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
             $items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' LIMIT %d", $rule_id, $limit));
 
             foreach ($items as $item) {
@@ -245,7 +245,7 @@ class ContentAuto_RuleManager {
             }
         } elseif ($rule->rule_type === 'import_keywords') {
             // 从规则项目表中获取关键词内容
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+            $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
             $items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' LIMIT %d", $rule_id, $limit));
 
             foreach ($items as $item) {
@@ -260,7 +260,7 @@ class ContentAuto_RuleManager {
             }
         } elseif ($rule->rule_type === 'random_categories') {
             // 从规则项目表中获取随机分类内容
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+            $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
             $items = $wpdb->get_results($wpdb->prepare("SELECT category_ids, category_names, category_descriptions FROM {$rule_items_table} WHERE rule_id = %d AND post_id = 0 LIMIT %d", $rule_id, $limit));
 
             foreach ($items as $item) {
@@ -276,7 +276,7 @@ class ContentAuto_RuleManager {
             }
         } elseif ($rule->rule_type === 'collect_url_rewrite') {
             // 从规则项目表中获取采集网址内容
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+            $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
             $items = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' LIMIT %d", $rule_id, $limit));
 
             foreach ($items as $item) {
@@ -316,126 +316,7 @@ class ContentAuto_RuleManager {
         
         return $content;
     }
-    
-    public function get_content_by_rule_for_subtask($rule_id, $subtask_index) {
-        global $wpdb;
-        
-        // 获取规则
-        $rules_table = $wpdb->prefix . 'content_auto_rules';
-        $rule = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rules_table} WHERE id = %d", $rule_id));
-        
-        if (!$rule) {
-            return false;
-        }
-        
-        $content = array();
-        
-        // 根据规则类型获取内容
-        if ($rule->rule_type === 'random_selection' || $rule->rule_type === 'fixed_articles') {
-            // 从规则项目表中获取特定子任务的文章内容 - 按ID排序确保顺序一致
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
-            $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND post_id > 0 ORDER BY id LIMIT %d, 1", $rule_id, $subtask_index));
-            
-            if ($item) {
-                // 获取文章的完整内容
-                $post = get_post($item->post_id);
-                $post_content = '';
-                if ($post) {
-                    // 截取前6000字
-                    $post_content = mb_substr($post->post_content, 0, 6000);
-                    // 过滤为纯文本
-                    $post_content = $this->convert_to_plain_text($post_content);
-                }
-                
-                $content[] = array(
-                    'id' => $item->post_id,
-                    'title' => $item->post_title,
-                    'content' => $post_content,
-                    'category_ids' => $item->category_ids,
-                    'category_names' => $item->category_names,
-                    'category_descriptions' => $item->category_descriptions,
-                    'tag_names' => $item->tag_names,
-                    'excerpt' => '', // 在这个上下文中不需要摘要
-                    'date' => '' // 在这个上下文中不需要日期
-                );
-            }
-        } elseif ($rule->rule_type === 'upload_text') {
-            // 从规则项目表中获取特定子任务的上传文本内容 - 按ID排序确保顺序一致
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
-            $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' ORDER BY id LIMIT %d, 1", $rule_id, $subtask_index));
 
-            if ($item) {
-                $content[] = array(
-                    'id' => 0, // 上传文本没有post_id
-                    'title' => '', // 上传文本没有标题
-                    'content' => '', // 在这个上下文中不需要完整内容
-                    'category_ids' => '',
-                    'category_names' => '',
-                    'category_descriptions' => '',
-                    'tag_names' => '',
-                    'upload_text' => $item->upload_text
-                );
-            }
-        } elseif ($rule->rule_type === 'import_keywords') {
-            // 从规则项目表中获取特定子任务的关键词内容 - 按ID排序确保顺序一致
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
-            $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' ORDER BY id LIMIT %d, 1", $rule_id, $subtask_index));
-
-            if ($item) {
-                $content[] = array(
-                    'id' => 0, // 关键词没有post_id
-                    'title' => '', // 关键词规则没有标题
-                    'content' => '', // 在这个上下文中不需要完整内容
-                    'category_ids' => '',
-                    'category_names' => '',
-                    'category_descriptions' => '',
-                    'tag_names' => '',
-                    'keyword' => $item->upload_text // 关键词内容从upload_text字段获取
-                );
-            }
-        } elseif ($rule->rule_type === 'random_categories') {
-            // 从规则项目表中获取特定子任务的随机分类内容 - 按ID排序确保顺序一致
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
-            $item = $wpdb->get_row($wpdb->prepare("SELECT category_ids, category_names, category_descriptions FROM {$rule_items_table} WHERE rule_id = %d AND post_id = 0 ORDER BY id LIMIT %d, 1", $rule_id, $subtask_index));
-
-            if ($item) {
-                $content[] = array(
-                    'id' => 0, // 随机分类没有post_id
-                    'title' => $item->category_names, // 分类名称作为标题
-                    'content' => '', // 在这个上下文中不需要完整内容
-                    'category_ids' => $item->category_ids,
-                    'category_names' => $item->category_names,
-                    'category_descriptions' => $item->category_descriptions,
-                    'category_name' => $item->category_names, // 分类名称
-                    'category_description' => $item->category_descriptions // 分类描述
-                );
-            }
-        } elseif ($rule->rule_type === 'collect_url_rewrite') {
-            // 从规则项目表中获取特定子任务的采集网址内容
-            $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
-            $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE rule_id = %d AND upload_text != '' ORDER BY id LIMIT %d, 1", $rule_id, $subtask_index));
-
-            if ($item) {
-                // 判断逻辑：如果内容以 http:// 或 https:// 开头，认为是待采集的 URL
-                $raw_text = $item->upload_text;
-                $is_pending_url = (strpos($raw_text, 'http://') === 0 || strpos($raw_text, 'https://') === 0);
-                
-                $content[] = array(
-                    'id' => 0,
-                    'title' => '',
-                    'content' => $is_pending_url ? '' : $raw_text,
-                    'category_ids' => '',
-                    'category_names' => '',
-                    'category_descriptions' => '',
-                    'tag_names' => '',
-                    'url' => $is_pending_url ? $raw_text : ''
-                );
-            }
-        }
-        
-        return $content;
-    }
-    
     /**
      * 检查规则是否正在被使用
      * 注意：文章任务只使用已有主题，不受规则变更影响，所以只检查主题任务
@@ -447,7 +328,7 @@ class ContentAuto_RuleManager {
         // 只要有 pending/processing/running 的主任务，即视为使用中
         // 这覆盖了“任务刚创建尚未生成子任务”的阶段
         $active_main_tasks = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->prefix}content_auto_topic_tasks 
+            "SELECT COUNT(*) FROM {$wpdb->prefix}yali_ai_writer_topic_tasks 
              WHERE rule_id = %d AND status IN ('pending', 'processing', 'running')",
              $rule_id
         ));
@@ -458,10 +339,10 @@ class ContentAuto_RuleManager {
 
         // 2. 再检查子任务队列表
         // 主要是为了捕获 waiting_browser 这种特殊状态（主任务可能已 finished，但子任务还在跑）
-        $topic_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $topic_queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $topic_tasks_in_use = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$topic_queue_table} tq
-            JOIN {$wpdb->prefix}content_auto_topic_tasks tt ON tq.job_id = tt.id
+            JOIN {$wpdb->prefix}yali_ai_writer_topic_tasks tt ON tq.job_id = tt.id
             WHERE tt.rule_id = %d
             AND tq.status IN ('pending', 'processing', 'running', 'waiting_browser')",
             $rule_id
@@ -487,11 +368,11 @@ class ContentAuto_RuleManager {
         // 使用 LEFT JOIN 确保：
         // 1. 即使还没有生成子任务的主任务也能被统计到（覆盖刚创建阶段）
         // 2. 能够统计处于 waiting_browser 状态的子任务
-        $topic_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $topic_queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $topic_tasks = $wpdb->get_results($wpdb->prepare(
             "SELECT tt.topic_task_id, tt.status as task_status, 
                     COUNT(CASE WHEN tq.status IN ('pending', 'processing', 'running', 'waiting_browser') THEN tq.id END) as active_subtasks
-            FROM {$wpdb->prefix}content_auto_topic_tasks tt
+            FROM {$wpdb->prefix}yali_ai_writer_topic_tasks tt
             LEFT JOIN {$topic_queue_table} tq ON tt.id = tq.job_id
             WHERE tt.rule_id = %d
             AND (
@@ -528,7 +409,7 @@ class ContentAuto_RuleManager {
         global $wpdb;
         
         // 直接通过规则项目ID查询，确保绝对的准确性
-        $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+        $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
         $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$rule_items_table} WHERE id = %d", $rule_item_id));
         
         if (!$item) {
@@ -543,12 +424,12 @@ class ContentAuto_RuleManager {
             $post = get_post($item->post_id);
             $post_content = '';
             if ($post) {
-                // 截取前6000字
-                $post_content = mb_substr($post->post_content, 0, 6000);
+                // 截取前8000字（与上传文本规则字符计算方法一致）
+                $post_content = mb_substr($post->post_content, 0, 8000, 'UTF-8');
                 // 过滤为纯文本
                 $post_content = $this->convert_to_plain_text($post_content);
             }
-            
+
             $content[] = array(
                 'id' => $item->post_id,
                 'title' => $item->post_title,
@@ -562,7 +443,7 @@ class ContentAuto_RuleManager {
             );
         } elseif (!empty($item->upload_text)) {
             // 检查规则类型来确定是上传文本还是关键词
-            $rules_table = $wpdb->prefix . 'content_auto_rules';
+            $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
             $rule = $wpdb->get_row($wpdb->prepare("SELECT rule_type FROM {$rules_table} WHERE id = %d", $item->rule_id));
             
             if ($rule && $rule->rule_type === 'import_keywords') {
@@ -594,6 +475,11 @@ class ContentAuto_RuleManager {
                         // [兼容] 缓存是字符串，只包含 content
                         $content_text = $cached_content;
                         $title_text = '';
+                    }
+                    
+                    // 截取前3万字（限制输入长度，避免超出模型上下文）
+                    if (!empty($content_text)) {
+                        $content_text = mb_substr($content_text, 0, 30000, 'UTF-8');
                     }
                     
                     $url_text = $raw_text; // 保留原始 URL 用于记录

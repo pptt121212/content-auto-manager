@@ -2,17 +2,17 @@
 /**
  * 优化后的文章API处理器 (适配器模式)
  * 职责：保持向后兼容性，实现API轮询和重试逻辑
- * 通信：完全重定向到 ContentAuto_UnifiedApiHandler
+ * 通信：完全重定向到 Yali_AI_Writer_UnifiedApiHandler
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'api-settings/class-api-config.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'api-settings/class-api-config.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
 
-class ContentAuto_ArticleApiHandler {
+class Yali_AI_Writer_ArticleApiHandler {
     
     private $api_config;
     private $current_api_config;
@@ -20,10 +20,10 @@ class ContentAuto_ArticleApiHandler {
     private $logger;
     
     public function __construct($logger = null) {
-        $this->api_config = new ContentAuto_ApiConfig();
+        $this->api_config = new Yali_AI_Writer_ApiConfig();
         $this->current_api_config = null;
         $this->last_api_error = null;
-        $this->logger = $logger ?: new ContentAuto_LoggingSystem();
+        $this->logger = $logger ?: new Yali_AI_Writer_LoggingSystem();
     }
     
     /**
@@ -48,7 +48,7 @@ class ContentAuto_ArticleApiHandler {
             $this->current_api_config = $api_config;
             
             // 2. 【核心优化：接入统一通信层】
-            $unified_handler = new ContentAuto_UnifiedApiHandler($this->logger);
+            $unified_handler = new Yali_AI_Writer_UnifiedApiHandler($this->logger);
             $result = $unified_handler->generate_content($prompt, 'article', [
                 'rule_id' => $rule_id,
                 'topic_id' => $topic_id,
@@ -84,7 +84,7 @@ class ContentAuto_ArticleApiHandler {
         } else {
             $this->api_config->mark_api_failed($api_id);
         }
-        update_option('content_auto_last_api_request', time());
+        update_option('yali_ai_writer_last_api_request', time());
     }
 
     // --- 兼容性保留方法 ---

@@ -40,16 +40,16 @@ class Editor_Assistant_Controller extends Base_Controller {
      * 获取提示词列表
      */
     public function get_prompts($request) {
-        if (!class_exists('\ContentAuto_Editor_Prompt_Manager')) {
-            if (defined('CONTENT_AUTO_MANAGER_PLUGIN_DIR')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
+        if (!class_exists('\Yali_AI_Writer_Editor_Prompt_Manager')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
             }
         }
         // 返回分组结构（与原插件 aich_ajax.prompts 一致）和展平列表
         return rest_ensure_response(array(
             'success'     => true,
-            'prompts'     => \ContentAuto_Editor_Prompt_Manager::get_prompts(),      // grouped
-            'all_prompts' => \ContentAuto_Editor_Prompt_Manager::get_flat_prompts(), // flat for index lookup
+            'prompts'     => \Yali_AI_Writer_Editor_Prompt_Manager::get_prompts(),      // grouped
+            'all_prompts' => \Yali_AI_Writer_Editor_Prompt_Manager::get_flat_prompts(), // flat for index lookup
         ));
     }
 
@@ -60,7 +60,7 @@ class Editor_Assistant_Controller extends Base_Controller {
         global $wpdb;
         
         // 检查发布规则表是否存在
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
         
         if (!$table_exists) {
@@ -93,7 +93,7 @@ class Editor_Assistant_Controller extends Base_Controller {
      * 生成内容
      */
     public function generate_content($request) {
-        $params = $request->get_json_params();
+        $params = $request->get_params();
         
         // 验证参数
         // 注意: 使用 isset 而非 empty，因为 empty(0) 为 true，会导致索引0的提示词无法使用
@@ -114,15 +114,15 @@ class Editor_Assistant_Controller extends Base_Controller {
         }
         
         // 获取提示词
-        if (!class_exists('\ContentAuto_Editor_Prompt_Manager')) {
-            if (defined('CONTENT_AUTO_MANAGER_PLUGIN_DIR')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
+        if (!class_exists('\Yali_AI_Writer_Editor_Prompt_Manager')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
             }
         }
 
         if (isset($params['promptIndex'])) {
             // 使用 isset 而非 empty，确保索引 0（第一个提示词）也能正确取值
-            $prompt = \ContentAuto_Editor_Prompt_Manager::get_prompt_by_index(intval($params['promptIndex']));
+            $prompt = \Yali_AI_Writer_Editor_Prompt_Manager::get_prompt_by_index(intval($params['promptIndex']));
         } else {
             $prompt = $params['prompt'];
         }
@@ -135,17 +135,22 @@ class Editor_Assistant_Controller extends Base_Controller {
         $selected_text = is_array($params['text']) ? $params['text'] : array($params['text']);
         $filtered_prompt = $this->prepare_prompt($prompt['prompt_content'], $selected_text);
         
+        // 检查是否是图像生成提示词
+        if (isset($prompt['is_image_generation']) && $prompt['is_image_generation']) {
+            return $this->handle_image_generation($filtered_prompt, $selected_text, $prompt);
+        }
+        
         // 隐式追加严格语言指令，强制输出语言与原文一致（修复原版插件英文回复缺陷）
         $filtered_prompt .= "\n\nCRITICAL INSTRUCTION: You MUST generate your response in the EXACT same language as the provided [[text_1]] content. For example, if the content is in Simplified Chinese, your entire response MUST be in Simplified Chinese. Do NOT respond in English unless the content is in English.";
         
         // 调用统一 API 处理器生成内容
-        if (!class_exists('\ContentAuto_UnifiedApiHandler')) {
-            if (defined('CONTENT_AUTO_MANAGER_PLUGIN_DIR')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+        if (!class_exists('\Yali_AI_Writer_UnifiedApiHandler')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
             }
         }
         
-        $unified_api_handler = new \ContentAuto_UnifiedApiHandler();
+        $unified_api_handler = new \Yali_AI_Writer_UnifiedApiHandler();
         
         try {
             $result = $unified_api_handler->generate_content(
@@ -190,5 +195,362 @@ class Editor_Assistant_Controller extends Base_Controller {
             $index = $matches[1] - 1;
             return isset($selected_text[$index]) ? $selected_text[$index] : '';
         }, $prompt);
+    }
+
+    /**
+     * 检测文本的主要语言
+     * 
+     * @param string $text 要检测的文本
+     * @return string 语言名称（用于AI提示词）
+     */
+    private function detect_text_language($text) {
+        if (empty($text)) {
+            return '中文';
+        }
+
+        // 确保语言映射函数已加载
+        if (!function_exists('yali_ai_writer_get_language_ai_names')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
+            }
+        }
+
+        // 检测各种语言的字符
+        $chinese_chars = preg_match_all('/[\x{4e00}-\x{9fff}]/u', $text, $matches);
+        $japanese_chars = preg_match_all('/[\x{3040}-\x{309f}\x{30a0}-\x{30ff}]/u', $text, $matches);
+        $korean_chars = preg_match_all('/[\x{ac00}-\x{d7af}]/u', $text, $matches);
+        $arabic_chars = preg_match_all('/[\x{0600}-\x{06ff}]/u', $text, $matches);
+        $cyrillic_chars = preg_match_all('/[\x{0400}-\x{04ff}]/u', $text, $matches);
+        $thai_chars = preg_match_all('/[\x{0e00}-\x{0e7f}]/u', $text, $matches);
+        $hindi_chars = preg_match_all('/[\x{0900}-\x{097f}]/u', $text, $matches);
+
+        // 确定主要语言
+        $lang_scores = array(
+            'zh-CN' => $chinese_chars,
+            'ja-JP' => $japanese_chars,
+            'ko-KR' => $korean_chars,
+            'ar-SA' => $arabic_chars,
+            'ru-RU' => $cyrillic_chars,
+            'th-TH' => $thai_chars,
+            'hi-IN' => $hindi_chars,
+        );
+
+        arsort($lang_scores);
+        $top_lang = key($lang_scores);
+        $top_score = current($lang_scores);
+
+        // 如果有明确的非英文字符，返回对应语言
+        if ($top_score > 0) {
+            return yali_ai_writer_get_language_ai_name($top_lang);
+        }
+
+        // 如果没有检测到特定语言字符，检查是否是纯英文
+        $latin_chars = preg_match_all('/[a-zA-Z]/', $text, $matches);
+        $total_chars = strlen(preg_replace('/\s/', '', $text));
+
+        if ($latin_chars > $total_chars * 0.5) {
+            return 'English';
+        }
+
+        // 默认返回中文
+        return '中文';
+    }
+
+    /**
+     * 获取发布规则中的语言设置
+     *
+     * @return string 语言代码（如 zh-CN, en-US 等）
+     */
+    private function get_publish_language() {
+        global $wpdb;
+
+        // 确保语言映射函数已加载
+        if (!function_exists('yali_ai_writer_validate_language_code')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
+            }
+        }
+
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
+
+        if (!$table_exists) {
+            return 'zh-CN';
+        }
+
+        $publish_rule = $wpdb->get_row("SELECT * FROM $table_name LIMIT 1", ARRAY_A);
+
+        if (!$publish_rule || !isset($publish_rule['publish_language'])) {
+            return 'zh-CN';
+        }
+
+        return yali_ai_writer_validate_language_code($publish_rule['publish_language']);
+    }
+
+    /**
+     * 根据语言名称获取语言代码
+     *
+     * @param string $language_name 语言名称（如 "中文", "English" 等）
+     * @return string 语言代码（如 zh-CN, en-US 等）
+     */
+    private function get_language_code_from_name($language_name) {
+        // 确保语言映射函数已加载
+        if (!function_exists('yali_ai_writer_get_language_ai_names')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
+            }
+        }
+
+        $ai_names = yali_ai_writer_get_language_ai_names();
+
+        foreach ($ai_names as $code => $name) {
+            if ($name === $language_name) {
+                return $code;
+            }
+        }
+
+        // 默认返回中文
+        return 'zh-CN';
+    }
+
+    /**
+     * 处理图像生成请求
+     */
+    private function handle_image_generation($filtered_prompt, $selected_text, $prompt) {
+        // 对于文字海报风格，提示词本身已包含语言适配逻辑
+        // 不需要额外的PHP层处理，让AI根据选中内容自然决定海报文字语言
+        // 保持原汁原味，不强制翻译
+
+        // 第一步：调用文本API生成图像描述
+        if (!class_exists('\Yali_AI_Writer_UnifiedApiHandler')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+            }
+        }
+
+        $unified_api_handler = new \Yali_AI_Writer_UnifiedApiHandler();
+
+        try {
+            $result = $unified_api_handler->generate_content(
+                $filtered_prompt,
+                'editor_assistant_image',
+                array(
+                    'return_usage' => true,
+                    'timeout' => 60,
+                )
+            );
+
+            if (isset($result['error'])) {
+                return new \WP_Error('api_error', __('生成图像描述失败: ', 'yali-ai-writer') . $result['error'], array('status' => 500));
+            }
+
+            $image_description = is_array($result) && isset($result['content']) ? trim($result['content']) : trim($result);
+            
+            // 现代图像 API（OpenAI DALL-E 3、ModelScope、SiliconFlow 等）均支持多语言 prompt，
+            // json_encode() 会正确处理 Unicode 字符，无需清理非 ASCII 字符。
+            if (empty($image_description)) {
+                return new \WP_Error('empty_description', __('生成的图像描述为空', 'yali-ai-writer'), array('status' => 500));
+            }
+
+            // 第二步：调用图像API生成图片
+            $image_result = $this->generate_image($image_description);
+
+            if (is_wp_error($image_result)) {
+                return $image_result;
+            }
+
+            return rest_ensure_response(array(
+                'success' => true,
+                'text' => $image_result['html'],
+                'image_url' => $image_result['url'],
+                'image_description' => $image_description,
+                'attachment_id' => $image_result['attachment_id'],
+                'is_image' => true,
+                'tokens' => isset($prompt['word_count']) ? $prompt['word_count'] : 0,
+            ));
+
+        } catch (\Exception $e) {
+            return new \WP_Error('image_generation_error', $e->getMessage(), array('status' => 500));
+        }
+    }
+
+    /**
+     * 生成图像
+     */
+    private function generate_image($prompt) {
+        // 加载图像API处理器
+        if (!class_exists('\Yali_AI_Writer_Image_API_Handler')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'image-api-settings/class-image-api-handler.php';
+            }
+        }
+
+        if (!class_exists('\Yali_AI_Writer_Image_API_Handler')) {
+            return new \WP_Error('image_handler_missing', __('图像API处理器未找到', 'yali-ai-writer'), array('status' => 500));
+        }
+
+        // 使用保存的设置生成图像
+        $result = \Yali_AI_Writer_Image_API_Handler::generate_image_from_saved_settings($prompt);
+
+        if (is_wp_error($result)) {
+            return new \WP_Error('image_generation_failed', $result->get_error_message(), array('status' => 500));
+        }
+
+        // 将base64图像保存到媒体库
+        $attachment_result = $this->save_base64_as_attachment($result, $prompt);
+        
+        if (!$attachment_result['success']) {
+            return new \WP_Error('image_save_failed', $attachment_result['error'], array('status' => 500));
+        }
+
+        // 获取附件URL并构建HTML
+        $image_url = $attachment_result['file_url'];
+        $attachment_id = $attachment_result['attachment_id'];
+        $html = '<img src="' . esc_url($image_url) . '" alt="' . esc_attr($prompt) . '" style="max-width:100%;height:auto;" />';
+
+        return array(
+            'url' => $image_url,
+            'html' => $html,
+            'attachment_id' => $attachment_id,
+        );
+    }
+
+    /**
+     * 将Base64图片保存为WordPress附件
+     * （复用文章生成图像的逻辑）
+     */
+    private function save_base64_as_attachment($base64_data, $prompt, $post_id = 0) {
+        try {
+            // 解码Base64数据
+            $image_data = base64_decode($base64_data);
+            if ($image_data === false) {
+                return [
+                    'success' => false,
+                    'error' => 'Base64解码失败'
+                ];
+            }
+            
+            // 检测图片类型
+            $image_info = getimagesizefromstring($image_data);
+            if ($image_info === false) {
+                return [
+                    'success' => false,
+                    'error' => '无效的图片数据'
+                ];
+            }
+            
+            // 获取文件扩展名
+            $mime_type = $image_info['mime'];
+            $extension = '';
+            switch ($mime_type) {
+                case 'image/jpeg':
+                    $extension = 'jpg';
+                    break;
+                case 'image/png':
+                    $extension = 'png';
+                    break;
+                case 'image/webp':
+                    $extension = 'webp';
+                    break;
+                default:
+                    $extension = 'jpg'; // 默认使用jpg
+            }
+            
+            // 生成文件名
+            $filename = 'editor-ai-image-' . date('Y-m-d-H-i-s') . '-' . uniqid() . '.' . $extension;
+            
+            // 获取上传目录
+            $upload_dir = wp_upload_dir();
+            $file_path = $upload_dir['path'] . '/' . $filename;
+            $file_url = $upload_dir['url'] . '/' . $filename;
+            
+            // 保存文件
+            if (file_put_contents($file_path, $image_data) === false) {
+                return [
+                    'success' => false,
+                    'error' => '文件保存失败'
+                ];
+            }
+
+            // --- 自动压缩与优化开始 ---
+            try {
+                $editor = wp_get_image_editor($file_path);
+                if (!is_wp_error($editor)) {
+                    // 设置压缩质量为 80% (平衡画质与体积)
+                    $editor->set_quality(80);
+                    
+                    // 如果是 PNG 格式，强制转换为 JPG 以显著减小体积
+                    if ($mime_type === 'image/png') {
+                        $new_filename = preg_replace('/\.png$/i', '.jpg', $filename);
+                        $new_file_path = $upload_dir['path'] . '/' . $new_filename;
+                        
+                        $save_result = $editor->save($new_file_path, 'image/jpeg');
+                        
+                        if (!is_wp_error($save_result)) {
+                            // 转换成功，删除原 PNG 文件
+                            unlink($file_path);
+                            
+                            // 更新变量以指向新的 JPG 文件
+                            $file_path = $new_file_path;
+                            $filename = $new_filename;
+                            $file_url = $upload_dir['url'] . '/' . $new_filename;
+                            $mime_type = 'image/jpeg';
+                        }
+                    } else {
+                        // 其他格式 (JPG/WebP) 原地保存压缩后的版本
+                        $editor->save($file_path);
+                    }
+                }
+            } catch (Exception $e) {
+                // 如果压缩失败，仅记录错误，继续使用原图
+                error_log('Yali AI Writer: 图片自动压缩优化异常 - ' . $e->getMessage());
+            }
+            // --- 自动压缩与优化结束 ---
+            
+            // 创建附件记录
+            $attachment_data = [
+                'guid' => $file_url,
+                'post_mime_type' => $mime_type,
+                'post_title' => 'AI生成配图: ' . wp_trim_words($prompt, 10, '...'),
+                'post_content' => '',
+                'post_status' => 'inherit',
+                'post_parent' => $post_id
+            ];
+            
+            $attachment_id = wp_insert_attachment($attachment_data, $file_path, $post_id);
+            
+            if (is_wp_error($attachment_id)) {
+                // 删除已保存的文件
+                unlink($file_path);
+                return [
+                    'success' => false,
+                    'error' => '创建附件记录失败: ' . $attachment_id->get_error_message()
+                ];
+            }
+            
+            // 生成附件元数据
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            $attach_data = wp_generate_attachment_metadata($attachment_id, $file_path);
+            wp_update_attachment_metadata($attachment_id, $attach_data);
+            
+            // 保存图片生成信息到自定义字段
+            update_post_meta($attachment_id, '_ai_generated', true);
+            update_post_meta($attachment_id, '_ai_prompt', $prompt);
+            update_post_meta($attachment_id, '_generation_date', current_time('mysql'));
+            update_post_meta($attachment_id, '_source', 'editor_assistant');
+            
+            return [
+                'success' => true,
+                'attachment_id' => $attachment_id,
+                'file_path' => $file_path,
+                'file_url' => $file_url
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => '保存附件异常: ' . $e->getMessage()
+            ];
+        }
     }
 }

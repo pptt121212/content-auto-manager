@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_PollinationsChannel extends ContentAuto_ApiChannel {
+class Yali_AI_Writer_PollinationsChannel extends Yali_AI_Writer_ApiChannel {
     
     public function __construct() {
         parent::__construct('pollinations', 'pollinations渠道', 'https://gen.pollinations.ai/');
@@ -50,83 +50,83 @@ class ContentAuto_PollinationsChannel extends ContentAuto_ApiChannel {
             'seed' => $this->generate_seed()
         );
         
-        $headers = array(
-            'Content-Type: application/json',
-            'Accept: text/event-stream',
-            'User-Agent: WordPress-ContentAutoManager/1.1'
+        $wp_args = array(
+            'headers'     => array(
+                'Content-Type' => 'application/json',
+                'Accept' => 'text/event-stream',
+                'User-Agent' => 'WordPress-ContentAutoManager/1.1'
+            ),
+            'body'        => json_encode($request_body),
+            'timeout'     => 300,
+            'sslverify'   => true,
+            'decompress'  => true
         );
         
         if (!empty($config['api_key'])) {
-            $headers[] = 'Authorization: Bearer ' . trim($config['api_key']);
+            $wp_args['headers']['Authorization'] = 'Bearer ' . trim($config['api_key']);
         }
         
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $url,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($request_body),
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_RETURNTRANSFER => false, 
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_TIMEOUT => 300,          // 5分钟超时，防止长文生成断流
-            CURLOPT_CONNECTTIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_ENCODING => '',          // 自动处理压缩
-        ));
+        $response = wp_remote_post($url, $wp_args);
+        
+        if (is_wp_error($response)) {
+            return array('success' => false, 'message' => __('网络请求失败 (WP HTTP): ', 'yali-ai-writer') . $response->get_error_message());
+        }
+        
+        $http_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        
+        if ($http_code >= 400) {
+            return array('success' => false, 'message' => __('API response error (HTTP ', 'yali-ai-writer') . $http_code . ') - ' . mb_substr($response_body, 0, 200));
+        }
 
         $accumulated_content = '';
-        $buffer = '';
         $stream_error = null;
         $saw_done = false;
 
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error, &$saw_done) {
-            if ($stream_error) return 0;
-            
-            $buffer .= $chunk;
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
-                $line = trim($line);
+        // Fallback: Check if response is just a direct JSON object (API ignored stream=true)
+        $direct_json = @json_decode($response_body, true);
+        if ($direct_json && isset($direct_json['choices'][0]['message']['content'])) {
+            $accumulated_content = $direct_json['choices'][0]['message']['content'];
+            $saw_done = true;
+        } elseif ($direct_json && isset($direct_json['error'])) {
+            $stream_error = "API Error: " . (is_array($direct_json['error']) ? json_encode($direct_json['error']) : $direct_json['error']);
+        } else {
+            // Parse as SSE
+            $blocks = explode("\n\n", str_replace("\r\n", "\n", $response_body));
+            foreach ($blocks as $block) {
+                if (empty(trim($block))) continue;
                 
-                if (empty($line)) continue;
-                
-                if (strpos($line, 'data: ') === 0) {
-                    $json_str = substr($line, 6);
-                    if ($json_str === '[DONE]') {
-                        $saw_done = true;
-                        continue;
+                $lines = explode("\n", $block);
+                foreach ($lines as $line) {
+                    $json_str = null;
+                    if (strpos($line, 'data: ') === 0) {
+                        $json_str = substr($line, 6);
+                    } elseif (strpos($line, 'data:') === 0) {
+                        $json_str = substr($line, 5);
                     }
                     
-                    $decoded = json_decode($json_str, true);
-                    if (isset($decoded['choices'][0]['delta']['content'])) {
-                        $accumulated_content .= $decoded['choices'][0]['delta']['content'];
-                    } elseif (isset($decoded['error'])) {
-                        $stream_error = "API Error: " . (is_array($decoded['error']) ? json_encode($decoded['error']) : $decoded['error']);
-                        return 0;
+                    if ($json_str !== null) {
+                        if (trim($json_str) === '[DONE]') {
+                            $saw_done = true;
+                            continue;
+                        }
+                        
+                        $decoded = @json_decode($json_str, true);
+                        if ($decoded && isset($decoded['choices'][0]['delta']['content'])) {
+                            $accumulated_content .= $decoded['choices'][0]['delta']['content'];
+                        } elseif ($decoded && isset($decoded['choices'][0]['message']['content'])) {
+                            // Support some models that stream with message instead of delta
+                            $accumulated_content .= $decoded['choices'][0]['message']['content'];
+                        } elseif ($decoded && isset($decoded['error'])) {
+                            $stream_error = "API Error: " . (is_array($decoded['error']) ? json_encode($decoded['error']) : $decoded['error']);
+                        }
                     }
                 }
             }
-            return strlen($chunk);
-        });
-
-        ob_start();
-        $success = curl_exec($ch);
-        ob_end_clean();
-
-        $curl_error = curl_error($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        }
 
         if ($stream_error) {
             return array('success' => false, 'message' => __('流数据错误: ', 'yali-ai-writer') . $stream_error);
-        }
-        
-        if ($curl_error) {
-            return array('success' => false, 'message' => __('网络请求失败 (cURL): ', 'yali-ai-writer') . $curl_error);
-        }
-
-        if ($http_code >= 400) {
-            return array('success' => false, 'message' => 'API 响应错误 (HTTP ' . $http_code . ')');
         }
 
         // [关键防御] 检查流是否完整结束
@@ -138,7 +138,7 @@ class ContentAuto_PollinationsChannel extends ContentAuto_ApiChannel {
         }
 
         if (empty($accumulated_content)) {
-            return array('success' => false, 'message' => __('未获取到内容响应', 'yali-ai-writer'));
+            return array('success' => false, 'message' => __('未获取到内容响应, 原始响应前500字: ', 'yali-ai-writer') . mb_substr($response_body, 0, 500));
         }
 
         return array('success' => true, 'data' => $accumulated_content);

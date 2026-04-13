@@ -12,48 +12,14 @@ if (!current_user_can('manage_options')) {
     wp_die(__('抱歉，您没有权限访问此页面。', 'yali-ai-writer'));
 }
 
-// 加载通用样式
-$tokens_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/assets/css/brand-tokens.css';
-$base_kit_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/assets/css/yali-ui-kit.css';
-
-$tokens_css = file_exists($tokens_path) ? file_get_contents($tokens_path) : '';
-$base_kit_css = file_exists($base_kit_path) ? file_get_contents($base_kit_path) : '';
 ?>
-<style type="text/css">
-    <?php echo $tokens_css; ?>
-    <?php echo $base_kit_css; ?>
-</style>
 <?php
 
-// 初始化通知数组
-$yali_notices = array();
-
-// 处理分类过滤设置表单提交
-if (isset($_POST['submit_category_filter']) && isset($_POST['content_auto_manager_category_filter_nonce'])) {
-    // 验证nonce
-    if (!wp_verify_nonce($_POST['content_auto_manager_category_filter_nonce'], 'content_auto_manager_category_filter')) {
-        wp_die(__('安全验证失败。', 'yali-ai-writer'));
-    }
-
-    // 获取"启用分类过滤"开关状态
-    $is_enabled = isset($_POST['yali_enable_category_filter']) && $_POST['yali_enable_category_filter'] == '1' ? 1 : 0;
-    update_option('content_auto_manager_category_filter_enabled', $is_enabled);
-
-    // 获取选中的分类ID
-    $allowed_category_ids = isset($_POST['allowed_category_ids']) ? array_map('intval', $_POST['allowed_category_ids']) : array();
-
-    // 保存设置
-    update_option('content_auto_manager_allowed_categories', $allowed_category_ids);
-
-    $yali_notices[] = array(
-        'type' => 'success',
-        'message' => __('设置已保存。', 'yali-ai-writer')
-    );
-}
+// 表单处理已移至 admin/form-handlers.php，在 admin_init 钩子中执行
 
 // 获取当前设置
-$allowed_categories = get_option('content_auto_manager_allowed_categories', array());
-$is_enabled = get_option('content_auto_manager_category_filter_enabled', 0); // 默认不启用
+$allowed_categories = get_option('yali_ai_writer_manager_allowed_categories', array());
+$is_enabled = get_option('yali_ai_writer_manager_category_filter_enabled', 0); // 默认不启用
 
 // 获取所有分类（包括层级结构）
 $categories = get_categories(array(
@@ -102,15 +68,6 @@ function render_category_tree($categories, $allowed_categories, $level = 0) {
         <span class="dashicons dashicons-category"></span> <?php _e('管理可用分类', 'yali-ai-writer'); ?>
     </h1>
 
-    <!-- 显示通知 -->
-    <?php if (!empty($yali_notices)): ?>
-        <?php foreach ($yali_notices as $notice): ?>
-            <div class="yali-notice yali-notice-<?php echo esc_attr($notice['type']); ?>">
-                <p><?php echo wp_kses_post($notice['message']); ?></p>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-    
     <div style="margin-bottom: 20px;">
         <a href="?page=yali-ai-writer-publish-rules" class="yali-btn yali-btn-secondary">
             <span class="dashicons dashicons-arrow-left-alt"></span> <?php _e('返回发布规则', 'yali-ai-writer'); ?>
@@ -123,7 +80,7 @@ function render_category_tree($categories, $allowed_categories, $level = 0) {
         </div>
         <div class="yali-card-body">
             <form method="post" action="" id="yali-category-filter-form">
-                <?php wp_nonce_field('content_auto_manager_category_filter', 'content_auto_manager_category_filter_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_category_filter', 'yali_ai_writer_manager_category_filter_nonce'); ?>
                 
                 <div class="yali-form-group">
                     <label class="yali-checkbox-label" style="font-weight: 600; font-size: 15px;">
@@ -210,84 +167,3 @@ function render_category_tree($categories, $allowed_categories, $level = 0) {
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 全选功能
-    document.getElementById('select-all-categories').addEventListener('click', function() {
-        var checkboxes = document.querySelectorAll('.category-checkbox');
-        checkboxes.forEach(function(checkbox) {
-            checkbox.checked = true;
-        });
-    });
-
-    // 全不选功能
-    document.getElementById('deselect-all-categories').addEventListener('click', function() {
-        var checkboxes = document.querySelectorAll('.category-checkbox');
-        checkboxes.forEach(function(checkbox) {
-            checkbox.checked = false;
-        });
-    });
-    
-    // 只选择父分类
-    document.getElementById('toggle-parent-categories').addEventListener('click', function() {
-        var checkboxes = document.querySelectorAll('.category-checkbox');
-        checkboxes.forEach(function(checkbox) {
-            // 只选择顶级分类（level=0）
-            checkbox.checked = checkbox.getAttribute('data-level') === '0';
-        });
-    });
-    
-    // 搜索功能
-    document.getElementById('category-search').addEventListener('input', function() {
-        var searchTerm = this.value.toLowerCase();
-        var categoryItems = document.querySelectorAll('.category-item');
-
-        categoryItems.forEach(function(item) {
-            var categoryName = item.textContent.toLowerCase();
-            if (categoryName.includes(searchTerm)) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    });
-
-    // 启用分类过滤开关功能
-    var enableFilterCheckbox = document.querySelector('input[name="yali_enable_category_filter"]');
-    var categorySelectionContainer = document.getElementById('category-selection-container');
-    if (enableFilterCheckbox && categorySelectionContainer) {
-        enableFilterCheckbox.addEventListener('change', function() {
-            categorySelectionContainer.style.display = this.checked ? 'block' : 'none';
-        });
-    }
-});
-</script>
-
-<style>
-.category-item {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--yali-border);
-}
-
-.category-item:last-child {
-    border-bottom: none;
-}
-
-.category-item label {
-    cursor: pointer;
-    display: block;
-    padding: 5px;
-    border-radius: var(--yali-radius-sm);
-    transition: var(--yali-transition);
-}
-
-.category-item label:hover {
-    background-color: var(--yali-primary-light);
-}
-
-.category-count {
-    color: var(--yali-text-muted);
-    font-size: 0.9em;
-}
-</style>

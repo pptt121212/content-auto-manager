@@ -7,13 +7,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_PredefinedApi {
+class Yali_AI_Writer_PredefinedApi {
     
     private $database;
     private $channels = array();
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
+        $this->database = new Yali_AI_Writer_Database();
         $this->init_channels();
     }
     
@@ -22,10 +22,10 @@ class ContentAuto_PredefinedApi {
      */
     private function init_channels() {
         // 初始化pollinations渠道
-        $this->channels['pollinations'] = new ContentAuto_PollinationsChannel();
+        $this->channels['pollinations'] = new Yali_AI_Writer_PollinationsChannel();
         
         // 初始化插件官方API渠道
-        $this->channels['official'] = new ContentAuto_OfficialChannel();
+        $this->channels['official'] = new Yali_AI_Writer_OfficialChannel();
     }
     
     /**
@@ -83,7 +83,7 @@ class ContentAuto_PredefinedApi {
      * 获取预置API配置（从数据库）
      */
     public function get_config($channel = 'pollinations') {
-        return $this->database->get_row('content_auto_api_configs', array('predefined_channel' => $channel));
+        return $this->database->get_row('yali_ai_writer_api_configs', array('predefined_channel' => $channel));
     }
     
     /**
@@ -113,7 +113,7 @@ class ContentAuto_PredefinedApi {
         );
         
         // 尝试插入数据
-        $config_id = $this->database->insert('content_auto_api_configs', $data);
+        $config_id = $this->database->insert('yali_ai_writer_api_configs', $data);
         
         // 如果插入成功，返回完整的配置信息
         if ($config_id) {
@@ -150,7 +150,7 @@ class ContentAuto_PredefinedApi {
             return false;
         }
         
-        return $this->database->update('content_auto_api_configs', $update_data, array('id' => $config['id']));
+        return $this->database->update('yali_ai_writer_api_configs', $update_data, array('id' => $config['id']));
     }
     
     /**

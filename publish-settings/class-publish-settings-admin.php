@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_Publish_Settings_Admin {
+class Yali_AI_Writer_Publish_Settings_Admin {
     
     public function __construct() {
         // 不再添加独立的分类过滤菜单项
@@ -23,4 +23,4 @@ class ContentAuto_Publish_Settings_Admin {
 }
 
 // 初始化管理页面
-new ContentAuto_Publish_Settings_Admin();
+new Yali_AI_Writer_Publish_Settings_Admin();

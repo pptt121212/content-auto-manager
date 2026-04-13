@@ -26,7 +26,7 @@ function cam_ajax_filter_topics() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_topic_filter')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
@@ -45,18 +45,18 @@ function cam_ajax_filter_topics() {
     $per_page = isset($_POST['per_page']) ? max(10, min(100, intval($_POST['per_page']))) : 20;
     
     // 确保服务类已加载
-    if (!class_exists('ContentAuto_TopicFilterService')) {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
+    if (!class_exists('Yali_AI_Writer_TopicFilterService')) {
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
     }
     
-    $filter_service = new ContentAuto_TopicFilterService();
+    $filter_service = new Yali_AI_Writer_TopicFilterService();
     $result = $filter_service->get_filtered_topics($filters, $page, $per_page);
     
     // 添加额外信息
     foreach ($result['topics'] as &$topic) {
         $topic['has_vector'] = !empty($topic['vector_embedding']);
         $topic['has_reference'] = !empty($topic['reference_material']);
-        $topic['status_label'] = content_auto_manager_get_topic_status_label($topic['status']);
+        $topic['status_label'] = yali_ai_writer_manager_get_topic_status_label($topic['status']);
         
         // 移除大字段减少传输
         unset($topic['vector_embedding']);
@@ -76,7 +76,7 @@ function cam_ajax_detect_duplicates() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_topic_filter')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
@@ -97,11 +97,11 @@ function cam_ajax_detect_duplicates() {
     $threshold = max(0.1, min(1.0, $threshold));
     
     // 确保服务类已加载
-    if (!class_exists('ContentAuto_TopicFilterService')) {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
+    if (!class_exists('Yali_AI_Writer_TopicFilterService')) {
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
     }
     
-    $filter_service = new ContentAuto_TopicFilterService();
+    $filter_service = new Yali_AI_Writer_TopicFilterService();
     
     try {
         $result = $filter_service->detect_duplicate_topics($filters, $threshold);
@@ -121,7 +121,7 @@ function cam_ajax_bulk_delete_topics() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_topic_filter')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
@@ -134,11 +134,11 @@ function cam_ajax_bulk_delete_topics() {
     }
     
     // 确保服务类已加载
-    if (!class_exists('ContentAuto_TopicFilterService')) {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
+    if (!class_exists('Yali_AI_Writer_TopicFilterService')) {
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
     }
     
-    $filter_service = new ContentAuto_TopicFilterService();
+    $filter_service = new Yali_AI_Writer_TopicFilterService();
     $result = $filter_service->bulk_delete_topics($topic_ids);
     
     if ($result['success']) {
@@ -158,7 +158,7 @@ function cam_ajax_delete_duplicate_topics() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_topic_filter')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
@@ -171,11 +171,11 @@ function cam_ajax_delete_duplicate_topics() {
     }
     
     // 确保服务类已加载
-    if (!class_exists('ContentAuto_TopicFilterService')) {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
+    if (!class_exists('Yali_AI_Writer_TopicFilterService')) {
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
     }
     
-    $filter_service = new ContentAuto_TopicFilterService();
+    $filter_service = new Yali_AI_Writer_TopicFilterService();
     $result = $filter_service->delete_duplicate_topics($duplicate_type, $status);
     
     if ($result['success']) {
@@ -195,16 +195,16 @@ function cam_ajax_get_filter_stats() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_topic_filter')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
     // 确保服务类已加载
-    if (!class_exists('ContentAuto_TopicFilterService')) {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
+    if (!class_exists('Yali_AI_Writer_TopicFilterService')) {
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
     }
     
-    $filter_service = new ContentAuto_TopicFilterService();
+    $filter_service = new Yali_AI_Writer_TopicFilterService();
     $stats = $filter_service->get_filter_stats();
     $categories = $filter_service->get_available_categories();
     
@@ -224,7 +224,7 @@ function cam_ajax_delete_all_filtered_topics() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_topic_filter')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
@@ -245,11 +245,11 @@ function cam_ajax_delete_all_filtered_topics() {
     }
     
     // 确保服务类已加载
-    if (!class_exists('ContentAuto_TopicFilterService')) {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
+    if (!class_exists('Yali_AI_Writer_TopicFilterService')) {
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-topic-filter-service.php';
     }
     
-    $filter_service = new ContentAuto_TopicFilterService();
+    $filter_service = new Yali_AI_Writer_TopicFilterService();
     $result = $filter_service->delete_all_filtered_topics($filters);
     
     if ($result['success']) {
@@ -265,7 +265,7 @@ add_action('wp_ajax_cam_bulk_generate_references', 'cam_ajax_bulk_generate_refer
  * 批量生成参考资料
  * 
  * 重要：此功能通过更新 topics 表的 material_search_status 字段来触发后台任务，
- * 与 ContentAuto_MaterialSearchManager 的自动触发机制保持一致。
+ * 与 Yali_AI_Writer_MaterialSearchManager 的自动触发机制保持一致。
  */
 function cam_ajax_bulk_generate_references() {
     // 验证权限
@@ -274,7 +274,7 @@ function cam_ajax_bulk_generate_references() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_topic_filter')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_topic_filter')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
@@ -285,7 +285,7 @@ function cam_ajax_bulk_generate_references() {
     }
     
     global $wpdb;
-    $topics_table = $wpdb->prefix . 'content_auto_topics';
+    $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
     $queued_count = 0;
     $skipped_existing = 0;      // 已有参考资料
     $skipped_in_progress = 0;   // 正在处理中或已在队列
@@ -330,7 +330,7 @@ function cam_ajax_bulk_generate_references() {
         
         if ($updated !== false) {
             // ✅ 关键修复：手动触发也必须写入队列，以支持 extension_rag 模式
-            $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+            $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
             $wpdb->insert($queue_table, array(
                 'job_type' => 'material_search',
                 'job_id' => 0, // material_search 没有父任务表
@@ -352,9 +352,9 @@ function cam_ajax_bulk_generate_references() {
     // 如果有任务被加入队列，触发调度器
     if ($queued_count > 0) {
         // 加载并触发调度器
-        if (file_exists(CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php';
-            $manager = new ContentAuto_MaterialSearchManager();
+        if (file_exists(YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-material-search-manager.php';
+            $manager = new Yali_AI_Writer_MaterialSearchManager();
             $manager->schedule_process();
         }
     }

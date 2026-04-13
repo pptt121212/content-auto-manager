@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_StructureOptimizationScheduler {
+class Yali_AI_Writer_StructureOptimizationScheduler {
     
     /**
      * 日志记录器
@@ -30,9 +30,9 @@ class ContentAuto_StructureOptimizationScheduler {
     /**
      * Cron 钩子名称
      */
-    const CRON_HOOK_DAILY_ANALYSIS = 'content_auto_structure_daily_analysis';
-    const CRON_HOOK_WEEKLY_POPULARITY = 'content_auto_structure_weekly_popularity';
-    const CRON_HOOK_CACHE_CLEANUP = 'content_auto_structure_cache_cleanup';
+    const CRON_HOOK_DAILY_ANALYSIS = 'yali_ai_writer_structure_daily_analysis';
+    const CRON_HOOK_WEEKLY_POPULARITY = 'yali_ai_writer_structure_weekly_popularity';
+    const CRON_HOOK_CACHE_CLEANUP = 'yali_ai_writer_structure_cache_cleanup';
     
     /**
      * 失败计数选项名称
@@ -53,19 +53,19 @@ class ContentAuto_StructureOptimizationScheduler {
     /**
      * 构造函数
      * 
-     * @param ContentAuto_PluginLogger|null $logger 日志记录器
+     * @param Yali_AI_Writer_PluginLogger|null $logger 日志记录器
      */
     public function __construct($logger = null) {
         // 加载日志记录器
         if ($logger === null) {
             require_once dirname(__FILE__) . '/../logging/class-plugin-logger.php';
-            $this->logger = new ContentAuto_PluginLogger();
+            $this->logger = new Yali_AI_Writer_PluginLogger();
         } else {
             $this->logger = $logger;
         }
         
         require_once dirname(__FILE__) . '/class-optimization-config.php';
-        $this->config = new ContentAuto_OptimizationConfig();
+        $this->config = new Yali_AI_Writer_OptimizationConfig();
     }
     
     /**
@@ -169,8 +169,8 @@ class ContentAuto_StructureOptimizationScheduler {
             require_once dirname(__FILE__) . '/class-article-analyzer.php';
             require_once dirname(__FILE__) . '/class-structure-extractor.php';
             
-            $analyzer = new ContentAuto_ArticleAnalyzer($this->logger);
-            $extractor = new ContentAuto_StructureExtractor($this->logger);
+            $analyzer = new Yali_AI_Writer_ArticleAnalyzer($this->logger);
+            $extractor = new Yali_AI_Writer_StructureExtractor($this->logger);
             
             // 获取所有 content_angle
             $angles = $this->get_all_content_angles();
@@ -293,7 +293,7 @@ class ContentAuto_StructureOptimizationScheduler {
             
             // 加载受欢迎度计算器
             require_once dirname(__FILE__) . '/class-popularity-calculator.php';
-            $calculator = new ContentAuto_PopularityCalculator($this->logger);
+            $calculator = new Yali_AI_Writer_PopularityCalculator($this->logger);
             
             // 批量更新所有结构的受欢迎度指数
             $updated_count = $calculator->update_all_indices();
@@ -345,7 +345,7 @@ class ContentAuto_StructureOptimizationScheduler {
             global $wpdb;
             
             // 1. 清理30天以上的 structure_analytics 数据
-            $analytics_table = $wpdb->prefix . 'content_auto_structure_analytics';
+            $analytics_table = $wpdb->prefix . 'yali_ai_writer_structure_analytics';
             $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$analytics_table'") == $analytics_table;
             
             if ($table_exists) {
@@ -411,7 +411,7 @@ class ContentAuto_StructureOptimizationScheduler {
         }
         
         global $wpdb;
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         $max_per_angle = $this->config->get_int('max_structures_per_angle', 20);
         $min_age_days = $this->config->get_int('structure_min_age_days', 30);
@@ -573,8 +573,8 @@ class ContentAuto_StructureOptimizationScheduler {
         
         switch ($task_name) {
             case 'daily_analysis':
-                if (!wp_next_scheduled('content_auto_structure_retry_daily_analysis')) {
-                    wp_schedule_single_event($retry_time, 'content_auto_structure_retry_daily_analysis');
+                if (!wp_next_scheduled('yali_ai_writer_structure_retry_daily_analysis')) {
+                    wp_schedule_single_event($retry_time, 'yali_ai_writer_structure_retry_daily_analysis');
                     $this->log_info('RETRY_SCHEDULED', '每日分析任务重试已安排', array(
                         'retry_time' => date('Y-m-d H:i:s', $retry_time)
                     ));
@@ -582,8 +582,8 @@ class ContentAuto_StructureOptimizationScheduler {
                 break;
                 
             case 'weekly_popularity':
-                if (!wp_next_scheduled('content_auto_structure_retry_weekly_popularity')) {
-                    wp_schedule_single_event($retry_time, 'content_auto_structure_retry_weekly_popularity');
+                if (!wp_next_scheduled('yali_ai_writer_structure_retry_weekly_popularity')) {
+                    wp_schedule_single_event($retry_time, 'yali_ai_writer_structure_retry_weekly_popularity');
                     $this->log_info('RETRY_SCHEDULED', '每周受欢迎度更新任务重试已安排', array(
                         'retry_time' => date('Y-m-d H:i:s', $retry_time)
                     ));
@@ -591,8 +591,8 @@ class ContentAuto_StructureOptimizationScheduler {
                 break;
                 
             case 'cache_cleanup':
-                if (!wp_next_scheduled('content_auto_structure_retry_cache_cleanup')) {
-                    wp_schedule_single_event($retry_time, 'content_auto_structure_retry_cache_cleanup');
+                if (!wp_next_scheduled('yali_ai_writer_structure_retry_cache_cleanup')) {
+                    wp_schedule_single_event($retry_time, 'yali_ai_writer_structure_retry_cache_cleanup');
                     $this->log_info('RETRY_SCHEDULED', '缓存清理任务重试已安排', array(
                         'retry_time' => date('Y-m-d H:i:s', $retry_time)
                     ));
@@ -663,7 +663,7 @@ class ContentAuto_StructureOptimizationScheduler {
     private function get_all_content_angles() {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $angles = $wpdb->get_col("
             SELECT DISTINCT source_angle 
@@ -863,9 +863,9 @@ class ContentAuto_StructureOptimizationScheduler {
         add_action(self::CRON_HOOK_CACHE_CLEANUP, array(__CLASS__, 'handle_cache_cleanup'));
         
         // 注册重试钩子
-        add_action('content_auto_structure_retry_daily_analysis', array(__CLASS__, 'handle_daily_analysis'));
-        add_action('content_auto_structure_retry_weekly_popularity', array(__CLASS__, 'handle_weekly_popularity'));
-        add_action('content_auto_structure_retry_cache_cleanup', array(__CLASS__, 'handle_cache_cleanup'));
+        add_action('yali_ai_writer_structure_retry_daily_analysis', array(__CLASS__, 'handle_daily_analysis'));
+        add_action('yali_ai_writer_structure_retry_weekly_popularity', array(__CLASS__, 'handle_weekly_popularity'));
+        add_action('yali_ai_writer_structure_retry_cache_cleanup', array(__CLASS__, 'handle_cache_cleanup'));
     }
     
     /**

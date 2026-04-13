@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ExternalVisitAdmin {
+class Yali_AI_Writer_ExternalVisitAdmin {
     
     private $tracker;
     

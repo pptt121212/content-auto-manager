@@ -20,28 +20,29 @@ $image_api_settings = get_option('cam_image_api_settings', array());
 
 // 处理表单提交
 $message = '';
-if (isset($_POST['action']) && isset($_POST['content_auto_debug_nonce'])) {
+if (isset($_POST['action']) && isset($_POST['yali_ai_writer_debug_nonce'])) {
     // 验证nonce
-            if (!wp_verify_nonce($_POST['content_auto_debug_nonce'], 'content_auto_debug_action')) {
+            if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['yali_ai_writer_debug_nonce'])), 'yali_ai_writer_debug_action')) {
                 wp_die(__('安全验证失败。', 'yali-ai-writer'));
             }    
-    $database = new ContentAuto_Database();
+    $database = new Yali_AI_Writer_Database();
     $table_prefix = $database->get_table_prefix();
     
-    switch ($_POST['action']) {
+    $action = sanitize_text_field(wp_unslash($_POST['action']));
+    switch ($action) {
         case 'truncate_tables':
             // 清空所有表数据
             $tables = array(
-                'content_auto_api_configs',
-                'content_auto_rules',
-                'content_auto_rule_items',
-                'content_auto_topic_tasks',
-                'content_auto_topics',
-                'content_auto_article_tasks',
-                'content_auto_articles',
-                'content_auto_job_queue',
-                'content_auto_publish_rules',
-                'content_auto_article_structures'
+                'yali_ai_writer_api_configs',
+                'yali_ai_writer_rules',
+                'yali_ai_writer_rule_items',
+                'yali_ai_writer_topic_tasks',
+                'yali_ai_writer_topics',
+                'yali_ai_writer_article_tasks',
+                'yali_ai_writer_articles',
+                'yali_ai_writer_job_queue',
+                'yali_ai_writer_publish_rules',
+                'yali_ai_writer_article_structures'
             );
             
             foreach ($tables as $table) {
@@ -55,16 +56,16 @@ if (isset($_POST['action']) && isset($_POST['content_auto_debug_nonce'])) {
         case 'drop_tables':
             // 删除所有表
             $tables = array(
-                'content_auto_api_configs',
-                'content_auto_rules',
-                'content_auto_rule_items',
-                'content_auto_topic_tasks',
-                'content_auto_topics',
-                'content_auto_article_tasks',
-                'content_auto_articles',
-                'content_auto_job_queue',
-                'content_auto_publish_rules',
-                'content_auto_article_structures'
+                'yali_ai_writer_api_configs',
+                'yali_ai_writer_rules',
+                'yali_ai_writer_rule_items',
+                'yali_ai_writer_topic_tasks',
+                'yali_ai_writer_topics',
+                'yali_ai_writer_article_tasks',
+                'yali_ai_writer_articles',
+                'yali_ai_writer_job_queue',
+                'yali_ai_writer_publish_rules',
+                'yali_ai_writer_article_structures'
             );
             
             foreach ($tables as $table) {
@@ -88,7 +89,7 @@ if (isset($_POST['action']) && isset($_POST['content_auto_debug_nonce'])) {
             
         case 'update_database':
             // 更新数据库表结构
-            $result = content_auto_manager_update_database_structure();
+            $result = yali_ai_writer_manager_update_database_structure();
             if ($result['success']) {
                 $message = __('数据库表结构已更新到最新版本。所有必要字段已同步。', 'yali-ai-writer');
             } else {
@@ -99,22 +100,22 @@ if (isset($_POST['action']) && isset($_POST['content_auto_debug_nonce'])) {
             
         case 'clear_logs':
             // 清空所有日志文件
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
-            $logger = new ContentAuto_PluginLogger();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+            $logger = new Yali_AI_Writer_PluginLogger();
             $logger->clear_log();
             $message = __('所有日志文件已清空。', 'yali-ai-writer');
             break;
 
         case 'clear_completed_tasks':
             // 清理历史队列任务
-            $database = new ContentAuto_Database();
+            $database = new Yali_AI_Writer_Database();
             $table_prefix = $database->get_table_prefix();
 
             $deleted_count = 0;
             $tables_to_clean = array(
-                'content_auto_job_queue',
-                'content_auto_topic_tasks',
-                'content_auto_article_tasks'
+                'yali_ai_writer_job_queue',
+                'yali_ai_writer_topic_tasks',
+                'yali_ai_writer_article_tasks'
             );
 
             foreach ($tables_to_clean as $table) {
@@ -180,48 +181,48 @@ $image_api_settings = get_option('cam_image_api_settings', array());
 $stats = array();
 
 // API配置统计
-$api_configs_table = $wpdb->prefix . 'content_auto_api_configs';
+$api_configs_table = $wpdb->prefix . 'yali_ai_writer_api_configs';
 $stats['api_configs'] = $wpdb->get_var("SELECT COUNT(*) FROM {$api_configs_table}");
 $stats['active_api_configs'] = $wpdb->get_var("SELECT COUNT(*) FROM {$api_configs_table} WHERE is_active = 1");
 
 // 品牌资料统计
-$brand_profiles_table = $wpdb->prefix . 'content_auto_brand_profiles';
+$brand_profiles_table = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
 $stats['brand_profiles'] = $wpdb->get_var("SELECT COUNT(*) FROM {$brand_profiles_table}");
 
 // 规则统计
-$rules_table = $wpdb->prefix . 'content_auto_rules';
+$rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
 $stats['rules'] = $wpdb->get_var("SELECT COUNT(*) FROM {$rules_table}");
 $stats['active_rules'] = $wpdb->get_var("SELECT COUNT(*) FROM {$rules_table} WHERE status = 1");
 
 // 规则项目统计
-$rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+$rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
 $stats['rule_items'] = $wpdb->get_var("SELECT COUNT(*) FROM {$rule_items_table}");
 
 // 主题任务统计
-$topic_tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
+$topic_tasks_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
 $stats['topic_tasks'] = $wpdb->get_var("SELECT COUNT(*) FROM {$topic_tasks_table}");
-$stats['pending_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_PENDING));
-$stats['processing_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_PROCESSING));
-$stats['completed_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_COMPLETED));
-$stats['failed_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_FAILED));
+$stats['pending_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_PENDING));
+$stats['processing_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_PROCESSING));
+$stats['completed_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_COMPLETED));
+$stats['failed_topic_tasks'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topic_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_FAILED));
 
 // 主题统计
-$topics_table = $wpdb->prefix . 'content_auto_topics';
+$topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
 $stats['topics'] = $wpdb->get_var("SELECT COUNT(*) FROM {$topics_table}");
-$stats['unused_topics'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topics_table} WHERE status = %s", CONTENT_AUTO_TOPIC_UNUSED));
-$stats['queued_topics'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topics_table} WHERE status = %s", CONTENT_AUTO_TOPIC_QUEUED));
-$stats['used_topics'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topics_table} WHERE status = %s", CONTENT_AUTO_TOPIC_USED));
+$stats['unused_topics'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topics_table} WHERE status = %s", YALI_AI_WRITER_TOPIC_UNUSED));
+$stats['queued_topics'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topics_table} WHERE status = %s", YALI_AI_WRITER_TOPIC_QUEUED));
+$stats['used_topics'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$topics_table} WHERE status = %s", YALI_AI_WRITER_TOPIC_USED));
 
 // 文章任务统计
-$article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+$article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
 $stats['article_jobs'] = $wpdb->get_var("SELECT COUNT(*) FROM {$article_tasks_table}");
-$stats['pending_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_PENDING));
-$stats['processing_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_PROCESSING));
-$stats['completed_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_COMPLETED));
-$stats['failed_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", CONTENT_AUTO_STATUS_FAILED));
+$stats['pending_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_PENDING));
+$stats['processing_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_PROCESSING));
+$stats['completed_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_COMPLETED));
+$stats['failed_article_jobs'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$article_tasks_table} WHERE status = %s", YALI_AI_WRITER_STATUS_FAILED));
 
 // 文章统计
-$articles_table = $wpdb->prefix . 'content_auto_articles';
+$articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
 $stats['articles'] = $wpdb->get_var("SELECT COUNT(*) FROM {$articles_table}");
 $stats['articles_with_images'] = $wpdb->get_var("SELECT COUNT(*) FROM {$articles_table} WHERE auto_images_processed = 1");
 $stats['pending_image_articles'] = $wpdb->get_var("SELECT COUNT(*) FROM {$articles_table} WHERE auto_images_processed = 0");
@@ -231,19 +232,19 @@ $stats['ai_generated_images'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->pos
 $stats['posts_with_image_placeholders'] = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_content LIKE '%<!-- image prompt:%' AND post_status IN ('publish', 'draft', 'future')");
 
 // 文章结构统计
-$article_structures_table = $wpdb->prefix . 'content_auto_article_structures';
+$article_structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
 $stats['article_structures'] = $wpdb->get_var("SELECT COUNT(*) FROM {$article_structures_table}");
 
 // 队列统计
-$queue_table = $wpdb->prefix . 'content_auto_job_queue';
+$queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
 $stats['queue_total'] = $wpdb->get_var("SELECT COUNT(*) FROM {$queue_table}");
-$stats['queue_pending'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", CONTENT_AUTO_STATUS_PENDING));
-$stats['queue_processing'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", CONTENT_AUTO_STATUS_PROCESSING));
-$stats['queue_completed'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", CONTENT_AUTO_STATUS_COMPLETED));
-$stats['queue_failed'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", CONTENT_AUTO_STATUS_FAILED));
+$stats['queue_pending'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", YALI_AI_WRITER_STATUS_PENDING));
+$stats['queue_processing'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", YALI_AI_WRITER_STATUS_PROCESSING));
+$stats['queue_completed'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", YALI_AI_WRITER_STATUS_COMPLETED));
+$stats['queue_failed'] = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE status = %s", YALI_AI_WRITER_STATUS_FAILED));
 
 // 获取日志文件统计信息
-$logs_dir = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'logs';
+$logs_dir = YALI_AI_WRITER_PLUGIN_DIR . 'logs';
 $log_stats = array(
     'file_count' => 0,
     'total_size' => 0,
@@ -281,7 +282,7 @@ if (file_exists($logs_dir)) {
 
 // 表结构描述 - 完全同步最新结构
 $table_descriptions = array(
-    'content_auto_api_configs' => array(
+    'yali_ai_writer_api_configs' => array(
         'name' => 'API配置表',
         'description' => '存储大模型API的配置信息',
         'fields' => array(
@@ -308,7 +309,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_brand_profiles' => array(
+    'yali_ai_writer_brand_profiles' => array(
         'name' => '品牌资料表',
         'description' => '存储品牌资料信息，用于文章插入时的品牌内容匹配',
         'fields' => array(
@@ -324,7 +325,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_rules' => array(
+    'yali_ai_writer_rules' => array(
         'name' => '规则表',
         'description' => '存储内容生成规则',
         'fields' => array(
@@ -340,7 +341,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_rule_items' => array(
+    'yali_ai_writer_rule_items' => array(
         'name' => '规则项目表',
         'description' => '存储规则的具体项目内容',
         'fields' => array(
@@ -358,7 +359,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_topic_tasks' => array(
+    'yali_ai_writer_topic_tasks' => array(
         'name' => '主题任务表',
         'description' => '存储主题生成任务信息',
         'fields' => array(
@@ -378,13 +379,13 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_job_queue' => array(
+    'yali_ai_writer_job_queue' => array(
             'name' => '任务队列表',
             'description' => '存储系统中所有待处理的任务队列（包括主题生成、文章生成等）',
             'fields' => array(
                 'id' => '队列项唯一标识符',
                 'job_type' => '任务类型（topic_task、article等）',
-                'job_id' => '关联的任务ID（指向具体任务表的主键ID，根据job_type字段确定具体表，如content_auto_topic_tasks表的id）',
+                'job_id' => '关联的任务ID（指向具体任务表的主键ID，根据job_type字段确定具体表，如yali_ai_writer_topic_tasks表的id）',
                 'subtask_id' => '子任务ID，用于唯一标识同一任务中的不同子任务',
                 'reference_id' => '引用ID，用于存储文章任务中的主题ID，article任务类型时有效（重构新增）',
                 'priority' => '任务优先级',
@@ -396,12 +397,12 @@ $table_descriptions = array(
                 'updated_at' => '更新时间'
             )
         ),
-    'content_auto_topics' => array(
+    'yali_ai_writer_topics' => array(
         'name' => '主题表',
         'description' => '存储生成的主题内容及结构化数据，包括API配置信息和向量数据',
         'fields' => array(
             'id' => '主题唯一标识符',
-            'task_id' => '关联的主题任务唯一标识符（来自content_auto_topic_tasks表的topic_task_id字段）',
+            'task_id' => '关联的主题任务唯一标识符（来自yali_ai_writer_topic_tasks表的topic_task_id字段）',
             'rule_id' => '关联的规则ID',
             'rule_item_index' => '来源规则项目索引',
             'title' => '主题标题',
@@ -425,7 +426,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_article_tasks' => array(
+    'yali_ai_writer_article_tasks' => array(
         'name' => '文章任务表',
         'description' => '存储文章生成父任务信息，实现与主题任务相同的父子任务架构',
         'fields' => array(
@@ -447,7 +448,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_articles' => array(
+    'yali_ai_writer_articles' => array(
         'name' => '文章表',
         'description' => '存储生成的文章内容',
         'fields' => array(
@@ -469,7 +470,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_publish_rules' => array(
+    'yali_ai_writer_publish_rules' => array(
         'name' => '发布规则表',
         'description' => '存储文章发布的规则配置，包括内链功能和发布间隔设置',
         'fields' => array(
@@ -502,7 +503,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_article_structures' => array(
+    'yali_ai_writer_article_structures' => array(
         'name' => '文章结构表',
         'description' => '存储不同内容角度的文章结构模板，用于指导AI生成结构化的文章内容',
         'fields' => array(
@@ -516,7 +517,7 @@ $table_descriptions = array(
             'updated_at' => '更新时间'
         )
     ),
-    'content_auto_prompt_templates' => array(
+    'yali_ai_writer_prompt_templates' => array(
         'name' => '提示词模板表',
         'description' => '存储内容生成所使用的提示词模板，支持文章生成和主题生成等多种类型',
         'fields' => array(
@@ -540,16 +541,16 @@ $table_descriptions = array(
     <div class="debug-mode-control yali-card" style="margin-top:20px;">
         <h2 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:15px;"><?php _e('🔧 调试模式控制', 'yali-ai-writer'); ?></h2>
         <?php
-        $debug_mode = get_option('content_auto_debug_mode', false);
+        $debug_mode = get_option('yali_ai_writer_debug_mode', false);
         $status_class = $debug_mode ? 'yali-notice-success' : 'yali-notice-info';
         $status_text = $debug_mode ? __('已启用', 'yali-ai-writer') : __('已禁用', 'yali-ai-writer');
         $status_icon = $debug_mode ? '✅' : '❌';
         ?>
         
-        <div class="yali-notice <?php echo $status_class; ?>">
-            <p><strong><?php echo $status_icon; ?> <?php _e('当前状态：调试模式', 'yali-ai-writer'); ?><?php echo $status_text; ?></strong></p>
+        <div class="yali-notice <?php echo esc_attr($status_class); ?>">
+            <p><strong><?php echo esc_html($status_icon); ?> <?php _e('当前状态：调试模式', 'yali-ai-writer'); ?><?php echo esc_html($status_text); ?></strong></p>
             <?php if ($debug_mode): ?>
-            <p>📂 <?php _e('日志位置：', 'yali-ai-writer'); ?><code><?php echo CONTENT_AUTO_MANAGER_PLUGIN_DIR; ?>logs/<?php echo date('Y-m-d'); ?>.log</code></p>
+            <p>📂 <?php _e('日志位置：', 'yali-ai-writer'); ?><code><?php echo YALI_AI_WRITER_PLUGIN_DIR; ?>logs/<?php echo date('Y-m-d'); ?>.log</code></p>
             <p>⚠️ <?php _e('调试模式会记录完整的API提示词，建议获取所需日志后及时关闭。', 'yali-ai-writer'); ?></p>
             <?php else: ?>
             <p>💡 <?php _e('启用后将记录完整的主题生成和文章生成API提示词到日志文件。', 'yali-ai-writer'); ?></p>
@@ -561,14 +562,11 @@ $table_descriptions = array(
             <button type="button" class="button button-secondary yali-btn yali-btn-secondary" id="disable-debug-mode">
                 ❌ <?php _e('关闭调试模式', 'yali-ai-writer'); ?>
             </button>
-            <button type="button" class="button button-primary yali-btn yali-btn-primary" id="view-debug-logs" style="margin-left: 10px;" 
-                data-view-text="📄 <?php _e('查看调试日志', 'yali-ai-writer'); ?>" 
-                data-hide-text="🔼 <?php _e('隐藏日志', 'yali-ai-writer'); ?>"
-                data-loading-text="⌛ <?php _e('加载中...', 'yali-ai-writer'); ?>">
+            <button type="button" class="button button-primary yali-btn yali-btn-primary" id="view-debug-logs" style="margin-left: 10px;"
+                data-view-text="📄 <?php echo esc_attr__('查看调试日志', 'yali-ai-writer'); ?>"
+                data-hide-text="🔼 <?php echo esc_attr__('隐藏日志', 'yali-ai-writer'); ?>"
+                data-loading-text="⌛ <?php echo esc_attr__('加载中...', 'yali-ai-writer'); ?>">
                 📄 <?php _e('查看调试日志', 'yali-ai-writer'); ?>
-            </button>
-            <button type="button" class="button button-secondary yali-btn yali-btn-secondary" id="clear-debug-logs" style="margin-left: 10px;">
-                🗑️ <?php _e('清空日志', 'yali-ai-writer'); ?>
             </button>
             <?php else: ?>
             <button type="button" class="button button-primary yali-btn yali-btn-primary" id="enable-debug-mode">
@@ -598,31 +596,31 @@ $table_descriptions = array(
                 
                 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:15px;">
                     <form method="post">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="truncate_tables">
                         <button type="submit" class="button button-secondary yali-btn yali-btn-secondary"><?php _e('清空所有表数据', 'yali-ai-writer'); ?></button>
                     </form>
                     
                     <form method="post">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="drop_tables">
                         <button type="submit" class="button button-secondary yali-btn yali-btn-secondary"><?php _e('删除所有表', 'yali-ai-writer'); ?></button>
                     </form>
                     
                     <form method="post">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="recreate_tables">
                         <button type="submit" class="button button-primary yali-btn yali-btn-primary"><?php _e('重新创建所有表', 'yali-ai-writer'); ?></button>
                     </form>
                     
                     <form method="post">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="update_database">
                          <button type="submit" class="button button-primary yali-btn yali-btn-primary"><?php _e('更新数据库表结构', 'yali-ai-writer'); ?></button>
                     </form>
 
                     <form method="post" id="clear_completed_tasks_form">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="clear_completed_tasks">
                         <button type="button" class="button button-secondary yali-btn yali-btn-secondary" onclick="confirmClearCompletedTasks()">
                             <?php _e('清理历史队列任务', 'yali-ai-writer'); ?>
@@ -638,32 +636,32 @@ $table_descriptions = array(
                 <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
                     <div class="stat-item">
                         <h4><?php _e('API配置', 'yali-ai-writer'); ?></h4>
-                        <p><?php printf(__('总数: %d | 激活: %d', 'yali-ai-writer'), $stats['api_configs'], $stats['active_api_configs']); ?></p>
+                        <p><?php printf(esc_html__('总数: %d | 激活: %d', 'yali-ai-writer'), intval($stats['api_configs']), intval($stats['active_api_configs'])); ?></p>
                     </div>
 
                     <div class="stat-item">
                         <h4><?php _e('品牌资料', 'yali-ai-writer'); ?></h4>
-                        <p><?php printf(__('总数: %d', 'yali-ai-writer'), $stats['brand_profiles']); ?></p>
+                        <p><?php printf(esc_html__('总数: %d', 'yali-ai-writer'), intval($stats['brand_profiles'])); ?></p>
                     </div>
 
                     <div class="stat-item">
                         <h4><?php _e('规则', 'yali-ai-writer'); ?></h4>
-                        <p><?php printf(__('总数: %d | 激活: %d', 'yali-ai-writer'), $stats['rules'], $stats['active_rules']); ?></p>
+                        <p><?php printf(esc_html__('总数: %d | 激活: %d', 'yali-ai-writer'), intval($stats['rules']), intval($stats['active_rules'])); ?></p>
                     </div>
                     
                     <div class="stat-item">
                         <h4><?php _e('主题任务/主题', 'yali-ai-writer'); ?></h4>
-                        <p><?php printf(__('任务: %d | 主题: %d', 'yali-ai-writer'), $stats['topic_tasks'], $stats['topics']); ?></p>
+                        <p><?php printf(esc_html__('任务: %d | 主题: %d', 'yali-ai-writer'), intval($stats['topic_tasks']), intval($stats['topics'])); ?></p>
                     </div>
                     
                     <div class="stat-item">
                         <h4><?php _e('文章任务/文章', 'yali-ai-writer'); ?></h4>
-                        <p><?php printf(__('任务: %d | 文章: %d', 'yali-ai-writer'), $stats['article_jobs'], $stats['articles']); ?></p>
+                        <p><?php printf(esc_html__('任务: %d | 文章: %d', 'yali-ai-writer'), intval($stats['article_jobs']), intval($stats['articles'])); ?></p>
                     </div>
                     
                     <div class="stat-item">
                         <h4><?php _e('任务队列', 'yali-ai-writer'); ?></h4>
-                        <p><?php printf(__('总数: %d | 待处理: %d', 'yali-ai-writer'), $stats['queue_total'], $stats['queue_pending']); ?></p>
+                        <p><?php printf(esc_html__('总数: %d | 待处理: %d', 'yali-ai-writer'), intval($stats['queue_total']), intval($stats['queue_pending'])); ?></p>
                     </div>
                 </div>
             </div>
@@ -678,8 +676,8 @@ $table_descriptions = array(
                     <h4 style="margin-top:0;"><?php _e('日志文件统计', 'yali-ai-writer'); ?></h4>
                     <p>
                         <?php printf(
-                            __('日志文件数量: %s | 总大小: %s', 'yali-ai-writer'),
-                            '<strong>' . $log_stats['file_count'] . '</strong>',
+                            esc_html__('日志文件数量: %s | 总大小: %s', 'yali-ai-writer'),
+                            '<strong>' . intval($log_stats['file_count']) . '</strong>',
                             '<strong>' . ($log_stats['total_size'] > 0 ? size_format($log_stats['total_size']) : '0 B') . '</strong>'
                         ); ?>
                     </p>
@@ -698,7 +696,7 @@ $table_descriptions = array(
                 
                 <div class="log-actions" style="margin-top: 20px;">
                     <form method="post" id="clear_logs_form">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="clear_logs">
                         <button type="button" class="button button-danger yali-btn yali-btn-danger" onclick="confirmClearLogs()">
                             🗑️ <?php _e('清空所有日志文件', 'yali-ai-writer'); ?>
@@ -726,7 +724,7 @@ $table_descriptions = array(
                 
                 <div class="image-api-actions" style="display:flex; gap:10px; margin-top:20px;">
                     <form method="post" id="clear_image_api_settings_form">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="clear_image_api_settings">
                         <button type="button" class="button button-secondary yali-btn yali-btn-secondary" onclick="confirmClearImageApiSettings()">
                             <?php _e('清空设置', 'yali-ai-writer'); ?>
@@ -734,7 +732,7 @@ $table_descriptions = array(
                     </form>
                     
                     <form method="post" id="reset_image_api_settings_form">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="reset_image_api_settings">
                         <button type="button" class="button button-primary yali-btn yali-btn-primary" onclick="confirmResetImageApiSettings()">
                             <?php _e('重置为默认值', 'yali-ai-writer'); ?>
@@ -754,14 +752,14 @@ $table_descriptions = array(
                     <h4 style="margin-top:0;"><?php _e('自动配图数据统计', 'yali-ai-writer'); ?></h4>
                     <p><strong><?php _e('插件表数据：', 'yali-ai-writer'); ?></strong></p>
                     <ul style="margin-left: 20px;">
-                        <li><?php printf(__('已配图文章: %d 篇', 'yali-ai-writer'), $stats['articles_with_images']); ?></li>
-                        <li><?php printf(__('待配图文章: %d 篇', 'yali-ai-writer'), $stats['pending_image_articles']); ?></li>
+                        <li><?php printf(esc_html__('已配图文章: %d 篇', 'yali-ai-writer'), intval($stats['articles_with_images'])); ?></li>
+                        <li><?php printf(esc_html__('待配图文章: %d 篇', 'yali-ai-writer'), intval($stats['pending_image_articles'])); ?></li>
                     </ul>
                     
                     <p><strong><?php _e('WordPress postmeta表数据：', 'yali-ai-writer'); ?></strong></p>
                     <ul style="margin-left: 20px;">
-                        <li><?php printf(__('AI生成的图片: %d 张', 'yali-ai-writer'), $stats['ai_generated_images']); ?></li>
-                        <li><?php printf(__('包含图片占位符的文章: %d 篇', 'yali-ai-writer'), $stats['posts_with_image_placeholders']); ?></li>
+                        <li><?php printf(esc_html__('AI生成的图片: %d 张', 'yali-ai-writer'), intval($stats['ai_generated_images'])); ?></li>
+                        <li><?php printf(esc_html__('包含图片占位符的文章: %d 篇', 'yali-ai-writer'), intval($stats['posts_with_image_placeholders'])); ?></li>
                     </ul>
                     
                     <p><strong><?php _e('涉及的postmeta字段：', 'yali-ai-writer'); ?></strong></p>
@@ -780,7 +778,7 @@ $table_descriptions = array(
                     <p class="yali-desc" style="color:#d63638;"><strong><?php _e('⚠️ 警告：以下操作将永久删除自动配图相关数据，且无法恢复！', 'yali-ai-writer'); ?></strong></p>
                     
                     <form method="post" id="clear_auto_image_postmeta_form" style="display: inline-block;">
-                        <?php wp_nonce_field('content_auto_debug_action', 'content_auto_debug_nonce'); ?>
+                        <?php wp_nonce_field('yali_ai_writer_debug_action', 'yali_ai_writer_debug_nonce'); ?>
                         <input type="hidden" name="action" value="clear_auto_image_postmeta">
                         <button type="button" class="button button-danger yali-btn yali-btn-danger" onclick="confirmClearAutoImagePostmeta()">
                             <?php _e('清理自动配图postmeta数据', 'yali-ai-writer'); ?>
@@ -799,17 +797,17 @@ $table_descriptions = array(
             <div class="yali-card-content">
                 <?php
                 $tables = array(
-                    'content_auto_api_configs' => __('API配置表', 'yali-ai-writer'),
-                    'content_auto_brand_profiles' => __('品牌资料表', 'yali-ai-writer'),
-                    'content_auto_rules' => __('规则表', 'yali-ai-writer'),
-                    'content_auto_rule_items' => __('规则项目表', 'yali-ai-writer'),
-                    'content_auto_topic_tasks' => __('主题任务表（父任务）', 'yali-ai-writer'),
-                    'content_auto_topics' => __('主题表', 'yali-ai-writer'),
-                    'content_auto_article_tasks' => __('文章任务表（父任务）', 'yali-ai-writer'),
-                    'content_auto_articles' => __('文章表', 'yali-ai-writer'),
-                    'content_auto_job_queue' => __('任务队列表（包含所有子任务）', 'yali-ai-writer'),
-                    'content_auto_publish_rules' => __('发布规则表', 'yali-ai-writer'),
-                    'content_auto_article_structures' => __('文章结构表', 'yali-ai-writer')
+                    'yali_ai_writer_api_configs' => __('API配置表', 'yali-ai-writer'),
+                    'yali_ai_writer_brand_profiles' => __('品牌资料表', 'yali-ai-writer'),
+                    'yali_ai_writer_rules' => __('规则表', 'yali-ai-writer'),
+                    'yali_ai_writer_rule_items' => __('规则项目表', 'yali-ai-writer'),
+                    'yali_ai_writer_topic_tasks' => __('主题任务表（父任务）', 'yali-ai-writer'),
+                    'yali_ai_writer_topics' => __('主题表', 'yali-ai-writer'),
+                    'yali_ai_writer_article_tasks' => __('文章任务表（父任务）', 'yali-ai-writer'),
+                    'yali_ai_writer_articles' => __('文章表', 'yali-ai-writer'),
+                    'yali_ai_writer_job_queue' => __('任务队列表（包含所有子任务）', 'yali-ai-writer'),
+                    'yali_ai_writer_publish_rules' => __('发布规则表', 'yali-ai-writer'),
+                    'yali_ai_writer_article_structures' => __('文章结构表', 'yali-ai-writer')
                 );
                 
                 foreach ($tables as $table_key => $table_name) {
@@ -841,21 +839,21 @@ $table_descriptions = array(
                                 echo '<tr>';
                                 // 检查是否为重构新增字段
                                 $new_fields = array();
-                                if ($table_key === 'content_auto_article_tasks') {
+                                if ($table_key === 'yali_ai_writer_article_tasks') {
                                     $new_fields = array('current_processing_item', 'total_rule_items', 'generated_articles_count');
-                                } elseif ($table_key === 'content_auto_job_queue') {
+                                } elseif ($table_key === 'yali_ai_writer_job_queue') {
                                     $new_fields = array('reference_id', 'retry_count', 'scheduled_at');
-                                } elseif ($table_key === 'content_auto_topics') {
+                                } elseif ($table_key === 'yali_ai_writer_topics') {
                                     $new_fields = array('vector_cluster_id', 'vector_status', 'vector_error', 'vector_retry_count', 'reference_material');
-                                } elseif ($table_key === 'content_auto_publish_rules') {
+                                } elseif ($table_key === 'yali_ai_writer_publish_rules') {
                                     $new_fields = array('max_auto_images', 'skip_first_image_placeholder', 'enable_internal_linking', 'publish_interval_minutes', 'enable_brand_profile_insertion', 'brand_profile_position', 'enable_reference_material', 'enable_ai_reference_select', 'publish_language');
-                                } elseif ($table_key === 'content_auto_api_configs') {
+                                } elseif ($table_key === 'yali_ai_writer_api_configs') {
                                     $new_fields = array('vector_api_url', 'vector_api_key', 'vector_model_name');
-                                } elseif ($table_key === 'content_auto_articles') {
+                                } elseif ($table_key === 'yali_ai_writer_articles') {
                                     $new_fields = array('auto_images_processed', 'auto_images_count');
-                                } elseif ($table_key === 'content_auto_rules') {
+                                } elseif ($table_key === 'yali_ai_writer_rules') {
                                     $new_fields = array('reference_material');
-                                } elseif ($table_key === 'content_auto_brand_profiles') {
+                                } elseif ($table_key === 'yali_ai_writer_brand_profiles') {
                                     $new_fields = array('type', 'custom_html');
                                 }
 
@@ -884,7 +882,7 @@ $table_descriptions = array(
                         echo '<h4 style="margin-top:20px;">' . __('数据示例（前10条记录）', 'yali-ai-writer') . '</h4>';
                         
                         // 根据表类型选择合适的排序字段
-                        $order_by = ($table_key === 'content_auto_topics') ? 'id DESC' : 'updated_at DESC';
+                        $order_by = ($table_key === 'yali_ai_writer_topics') ? 'id DESC' : 'updated_at DESC';
                         $table_data = $wpdb->get_results("SELECT * FROM `$table_full_name` ORDER BY $order_by LIMIT 10");
                         
                         if (!empty($table_data)) {
@@ -927,244 +925,4 @@ $table_descriptions = array(
         </div>
     </div>
 </div>
-
-<style>
-.status.exists {
-    color: green;
-    font-weight: bold;
-}
-
-.status.missing {
-    color: red;
-    font-weight: bold;
-}
-
-.table-info {
-    margin-bottom: 30px;
-}
-
-.table-info h3 {
-    margin-bottom: 10px;
-}
-
-.table-info p {
-    margin-bottom: 15px;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.stat-item h4 {
-    margin: 0 0 10px 0;
-    color: #495057;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.stat-item p {
-    margin: 5px 0;
-    font-size: 13px;
-    color: #6c757d;
-}
-</style>
-
-
-
-<script>
-
-
-
-// 确认清空日志文件
-function confirmClearLogs() {
-    if (confirm('<?php echo esc_js(__("确定要清空所有日志文件吗？\n\n此操作将永久删除logs目录下的所有.log文件，且无法恢复！\n\n请确认您已备份重要日志后再继续。", "yali-ai-writer")); ?>')) {
-        if (confirm('<?php echo esc_js(__("最后确认：\n\n您真的要删除所有日志文件吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。", "yali-ai-writer")); ?>')) {
-            document.getElementById('clear_logs_form').submit();
-        }
-    }
-}
-
-// 确认清空图像API设置
-function confirmClearImageApiSettings() {
-    if (confirm('<?php echo esc_js(__("确定要清空图像API设置吗？\n\n此操作将删除所有图像API提供商的配置，且无法恢复！\n\n请确认您已备份重要配置后再继续。", "yali-ai-writer")); ?>')) {
-        if (confirm('<?php echo esc_js(__("最后确认：\n\n您真的要清空图像API设置吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。", "yali-ai-writer")); ?>')) {
-            // 提交清空图像API设置的表单
-            var form = document.getElementById('clear_image_api_settings_form');
-            if (form) {
-                form.submit();
-            }
-        }
-    }
-}
-
-// 确认重置图像API设置
-function confirmResetImageApiSettings() {
-    if (confirm('<?php echo esc_js(__("确定要重置图像API设置为默认值吗？\n\n此操作将覆盖所有当前配置，且无法恢复！\n\n请确认您已备份重要配置后再继续。", "yali-ai-writer")); ?>')) {
-        if (confirm('<?php echo esc_js(__("最后确认：\n\n您真的要重置图像API设置吗？\n\n点击\"确定\"将继续重置，点击\"取消\"将放弃操作。", "yali-ai-writer")); ?>')) {
-            // 提交重置图像API设置的表单
-            var form = document.getElementById('reset_image_api_settings_form');
-            if (form) {
-                form.submit();
-            }
-        }
-    }
-}
-
-// 确认清理自动配图postmeta数据
-function confirmClearAutoImagePostmeta() {
-    if (confirm('<?php echo esc_js(__("确定要清理自动配图postmeta数据吗？\n\n此操作将永久删除所有自动配图相关的postmeta记录，且无法恢复！\n\n请确认您已备份重要数据后再继续。", "yali-ai-writer")); ?>')) {
-        if (confirm('<?php echo esc_js(__("最后确认：\n\n您真的要清理自动配图postmeta数据吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。", "yali-ai-writer")); ?>')) {
-            // 提交清理自动配图postmeta数据的表单
-            var form = document.getElementById('clear_auto_image_postmeta_form');
-            if (form) {
-                form.submit();
-            }
-        }
-    }
-}
-
-// 确认清理历史队列任务
-function confirmClearCompletedTasks() {
-    if (confirm('<?php echo esc_js(__("确定要清理历史队列任务吗？\n\n此操作将删除以下三个表中所有状态为\"completed\"的记录：\n\n• wp_content_auto_job_queue\n• wp_content_auto_topic_tasks\n• wp_content_auto_article_tasks\n\n此操作无法恢复！\n\n请确认您已备份重要数据后再继续。", "yali-ai-writer")); ?>')) {
-        if (confirm('<?php echo esc_js(__("最后确认：\n\n您真的要清理所有已完成的队列任务记录吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。", "yali-ai-writer")); ?>')) {
-            // 提交清理历史队列任务的表单
-            var form = document.getElementById('clear_completed_tasks_form');
-            if (form) {
-                form.submit();
-            }
-        }
-    }
-}
-
-// 调试模式控制功能
-jQuery(document).ready(function($) {
-    $('#enable-debug-mode').on('click', function() {
-        var button = $(this);
-        button.prop('disabled', true).text('<?php echo esc_js(__("启用中...", "yali-ai-writer")); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            method: 'POST',
-            data: {
-                action: 'content_auto_toggle_debug_mode',
-                mode: 'enable',
-                nonce: '<?php echo wp_create_nonce("debug_mode_toggle"); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    location.reload();
-                } else {
-                    alert('<?php echo esc_js(__('启用失败：', 'yali-ai-writer')); ?>' + (response.data || '<?php echo esc_js(__('未知错误', 'yali-ai-writer')); ?>'));
-                    button.prop('disabled', false).text('✅ <?php echo esc_js(__("启用调试模式", "yali-ai-writer")); ?>');
-                }
-            },
-            error: function() {
-                alert('<?php echo esc_js(__("请求失败，请重试", "yali-ai-writer")); ?>');
-                button.prop('disabled', false).text('✅ <?php echo esc_js(__("启用调试模式", "yali-ai-writer")); ?>');
-            }
-        });
-    });
-    
-    $('#disable-debug-mode').on('click', function() {
-        var button = $(this);
-        button.prop('disabled', true).text('<?php echo esc_js(__("关闭中...", "yali-ai-writer")); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            method: 'POST',
-            data: {
-                action: 'content_auto_toggle_debug_mode',
-                mode: 'disable',
-                nonce: '<?php echo wp_create_nonce("debug_mode_toggle"); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    location.reload();
-                } else {
-                    alert('<?php echo esc_js(__('关闭失败：', 'yali-ai-writer')); ?>' + (response.data || '<?php echo esc_js(__('未知错误', 'yali-ai-writer')); ?>'));
-                    button.prop('disabled', false).text('❌ <?php echo esc_js(__("关闭调试模式", "yali-ai-writer")); ?>');
-                }
-            },
-            error: function() {
-                alert('<?php echo esc_js(__("请求失败，请重试", "yali-ai-writer")); ?>');
-                button.prop('disabled', false).text('❌ <?php echo esc_js(__("关闭调试模式", "yali-ai-writer")); ?>');
-            }
-        });
-    });
-    
-    $('#view-debug-logs').on('click', function() {
-        var button = $(this);
-        var logsContainer = $('#debug-logs-content');
-        var logsDisplay = $('#logs-display');
-        
-        if (logsContainer.is(':visible')) {
-            logsContainer.hide();
-            button.text(button.data('view-text'));
-            return;
-        }
-        
-        button.prop('disabled', true).text(button.data('loading-text'));
-        
-        $.ajax({
-            url: ajaxurl,
-            method: 'POST',
-            data: {
-                action: 'content_auto_get_debug_logs',
-                nonce: '<?php echo wp_create_nonce("debug_logs_view"); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    logsDisplay.text(response.data.logs || '<?php echo esc_js(__('暂无日志内容', 'yali-ai-writer')); ?>');
-                    logsContainer.show();
-                    button.text(button.data('hide-text'));
-                } else {
-                    alert('<?php echo esc_js(__('获取日志失败：', 'yali-ai-writer')); ?>' + (response.data || '<?php echo esc_js(__('未知错误', 'yali-ai-writer')); ?>'));
-                    button.text(button.data('view-text'));
-                }
-                button.prop('disabled', false);
-            },
-            error: function() {
-                alert('<?php echo esc_js(__('请求失败，请重试', 'yali-ai-writer')); ?>');
-                button.prop('disabled', false).text(button.data('view-text'));
-            }
-        });
-    });
-    
-    $('#clear-debug-logs').on('click', function() {
-        if (!confirm('<?php echo esc_js(__("确定要清空所有调试日志吗？此操作不可逆！", "yali-ai-writer")); ?>')) {
-            return;
-        }
-        
-        var button = $(this);
-        button.prop('disabled', true).text('<?php echo esc_js(__("清空中...", "yali-ai-writer")); ?>');
-        
-        $.ajax({
-            url: ajaxurl,
-            method: 'POST',
-            data: {
-                action: 'content_auto_clear_debug_logs',
-                nonce: '<?php echo wp_create_nonce("debug_logs_clear"); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert('<?php echo esc_js(__("日志已清空", "yali-ai-writer")); ?>');
-                    $('#debug-logs-content').hide();
-                    $('#view-debug-logs').text('📄 <?php echo esc_js(__("查看调试日志", "yali-ai-writer")); ?>');
-                } else {
-                    alert('<?php echo esc_js(__("清空失败：", "yali-ai-writer")); ?>' + (response.data || '<?php echo esc_js(__("未知错误", "yali-ai-writer")); ?>'));
-                }
-                button.prop('disabled', false).text('🗑️ <?php echo esc_js(__("清空日志", "yali-ai-writer")); ?>');
-            },
-            error: function() {
-                alert('<?php echo esc_js(__("请求失败，请重试", "yali-ai-writer")); ?>');
-                button.prop('disabled', false).text('🗑️ <?php echo esc_js(__("清空日志", "yali-ai-writer")); ?>');
-            }
-        });
-    });
-});
-</script>
-
 

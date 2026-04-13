@@ -1,0 +1,25 @@
+.category-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--yali-border);
+}
+
+.category-item:last-child {
+    border-bottom: none;
+}
+
+.category-item label {
+    cursor: pointer;
+    display: block;
+    padding: 5px;
+    border-radius: var(--yali-radius-sm);
+    transition: var(--yali-transition);
+}
+
+.category-item label:hover {
+    background-color: var(--yali-primary-light);
+}
+
+.category-count {
+    color: var(--yali-text-muted);
+    font-size: 0.9em;
+}

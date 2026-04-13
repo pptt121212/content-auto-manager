@@ -24,13 +24,13 @@ abstract class Base_Controller {
      */
     public function check_admin_permission( $request ) {
         // Verify License Status First
-        if ( ! class_exists( '\ContentAuto_License_Manager' ) ) {
-            if ( defined( 'CONTENT_AUTO_MANAGER_PLUGIN_DIR' ) ) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'includes/class-license-manager.php';
+        if ( ! class_exists( '\Yali_AI_Writer_License_Manager' ) ) {
+            if ( defined( 'YALI_AI_WRITER_PLUGIN_DIR' ) ) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'includes/class-license-manager.php';
             }
         }
         
-        if ( class_exists( '\ContentAuto_License_Manager' ) && ! \ContentAuto_License_Manager::is_license_active() ) {
+        if ( class_exists( '\Yali_AI_Writer_License_Manager' ) && ! \Yali_AI_Writer_License_Manager::is_license_active() ) {
             return new \WP_Error(
                 'rest_forbidden',
                 'Plugin License Invalid. Please activate the plugin license in WordPress admin to use the extension.',

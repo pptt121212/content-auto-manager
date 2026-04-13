@@ -7,148 +7,21 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_EditorAssistantAdminPage {
+class Yali_AI_Writer_EditorAssistantAdminPage {
 
     public function __construct() {
-        add_action('wp_ajax_get_editor_assistant_prompts', [$this, 'ajax_get_prompts']);
-        add_action('wp_ajax_save_editor_assistant_prompts', [$this, 'ajax_save_prompts']);
+        add_action('wp_ajax_yali_ai_writer_get_editor_assistant_prompts', [$this, 'ajax_get_prompts']);
+        add_action('wp_ajax_yali_ai_writer_save_editor_assistant_prompts', [$this, 'ajax_save_prompts']);
+        add_action('wp_ajax_yali_ai_writer_get_image_prompts_config', [$this, 'ajax_get_image_prompts_config']);
+        add_action('wp_ajax_yali_ai_writer_save_image_prompts_config', [$this, 'ajax_save_image_prompts_config']);
     }
 
     public function render_page() {
-        // Localized data for JS
-        $localized_data = [
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce'   => wp_create_nonce('editor_assistant_settings_nonce')
-        ];
-
-        $tokens_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/assets/css/brand-tokens.css';
-        $base_kit_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/assets/css/yali-ui-kit.css';
-        $tokens_css = file_exists($tokens_path) ? file_get_contents($tokens_path) : '';
-        $base_kit_css = file_exists($base_kit_path) ? file_get_contents($base_kit_path) : '';
-
-        // Additional inline CSS for this specific page if needed
-        $style_css_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'editor-assistant/assets/css/editor-assistant-settings.css';
-        $style_css = file_exists($style_css_path) ? file_get_contents($style_css_path) : '';
-
         ?>
         <div class="wrap yali-plugin-wrapper">
-            <style type="text/css">
-                <?php echo $tokens_css; ?>
-                <?php echo $base_kit_css; ?>
-                <?php echo $style_css; ?>
-                
-                /* Custom styles for the Editor Assistant configuration */
-                .ea-prompt-card {
-                    margin-bottom: 20px;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 20px;
-                    background: #fff;
-                    transition: all 0.2s ease;
-                }
-                .ea-prompt-card:hover {
-                    border-color: #cbd5e1;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-                }
-                .ea-prompt-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 15px;
-                    padding-bottom: 10px;
-                    border-bottom: 1px solid #f1f5f9;
-                }
-                .ea-prompt-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #1e293b;
-                    margin: 0;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                .ea-field-group {
-                    margin-bottom: 15px;
-                }
-                .ea-field-group label {
-                    display: block;
-                    font-weight: 500;
-                    margin-bottom: 6px;
-                    color: #475569;
-                    font-size: 13px;
-                }
-                .ea-field-group input, 
-                .ea-field-group textarea {
-                    width: 100%;
-                    border: 1px solid #cbd5e1;
-                    border-radius: 6px;
-                    padding: 8px 12px;
-                    font-size: 14px;
-                }
-                .ea-field-group textarea {
-                    min-height: 80px;
-                    font-family: inherit;
-                    line-height: 1.5;
-                }
-                .ea-field-group input:focus, 
-                .ea-field-group textarea:focus {
-                    border-color: #3b82f6;
-                    box-shadow: 0 0 0 1px #3b82f6;
-                    outline: none;
-                }
-                .ea-number-input {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                .ea-number-input input {
-                    width: 120px;
-                }
-                .ea-tabs-header {
-                    display: flex;
-                    gap: 10px;
-                    border-bottom: 2px solid #e2e8f0;
-                    margin-bottom: 20px;
-                }
-                .ea-tab {
-                    padding: 10px 20px;
-                    font-weight: 500;
-                    color: #64748b;
-                    cursor: pointer;
-                    margin-bottom: -2px;
-                    border-bottom: 2px solid transparent;
-                    transition: all 0.2s;
-                }
-                .ea-tab:hover {
-                    color: #3b82f6;
-                }
-                .ea-tab.active {
-                    color: #3b82f6;
-                    border-bottom-color: #3b82f6;
-                }
-                .ea-sticky-footer {
-                    position: sticky;
-                    bottom: 0;
-                    background: #fff;
-                    padding: 15px 20px;
-                    border-top: 1px solid #e2e8f0;
-                    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    z-index: 10;
-                    margin-top: 40px;
-                    border-radius: 0 0 8px 8px;
-                }
-            </style>
-            
             <?php 
-            include CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'editor-assistant/views/editor-assistant-settings.php'; 
+            include YALI_AI_WRITER_PLUGIN_DIR . 'editor-assistant/views/editor-assistant-settings.php'; 
             ?>
-
-            <script type="text/javascript">
-                window.editorAssistantSettings = <?php echo json_encode($localized_data); ?>;
-            </script>
         </div>
         <?php
     }
@@ -161,13 +34,13 @@ class ContentAuto_EditorAssistantAdminPage {
             return;
         }
 
-        if (!class_exists('ContentAuto_Editor_Prompt_Manager')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
+        if (!class_exists('Yali_AI_Writer_Editor_Prompt_Manager')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
         }
         
         // We need both the custom prompts from DB and the default ones to allow resetting
         $default_prompts_obj = array(
-            'en' => ContentAuto_Editor_Prompt_Manager::get_default_prompts()
+            'en' => Yali_AI_Writer_Editor_Prompt_Manager::get_default_prompts()
         );
         
         $saved_prompts = get_option('yali_editor_assistant_prompts', []);
@@ -221,5 +94,66 @@ class ContentAuto_EditorAssistantAdminPage {
         update_option('yali_editor_assistant_prompts', $prompts_data);
 
         wp_send_json_success(['message' => __('设置已成功保存！', 'yali-ai-writer')]);
+    }
+
+    /**
+     * 获取图像提示词配置
+     */
+    public function ajax_get_image_prompts_config() {
+        check_ajax_referer('editor_assistant_settings_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('您没有权限执行此操作。', 'yali-ai-writer')]);
+            return;
+        }
+
+        // 从JSON文件读取配置
+        $config_file = YALI_AI_WRITER_PLUGIN_DIR . 'editor-assistant/config/image-prompts.json';
+        $default_config = file_exists($config_file) ? file_get_contents($config_file) : '[]';
+        
+        // 如果数据库中有保存的配置，则使用数据库中的
+        $saved_config = get_option('yali_image_prompts_config', '');
+        $config = !empty($saved_config) ? $saved_config : $default_config;
+        
+        // 解析JSON
+        $config_array = json_decode($config, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $config_array = json_decode($default_config, true) ?: [];
+        }
+
+        wp_send_json_success([
+            'config' => $config_array
+        ]);
+    }
+
+    /**
+     * 保存图像提示词配置
+     */
+    public function ajax_save_image_prompts_config() {
+        check_ajax_referer('editor_assistant_settings_nonce', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('您没有权限执行此操作。', 'yali-ai-writer')]);
+            return;
+        }
+
+        if (!isset($_POST['config'])) {
+            wp_send_json_error(['message' => __('未提供配置数据', 'yali-ai-writer')]);
+            return;
+        }
+
+        $config_json = stripslashes($_POST['config']);
+        
+        // 验证JSON格式
+        $config_array = json_decode($config_json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            wp_send_json_error(['message' => __('无效的JSON格式: ', 'yali-ai-writer') . json_last_error_msg()]);
+            return;
+        }
+
+        // 保存到数据库
+        update_option('yali_image_prompts_config', $config_json);
+
+        wp_send_json_success(['message' => __('图像提示词配置已保存！', 'yali-ai-writer')]);
     }
 }

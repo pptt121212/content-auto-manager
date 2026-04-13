@@ -1,35 +1,49 @@
 /**
  * 鸭梨AI助手 — Gutenberg 工具栏弹出面板样式
+ * 布局结构：
+ * 1. Popover 容器（固定宽度 360px）
+ * 2. 输入区域（包含：标签、输入框、错误提示）
+ * 3. 搜索框
+ * 4. 提示词列表（可滚动）
  */
 
-/* Popover 面板容器 */
+/* ═══════════════════════════════════════════════════════
+   Popover 面板容器
+   ═══════════════════════════════════════════════════════ */
 .yali-ai-popover-panel {
-    width: 300px;
+    width: 360px;
     max-height: 480px;
     display: flex;
     flex-direction: column;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e2e8f0;
     font-size: 13px;
     user-select: none;
+    overflow: hidden;
 }
 
-/* ——— 顶部文字输入区（PRO 版等价功能：有无选中均可使用）——— */
+/* ═══════════════════════════════════════════════════════
+   输入区域（包含标签、输入框、错误提示）
+   关键：错误提示作为输入区的一部分，位置固定可控
+   ═══════════════════════════════════════════════════════ */
 .yali-ai-input-area {
-    padding: 10px 12px 8px;
+    padding: 14px 16px 12px;
     border-bottom: 1px solid #e2e8f0;
     background: #f8fafc;
     flex-shrink: 0;
 }
 
+/* 输入区标签 */
 .yali-ai-input-label {
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-size: 11px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
-    color: #64748b;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: #475569;
+    margin-bottom: 8px;
 }
 
 /* 状态指示点 */
@@ -51,41 +65,59 @@
     box-shadow: 0 0 4px rgba(245, 158, 11, 0.5);
 }
 
+/* 输入框 */
 .yali-ai-input-textarea {
     width: 100%;
     box-sizing: border-box;
-    padding: 7px 9px;
+    padding: 10px 12px;
     border: 1px solid #cbd5e1;
-    border-radius: 5px;
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 13px;
     line-height: 1.5;
     resize: none;
     color: #1e293b;
     background: #fff;
-    transition: border-color 0.15s;
+    transition: all 0.2s ease;
     outline: none;
     font-family: inherit;
 }
 
 .yali-ai-input-textarea:focus {
     border-color: #6366f1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .yali-ai-input-textarea.has-selection {
     background: #f0fdf4;
-    border-color: #86efac;
+    border-color: #22c55e;
     color: #166534;
 }
 
-.yali-ai-input-textarea:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+/* ═══════════════════════════════════════════════════════
+   错误提示（关键改进：移到输入区内，紧挨输入框下方）
+   作为输入区的独立元素，宽度100%，不会受下方列表影响
+   ═══════════════════════════════════════════════════════ */
+.yali-ai-error-message {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    border-left: 3px solid #ef4444;
+    color: #b91c1c;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
 }
 
-/* ——— 搜索框 ——— */
+/* ═══════════════════════════════════════════════════════
+   搜索框
+   ═══════════════════════════════════════════════════════ */
 .yali-ai-search {
-    padding: 8px 12px 6px;
+    padding: 12px 16px;
     border-bottom: 1px solid #e2e8f0;
     background: #f8fafc;
     flex-shrink: 0;
@@ -94,59 +126,44 @@
 .yali-ai-search-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 6px 10px;
+    padding: 8px 12px;
     border: 1px solid #cbd5e1;
-    border-radius: 4px;
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 13px;
     outline: none;
     color: #1e293b;
+    background: #fff;
+    transition: all 0.2s ease;
 }
 
 .yali-ai-search-input:focus {
     border-color: #6366f1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-/* ——— 状态信息行 ——— */
-.yali-ai-status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    font-size: 12px;
-    flex-shrink: 0;
-}
-
-.yali-ai-status.generating {
-    color: #4f46e5;
-    background: #eef2ff;
-    border-bottom: 1px solid #c7d2fe;
-}
-
-.yali-ai-status.error {
-    color: #b91c1c;
-    background: #fef2f2;
-    border-bottom: 1px solid #fecaca;
-}
-
-/* ——— 提示词滚动列表 ——— */
+/* ═══════════════════════════════════════════════════════
+   提示词列表（可滚动区域）
+   ═══════════════════════════════════════════════════════ */
 .yali-ai-prompt-list {
     overflow-y: auto;
     flex: 1;
-    padding: 4px 0;
+    padding: 6px 0;
+    background: #fff;
 }
 
 .yali-ai-prompt-item {
-    padding: 8px 14px;
+    padding: 10px 16px;
     cursor: pointer;
     color: #1e293b;
-    transition: background 0.1s, color 0.1s;
-    line-height: 1.4;
+    transition: all 0.15s ease;
+    line-height: 1.5;
+    border-left: 3px solid transparent;
 }
 
 .yali-ai-prompt-item:hover {
     background: #eef2ff;
     color: #4f46e5;
+    border-left-color: #6366f1;
 }
 
 .yali-ai-prompt-item.disabled {
@@ -155,40 +172,52 @@
     pointer-events: none;
 }
 
-/* ——— 分组标题（多语言时显示，与原插件 category_heading 对应）——— */
+/* 图像生成提示词特殊标识 */
+.yali-ai-image-prompt {
+    color: #4f46e5;
+}
+
+.yali-ai-image-prompt:hover {
+    background: #eef2ff;
+    color: #4338ca;
+    border-left-color: #4f46e5;
+}
+
+/* ═══════════════════════════════════════════════════════
+   分组标题
+   ═══════════════════════════════════════════════════════ */
 .yali-ai-group-header {
-    padding: 6px 14px 4px;
+    padding: 10px 16px 6px;
     font-size: 11px;
     font-weight: 700;
-    color: #94a3b8;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-top: 1px solid #f1f5f9;
-    margin-top: 2px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .yali-ai-group-header:first-child {
     border-top: none;
-    margin-top: 0;
 }
 
-/* ——— 无结果提示 ——— */
+/* ═══════════════════════════════════════════════════════
+   无结果提示
+   ═══════════════════════════════════════════════════════ */
 .yali-ai-empty {
-    padding: 16px;
+    padding: 20px 16px;
     text-align: center;
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 13px;
 }
 
-/* ——— 文档内加载动画块（与原插件 .aich-loading 对应）——— */
+/* ═══════════════════════════════════════════════════════
+   加载动画块
+   ═══════════════════════════════════════════════════════ */
 @keyframes yali-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .yali-ai-loading {

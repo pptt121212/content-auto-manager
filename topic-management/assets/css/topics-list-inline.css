@@ -1,0 +1,172 @@
+/**
+ * Topics List Inline Styles
+ * Extracted from topics-list.php for WordPress.org compliance
+ */
+
+.content-auto-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.status-unused {
+    color: #0073aa;
+    font-weight: bold;
+}
+
+.status-used {
+    color: #666;
+}
+
+.status-queued {
+    color: #f59e0b;
+    font-weight: bold;
+}
+
+.button-small {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.reference-material {
+    display: inline-block;
+    background: #f0f6fc;
+    border: 1px solid #c3d4e7;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 11px;
+    color: #2a547e;
+    max-width: 120px;
+    white-space: normal;
+    word-wrap: break-word;
+    word-break: break-all;
+    cursor: help;
+    line-height: 1.3;
+    vertical-align: top;
+}
+
+.reference-material:hover {
+    background: #e9f2f9;
+    border-color: #a8c4e0;
+}
+
+.topic-meta {
+    color: #666;
+    font-size: 11px;
+}
+
+.source-angle {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.user-value {
+    font-size: 12px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.keyword-tag {
+    background: #f5f5f5;
+    color: #333;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 11px;
+    margin-right: 2px;
+    display: inline-block;
+    margin-bottom: 2px;
+}
+
+.matched-category {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.priority-score {
+    text-align: center;
+}
+
+.priority-1 { color: #f44336; }
+.priority-2 { color: #ff9800; }
+.priority-3 { color: #ffc107; }
+.priority-4 { color: #4caf50; }
+.priority-5 { color: #2196f3; }
+
+.priority-score small {
+    display: block;
+    font-size: 10px;
+    color: #666;
+}
+
+.no-data {
+    color: #999;
+    font-style: italic;
+}
+
+.api-config-name {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* 表格单元格垂直对齐优化 */
+.wp-list-table td {
+    vertical-align: top;
+}
+
+.prev-page span,
+.next-page span {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* 响应式分页样式 */
+@media screen and (max-width: 782px) {
+    .tablenav {
+        height: auto;
+    }
+
+    .tablenav-pages {
+        float: none;
+        margin: 10px 0;
+        text-align: center;
+    }
+
+    .pagination-links a,
+    .pagination-links span {
+        margin: 3px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
+
+.btn-recall-test {
+    margin-left: 5px !important;
+}
+
+.btn-recall-test:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 召回测试弹窗样式 - 使用通用 yali-modal 样式 */
+/* 额外的自定义样式 */
+.yali-bg-success {
+    background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+.yali-bg-error {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+}

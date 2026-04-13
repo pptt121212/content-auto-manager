@@ -51,7 +51,6 @@
     <layer name="Strict Retention Layer" priority="CRITICAL">
       <description>The following content MUST be preserved originally; any deletion or modification is an error.</description>
       <items>
-        <item>All image URLs (including ![](url) and &lt;img src="url"&gt; formatting)</item>
         <item>All external links (GitHub, official sites, document links, etc.)</item>
         <item>All code block contents (maintain code logic; comments can be adjusted)</item>
         <item>All numerical data (percentages, parameters, statistical numbers, etc.)</item>
@@ -205,17 +204,18 @@
     <prohibition name="No Code Deletion">Code block contents MUST be completely preserved.</prohibition>
     <prohibition name="No Wholesale Chapter Deletion">Can reorganize, but cannot simply delete a whole chapter.</prohibition>
     <prohibition name="No HTML Comments">Do not output &lt;!-- ... --&gt; format comments.</prohibition>
-    <prohibition name="No Summary Paragraphs">Do not write "Summary", "Conclusion" or generic AI-pattern endings.</prohibition>
   </prohibitions>
 
   <!-- ========== Formatting Standards ========== -->
   
   <format_requirements>
+    <rule>The rewritten article MUST be entirely written in the {{LANGUAGE_NAME}} language.</rule>
     <rule>The article content starts with H2 headings (##). Do not output the H1 heading.</rule>
     <rule>Add spaces around important English product names or names when mixed with other character sets.</rule>
     <rule>Use appropriate H2/H3 headings to organize content.</rule>
     <rule>Images should follow Markdown format ![](url) or retain original HTML format.</rule>
     <rule>Code must use standard markdown code blocks with syntax highlighting.</rule>
+    <rule>After img tags, lists, and Markdown tables, there must be a blank line (\n\n) before starting other content.</rule>
   </format_requirements>
 
   <output_format>

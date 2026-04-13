@@ -1,0 +1,38 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "采集网址仿写规则每次仅生成1个主题": [
+                "URL collection and rewrite rules generate only 1 topic per run"
+            ],
+            "已选择 %s 个任务": [
+                "Selected %s task(s)"
+            ],
+            "请至少选择一个任务进行重试": [
+                "Please select at least one task to retry"
+            ],
+            "确定要重试选中的 %s 个任务吗？": [
+                "Are you sure you want to retry the selected %s task(s)?"
+            ],
+            "批量重试请求已提交，任务将在后台处理。": [
+                "Bulk retry request submitted, processing in background."
+            ],
+            "批量重试失败: ": [
+                "Bulk retry failed: "
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "批量重试失败: 服务器错误": [
+                "Bulk retry failed: Server error"
+            ]
+        }
+    }
+}

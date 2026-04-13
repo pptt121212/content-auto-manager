@@ -13,6 +13,7 @@
 #
 #
 
+if (!class_exists('Parsedown', false)) {
 class Parsedown
 {
     # ~
@@ -1991,4 +1992,5 @@ class Parsedown
                    'var', 'span',
                    'wbr', 'time',
     );
+}
 }

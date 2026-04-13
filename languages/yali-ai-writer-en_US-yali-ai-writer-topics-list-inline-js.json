@@ -1,0 +1,134 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "正在执行召回测试，请稍候...": [
+                "Executing recall test, please wait..."
+            ],
+            "（大模型精选可能需要10-30秒）": [
+                "(AI selection may take 10-30 seconds)"
+            ],
+            "测试失败": [
+                "Test failed"
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "请求失败": [
+                "Request failed"
+            ],
+            "测试主题": [
+                "Test Topic"
+            ],
+            "标题:": [
+                "Title:"
+            ],
+            "向量状态:": [
+                "Vector Status:"
+            ],
+            "已生成": [
+                "Generated"
+            ],
+            "未生成": [
+                "Not Generated"
+            ],
+            "调试信息": [
+                "Debug Info"
+            ],
+            "主题向量维度:": [
+                "Topic Vector Dimension:"
+            ],
+            "参考资料总数:": [
+                "Total Reference Materials:"
+            ],
+            "条": [
+                "item(s)"
+            ],
+            "建议:": [
+                "Suggestion:"
+            ],
+            "所有参考资料相似度": [
+                "All Reference Similarities"
+            ],
+            "此表显示所有参考资料与主题的相似度，用于调试。阈值为 0.5（50%）。": [
+                "This table shows the similarity between all reference materials and the topic for debugging. Threshold is 0.5 (50%)."
+            ],
+            "标题": [
+                "Title"
+            ],
+            "相似度": [
+                "Similarity"
+            ],
+            "达到阈值": [
+                "Meets Threshold"
+            ],
+            "解码失败": [
+                "Decode Failed"
+            ],
+            "是": [
+                "Yes"
+            ],
+            "否": [
+                "No"
+            ],
+            "召回失败": [
+                "Recall Failed"
+            ],
+            "召回候选列表": [
+                "Recall Candidate List"
+            ],
+            "描述预览": [
+                "Description Preview"
+            ],
+            "大模型精选结果": [
+                "AI Selected Result"
+            ],
+            "选中ID:": [
+                "Selected ID:"
+            ],
+            "选中标题:": [
+                "Selected Title:"
+            ],
+            "选择原因:": [
+                "Selection Reason:"
+            ],
+            "最终召回结果": [
+                "Final Recall Result"
+            ],
+            "参考资料内容:": [
+                "Reference Content:"
+            ],
+            "参考资料": [
+                "Reference Material"
+            ],
+            "深度写作需要打开鸭梨AI浏览器扩展，每篇文章约执行5~30分钟": [
+                "Deep Writing requires the Yali AI Browser Extension, and each article usually takes about 5 to 30 minutes to complete."
+            ],
+            "在此期间不要关闭鸭梨AI浏览器扩展。": [
+                "Do not close the Yali AI Browser Extension during this time."
+            ],
+            "完成后会将文章发布到文章列表，转为草稿，请校对没问题后发布。": [
+                "When finished, the article will be sent to the Articles list as a draft. Please review it carefully before publishing."
+            ],
+            "完成后会将文章发布到文章列表，转来为草稿，请校对没问题后发布。": [
+                "When finished, the article will be sent to the Articles list as a draft. Please review it carefully before publishing."
+            ],
+            "文章中会自动配图，请提前配置好图像API。": [
+                "Images will be generated automatically for the article, so please configure the image API in advance."
+            ],
+            "鸭梨AI浏览器扩展": [
+                "Yali AI Browser Extension"
+            ],
+            "确认写作": [
+                "Confirm Writing"
+            ]
+        }
+    }
+}

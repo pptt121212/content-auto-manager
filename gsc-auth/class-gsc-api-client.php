@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_GSC_API_Client {
+class Yali_AI_Writer_GSC_API_Client {
     private static $instance = null;
     private $access_token = '';
     private $refresh_token = '';

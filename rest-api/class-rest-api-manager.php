@@ -6,6 +6,7 @@ use ContentAutoManager\RestApi\Controllers\ApiKey_Controller;
 use ContentAutoManager\RestApi\Controllers\Proxy_Controller;
 use ContentAutoManager\RestApi\Controllers\Task_Controller;
 use ContentAutoManager\RestApi\Controllers\Editor_Assistant_Controller;
+use ContentAutoManager\RestApi\Controllers\Extension_Controller;
 
 /**
  * REST API Manager
@@ -36,7 +37,8 @@ class Rest_Api_Manager {
             new ApiKey_Controller( self::NAMESPACE ),
             new Proxy_Controller( self::NAMESPACE ),
             new Task_Controller( self::NAMESPACE ),
-            new Editor_Assistant_Controller( self::NAMESPACE )
+            new Editor_Assistant_Controller( self::NAMESPACE ),
+            new Extension_Controller( self::NAMESPACE ),
         );
 
         foreach ( $controllers as $controller ) {
@@ -48,12 +50,13 @@ class Rest_Api_Manager {
      * Load controller files
      */
     private function load_controllers() {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-base-controller.php';
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-config-controller.php';
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-apikey-controller.php';
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-proxy-controller.php';
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-task-controller.php';
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-editor-assistant-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-base-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-config-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-apikey-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-proxy-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-task-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-editor-assistant-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-extension-controller.php';
     }
 }
 

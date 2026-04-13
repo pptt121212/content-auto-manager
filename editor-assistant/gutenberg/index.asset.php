@@ -13,5 +13,5 @@ return array(
         'wp-notices',
         'wp-rich-text',
     ),
-    'version' => CONTENT_AUTO_MANAGER_VERSION,
+    'version' => YALI_AI_WRITER_VERSION,
 );

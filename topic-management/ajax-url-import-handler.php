@@ -17,7 +17,7 @@ function cam_ajax_url_import() {
     }
     
     // Verify nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_import_nonce')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_import_nonce')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
 
@@ -87,15 +87,15 @@ function cam_process_url_import($url, $provided_content = '', $provided_title = 
     $optimized_title = $title;
     
     // Check if Unified API Handler exists
-    if (!class_exists('ContentAuto_UnifiedApiHandler')) {
-        $api_handler_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+    if (!class_exists('Yali_AI_Writer_UnifiedApiHandler')) {
+        $api_handler_path = YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
         if (file_exists($api_handler_path)) {
             require_once $api_handler_path;
         }
     }
     
-    if (class_exists('ContentAuto_UnifiedApiHandler') && !empty($title)) {
-        $handler = new ContentAuto_UnifiedApiHandler();
+    if (class_exists('Yali_AI_Writer_UnifiedApiHandler') && !empty($title)) {
+        $handler = new Yali_AI_Writer_UnifiedApiHandler();
         
         $prompt = "Task: Optimize this article title for better CTR and SEO.\n";
         $prompt .= "Requirements:\n";

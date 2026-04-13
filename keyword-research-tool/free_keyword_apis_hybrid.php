@@ -12,11 +12,11 @@
  *   - 'now 7-d': 过去7天(每小时数据点)
  */
 
-if (!class_exists('FreeKeywordAPIs')) {
+if (!class_exists('Yali_AI_Writer_FreeKeywordAPIs')) {
     require_once plugin_dir_path(__FILE__) . 'free_keyword_apis.php';
 }
 
-class FreeKeywordAPIs_Hybrid extends FreeKeywordAPIs {
+class Yali_AI_Writer_Yali_AI_Writer_FreeKeywordAPIs_Hybrid extends Yali_AI_Writer_FreeKeywordAPIs {
 
     private $cookie_jar = [];
     private $last_request_time = 0;
@@ -306,26 +306,10 @@ class FreeKeywordAPIs_Hybrid extends FreeKeywordAPIs {
     }
 
     /**
-     * 混合请求方法: 优先WP HTTP API，失败降级到cURL
+     * 混合请求方法: 为了通过 WordPress 代码审查，彻底移除了 cURL 降级方案
      */
     private function makeHybridRequest($url, $headers, $maxRetries = 3) {
-        // 首先尝试WordPress HTTP API
-        if ($this->use_wp_http && function_exists('wp_remote_get')) {
-            $result = $this->makeWPHTTPRequest($url, $headers, $maxRetries);
-
-            if ($result['success']) {
-                $this->fallback_to_curl = false;
-                return $result;
-            }
-
-            // WP HTTP失败，标记降级到cURL
-            $this->logDebug('WP HTTP API失败，降级到cURL: ' . ($result['error'] ?? 'Unknown'));
-            $this->use_wp_http = false;
-            $this->fallback_to_curl = true;
-        }
-
-        // 使用cURL作为备选
-        return $this->makeCurlRequestWithRetry($url, $headers, $maxRetries);
+        return $this->makeWPHTTPRequest($url, $headers, $maxRetries);
     }
 
     /**
@@ -406,82 +390,7 @@ class FreeKeywordAPIs_Hybrid extends FreeKeywordAPIs {
         ];
     }
 
-    /**
-     * cURL请求 (降级方案)
-     */
-    private function makeCurlRequestWithRetry($url, $headers, $maxRetries = 3) {
-        $attempt = 0;
-        $headerArray = [];
-        foreach ($headers as $key => $value) {
-            $headerArray[] = "{$key}: {$value}";
-        }
-
-        while ($attempt < $maxRetries) {
-            $attempt++;
-            $this->rateLimit();
-
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL => $url,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS => 5,
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_CONNECTTIMEOUT => 10,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_ENCODING => 'gzip, deflate',
-                CURLOPT_HTTPHEADER => $headerArray,
-                CURLOPT_COOKIEJAR => $this->hybrid_cookie_file,
-                CURLOPT_COOKIEFILE => $this->hybrid_cookie_file,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1
-            ]);
-
-            $response = curl_exec($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curl_error = curl_error($ch);
-            curl_close($ch);
-
-            if ($response === false) {
-                $this->logDebug("cURL尝试 {$attempt}/{$maxRetries} 错误: {$curl_error}");
-                if ($attempt < $maxRetries) {
-                    usleep(1000000 * $attempt);
-                }
-                continue;
-            }
-
-            // 处理429限流
-            if ($http_code === 429) {
-                $this->logDebug("cURL尝试 {$attempt}/{$maxRetries} 遇到429限流");
-                $this->last_error = "请求过于频繁，正在重试... ({$attempt}/{$maxRetries})";
-                if ($attempt < $maxRetries) {
-                    // 增加更长的延迟: 5秒、10秒、15秒 + 随机抖动(0-2秒)
-                    $delay = (5000000 * $attempt) + random_int(0, 2000000);
-                    $this->logDebug("等待 " . round($delay/1000000, 1) . " 秒后重试...");
-                    usleep($delay);
-                }
-                continue;
-            }
-
-            if ($http_code === 200) {
-                return [
-                    'success' => true,
-                    'http_code' => $http_code,
-                    'body' => $response
-                ];
-            }
-
-            $this->logDebug("cURL尝试 {$attempt}/{$maxRetries} HTTP {$http_code}");
-            if ($attempt < $maxRetries) {
-                usleep(1000000);
-            }
-        }
-
-        return [
-            'success' => false,
-            'error' => 'Max retries exceeded with cURL'
-        ];
-    }
+    // (makeCurlRequestWithRetry has been completely removed to comply with WP Plugin guidelines)
 
     /**
      * 请求频率限制
@@ -504,14 +413,14 @@ class FreeKeywordAPIs_Hybrid extends FreeKeywordAPIs {
     }
 
     /**
-     * 检查是否已降级到cURL
+     * 检查是否已降级到cURL (废弃)
      */
     public function isFallbackToCurl() {
-        return $this->fallback_to_curl;
+        return false;
     }
 
     /**
-     * 重置为使用WP HTTP API
+     * 重置为使用WP HTTP API (废弃)
      */
     public function resetToWPHTTP() {
         $this->use_wp_http = true;

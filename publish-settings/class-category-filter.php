@@ -7,14 +7,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_Category_Filter {
+class Yali_AI_Writer_Category_Filter {
     
     /**
      * 获取允许使用的分类ID列表
      */
     public static function get_allowed_categories() {
-        $is_enabled = get_option('content_auto_manager_category_filter_enabled', 0);
-        $allowed_categories = get_option('content_auto_manager_allowed_categories', array());
+        $is_enabled = get_option('yali_ai_writer_manager_category_filter_enabled', 0);
+        $allowed_categories = get_option('yali_ai_writer_manager_allowed_categories', array());
 
         // 如果未启用分类过滤，或者没有选择任何分类，返回所有分类
         if ($is_enabled != 1 || empty($allowed_categories)) {
@@ -45,14 +45,14 @@ class ContentAuto_Category_Filter {
 
         $args = wp_parse_args($args, $default_args);
         $all_categories = get_categories($args);
-        $is_enabled = get_option('content_auto_manager_category_filter_enabled', 0);
+        $is_enabled = get_option('yali_ai_writer_manager_category_filter_enabled', 0);
 
         // 如果未启用分类过滤，返回所有分类
         if ($is_enabled != 1) {
             return $all_categories;
         }
 
-        $allowed_category_ids = get_option('content_auto_manager_allowed_categories', array());
+        $allowed_category_ids = get_option('yali_ai_writer_manager_allowed_categories', array());
 
         // 如果没有选择任何分类，返回所有分类
         if (empty($allowed_category_ids)) {
@@ -95,8 +95,8 @@ class ContentAuto_Category_Filter {
      */
     public static function get_filter_stats() {
         $all_categories = get_categories(array('hide_empty' => false));
-        $allowed_categories = get_option('content_auto_manager_allowed_categories', array());
-        $is_enabled = get_option('content_auto_manager_category_filter_enabled', 0);
+        $allowed_categories = get_option('yali_ai_writer_manager_allowed_categories', array());
+        $is_enabled = get_option('yali_ai_writer_manager_category_filter_enabled', 0);
 
         // 只有当开关启用且选择了分类时，才认为过滤已启用
         $is_filtered = ($is_enabled == 1) && !empty($allowed_categories);
@@ -114,15 +114,15 @@ class ContentAuto_Category_Filter {
      * 重置分类过滤设置
      */
     public static function reset_filter() {
-        delete_option('content_auto_manager_allowed_categories');
-        delete_option('content_auto_manager_category_filter_enabled');
+        delete_option('yali_ai_writer_manager_allowed_categories');
+        delete_option('yali_ai_writer_manager_category_filter_enabled');
     }
     
     /**
      * 验证并清理分类设置（移除已删除的分类）
      */
     public static function validate_and_clean_settings() {
-        $allowed_categories = get_option('content_auto_manager_allowed_categories', array());
+        $allowed_categories = get_option('yali_ai_writer_manager_allowed_categories', array());
         
         if (empty($allowed_categories)) {
             return;
@@ -138,7 +138,7 @@ class ContentAuto_Category_Filter {
         
         // 如果有变化，更新设置
         if (count($valid_categories) !== count($allowed_categories)) {
-            update_option('content_auto_manager_allowed_categories', $valid_categories);
+            update_option('yali_ai_writer_manager_allowed_categories', $valid_categories);
         }
     }
     

@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 /**
  * 获取语言指令映射
  */
-function content_auto_get_language_instructions($language_code = 'zh-CN') {
+function yali_ai_writer_get_language_instructions($language_code = 'zh-CN') {
     $language_instructions = array(
         'zh-CN' => '请使用中文（简体）进行回复，采用适合中国大陆用户的表达方式和文化语境。',
         'zh-TW' => '請使用繁體中文進行回復，採用適合台灣用戶的表達方式和文化語境。',
@@ -36,7 +36,7 @@ function content_auto_get_language_instructions($language_code = 'zh-CN') {
 /**
  * 获取语言名称映射（用于界面显示）
  */
-function content_auto_get_language_names() {
+function yali_ai_writer_get_language_names() {
     return array(
         'zh-CN' => '中文（简体）',
         'zh-TW' => '中文（繁体）',
@@ -60,7 +60,7 @@ function content_auto_get_language_names() {
 /**
  * 获取语言的AI识别名称（用于提示词约束）
  */
-function content_auto_get_language_ai_names() {
+function yali_ai_writer_get_language_ai_names() {
     return array(
         'zh-CN' => '中文',
         'zh-TW' => '繁体中文',
@@ -84,16 +84,16 @@ function content_auto_get_language_ai_names() {
 /**
  * 获取语言的AI识别名称
  */
-function content_auto_get_language_ai_name($language_code) {
-    $ai_names = content_auto_get_language_ai_names();
+function yali_ai_writer_get_language_ai_name($language_code) {
+    $ai_names = yali_ai_writer_get_language_ai_names();
     return isset($ai_names[$language_code]) ? $ai_names[$language_code] : $ai_names['zh-CN'];
 }
 
 /**
  * 验证语言代码是否有效
  */
-function content_auto_validate_language_code($language_code) {
-    $valid_languages = array_keys(content_auto_get_language_names());
+function yali_ai_writer_validate_language_code($language_code) {
+    $valid_languages = array_keys(yali_ai_writer_get_language_names());
     return in_array($language_code, $valid_languages) ? $language_code : 'zh-CN';
 }
 
@@ -103,7 +103,7 @@ function content_auto_validate_language_code($language_code) {
  * 返回格式: ['English Name' => '中文名称', ...]
  * 中文名称是数据库中使用的标准键
  */
-function content_auto_get_angle_mappings() {
+function yali_ai_writer_get_angle_mappings() {
     return array(
         // English => Chinese (canonical DB key)
         'Knowledge Base'        => '知识科普',
@@ -122,8 +122,8 @@ function content_auto_get_angle_mappings() {
 /**
  * 获取所有标准的中文角度名称列表
  */
-function content_auto_get_canonical_angles() {
-    return array_values(content_auto_get_angle_mappings());
+function yali_ai_writer_get_canonical_angles() {
+    return array_values(yali_ai_writer_get_angle_mappings());
 }
 
 /**
@@ -137,13 +137,13 @@ function content_auto_get_canonical_angles() {
  * @param string $angle 任意语言的角度名称
  * @return string 归一化后的中文标准键，或原始值（如果无法映射）
  */
-function content_auto_normalize_angle($angle) {
+function yali_ai_writer_normalize_angle($angle) {
     if (empty($angle)) {
         return $angle;
     }
 
     $angle = trim($angle);
-    $mappings = content_auto_get_angle_mappings();
+    $mappings = yali_ai_writer_get_angle_mappings();
     $canonical_angles = array_values($mappings);
 
     // 1. 如果已经是中文标准键，直接返回
@@ -174,8 +174,8 @@ function content_auto_normalize_angle($angle) {
  * @param string $angle 中文标准角度名
  * @return string 英文显示名，或原始值（如果无法映射）
  */
-function content_auto_angle_to_english($angle) {
-    $mappings = content_auto_get_angle_mappings();
+function yali_ai_writer_angle_to_english($angle) {
+    $mappings = yali_ai_writer_get_angle_mappings();
     $reverse = array_flip($mappings);
     return isset($reverse[$angle]) ? $reverse[$angle] : $angle;
 }
@@ -187,7 +187,7 @@ function content_auto_angle_to_english($angle) {
  * @param string $canonical_angle 中文标准角度名
  * @return string 本地化后的显示名称
  */
-function content_auto_get_localized_angle_name($canonical_angle) {
+function yali_ai_writer_get_localized_angle_name($canonical_angle) {
     $locale = function_exists('get_user_locale') ? get_user_locale() : get_locale();
     $is_chinese = strpos($locale, 'zh') === 0;
     
@@ -195,5 +195,5 @@ function content_auto_get_localized_angle_name($canonical_angle) {
         return $canonical_angle;
     }
     
-    return content_auto_angle_to_english($canonical_angle);
+    return yali_ai_writer_angle_to_english($canonical_angle);
 }

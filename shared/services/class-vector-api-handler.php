@@ -9,11 +9,11 @@ if (!defined('ABSPATH')) {
 }
 
 // 确保日志类已加载
-if (!class_exists('ContentAuto_PluginLogger')) {
-    require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+    require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
 }
 
-class ContentAuto_VectorApiHandler {
+class Yali_AI_Writer_VectorApiHandler {
     
     private $api_config;
     private $logger;
@@ -28,13 +28,13 @@ class ContentAuto_VectorApiHandler {
     const DEFAULT_TPM = 500000; // 每分钟Token数
     
     public function __construct($logger = null) {
-        $this->api_config = new ContentAuto_ApiConfig();
+        $this->api_config = new Yali_AI_Writer_ApiConfig();
         
         // 处理日志依赖 - 如果类不存在则创建虚拟日志器
         if ($logger !== null) {
             $this->logger = $logger;
-        } elseif (class_exists('ContentAuto_PluginLogger')) {
-            $this->logger = new ContentAuto_PluginLogger();
+        } elseif (class_exists('Yali_AI_Writer_PluginLogger')) {
+            $this->logger = new Yali_AI_Writer_PluginLogger();
         } else {
             // 创建虚拟日志器，避免类未找到错误
             $this->logger = new class {
@@ -45,7 +45,7 @@ class ContentAuto_VectorApiHandler {
             };
         }
         
-        $this->rate_limiter = new ContentAuto_RateLimiter();
+        $this->rate_limiter = new Yali_AI_Writer_RateLimiter();
         $this->last_error = null;
         $this->retry_attempts = 0;
         $this->max_retries = 3;
@@ -587,7 +587,7 @@ class ContentAuto_VectorApiHandler {
             }
             
             // 获取向量API配置
-            $api_config = new ContentAuto_ApiConfig();
+            $api_config = new Yali_AI_Writer_ApiConfig();
             $config = $api_config->get_config($config_id);
             
             if (!$config) {
@@ -704,7 +704,7 @@ class ContentAuto_VectorApiHandler {
 /**
  * 简单的速率限制器
  */
-class ContentAuto_RateLimiter {
+class Yali_AI_Writer_RateLimiter {
     
     private $limits = array();
     
@@ -739,11 +739,11 @@ class ContentAuto_RateLimiter {
 /**
  * 便捷函数：生成文本嵌入向量
  */
-function content_auto_generate_embedding($text, $config_id = null) {
+function yali_ai_writer_generate_embedding($text, $config_id = null) {
     static $handler = null;
     
     if ($handler === null) {
-        $handler = new ContentAuto_VectorApiHandler();
+        $handler = new Yali_AI_Writer_VectorApiHandler();
     }
     
     return $handler->generate_embedding($text, $config_id);

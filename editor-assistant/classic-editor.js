@@ -21,7 +21,10 @@
             alert_prefix: '鸭梨AI助手: ',
         };
 
-        var menu = [];
+        // 构建菜单，将文本生成和图像生成分开
+        var textPrompts = [];
+        var imagePrompts = [];
+        
         prompts.forEach(function (group, groupIndex) {
             group.new_prompt.forEach(function (prompt, promptIndex) {
                 var flatIndex = 0;
@@ -30,15 +33,48 @@
                 }
                 flatIndex += promptIndex;
 
-                menu.push({
+                var menuItem = {
                     text: prompt.prompt_title,
                     image: iconUrl || '',
                     onclick: function () {
                         handlePromptClick(flatIndex, prompt);
                     }
-                });
+                };
+
+                if (prompt.is_image_generation) {
+                    imagePrompts.push(menuItem);
+                } else {
+                    textPrompts.push(menuItem);
+                }
             });
         });
+
+        // 构建分组菜单
+        var menu = [];
+        
+        // 文本生成组
+        if (textPrompts.length > 0) {
+            menu.push({
+                text: '✍️ 文本生成',
+                disabled: true,
+                classes: 'yali-ai-menu-header'
+            });
+            textPrompts.forEach(function (item) {
+                menu.push(item);
+            });
+        }
+        
+        // 图像生成组
+        if (imagePrompts.length > 0) {
+            menu.push({
+                text: '🖼️ 图像生成',
+                disabled: true,
+                classes: 'yali-ai-menu-header'
+            });
+            imagePrompts.forEach(function (item) {
+                menu.push(item);
+            });
+        }
 
         editor.addButton('yali_classic_plugin', {
             title: i18n.button_title,
@@ -108,19 +144,33 @@
                 if (!data || !data.success) throw new Error(data.message || i18n.generate_failed_short);
 
                 // 3. 内容回填
-                var finalNode = editor.dom.get(loaderId) || loaderNode;
-                if (finalNode && finalNode.parentNode) {
-                    finalNode.removeAttribute('id');
-                    finalNode.removeAttribute('class');
-                    finalNode.removeAttribute('data-mce-bogus');
-                    // 核心：回填 AI 结果
-                    editor.dom.setHTML(finalNode, data.text);
+                if (data.is_image && data.image_url) {
+                    // 图像生成结果
+                    var imageHtml = '<img src="' + data.image_url + '" alt="' + (data.image_description || '') + '" style="max-width:100%;height:auto;display:block;margin:20px auto;" />';
+                    var finalNode = editor.dom.get(loaderId) || loaderNode;
+                    if (finalNode && finalNode.parentNode) {
+                        editor.dom.setOuterHTML(finalNode, imageHtml);
+                    } else {
+                        editor.insertContent(imageHtml);
+                    }
+                    editor.undoManager.add();
+                    editor.nodeChanged();
                 } else {
-                    editor.insertContent(data.text);
-                }
+                    // 文本生成结果
+                    var finalNode = editor.dom.get(loaderId) || loaderNode;
+                    if (finalNode && finalNode.parentNode) {
+                        finalNode.removeAttribute('id');
+                        finalNode.removeAttribute('class');
+                        finalNode.removeAttribute('data-mce-bogus');
+                        // 核心：回填 AI 结果
+                        editor.dom.setHTML(finalNode, data.text);
+                    } else {
+                        editor.insertContent(data.text);
+                    }
 
-                editor.undoManager.add();
-                editor.nodeChanged();
+                    editor.undoManager.add();
+                    editor.nodeChanged();
+                }
             } catch (err) {
                 console.error('Yali AI Error:', err);
                 var errorNode = editor.dom.get(loaderId);

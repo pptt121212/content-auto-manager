@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-abstract class ContentAuto_ApiChannel {
+abstract class Yali_AI_Writer_ApiChannel {
     protected $channel_key;
     protected $name;
     protected $api_url;

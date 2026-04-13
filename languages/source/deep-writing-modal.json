@@ -1,0 +1,11 @@
+{
+  "深度写作需要打开%s，每篇文章约执行5~30分钟": "Deep Writing requires %s, and each article usually takes about 5 to 30 minutes to complete.",
+  "深度写作需要打开鸭梨AI浏览器扩展，每篇文章约执行5~30分钟": "Deep Writing requires the Yali AI Browser Extension, and each article usually takes about 5 to 30 minutes to complete.",
+  "在此期间不要关闭%s。": "Do not close %s during this time.",
+  "在此期间不要关闭鸭梨AI浏览器扩展。": "Do not close the Yali AI Browser Extension during this time.",
+  "完成后会将文章发布到文章列表，转为草稿，请校对没问题后发布。": "When finished, the article will be sent to the Articles list as a draft. Please review it carefully before publishing.",
+  "完成后会将文章发布到文章列表，转来为草稿，请校对没问题后发布。": "When finished, the article will be sent to the Articles list as a draft. Please review it carefully before publishing.",
+  "文章中会自动配图，请提前配置好图像API。": "Images will be generated automatically for the article, so please configure the image API in advance.",
+  "鸭梨AI浏览器扩展": "Yali AI Browser Extension",
+  "确认写作": "Confirm Writing"
+}

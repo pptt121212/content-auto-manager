@@ -3,15 +3,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_SearchMaterialsAdminPage {
+class Yali_AI_Writer_SearchMaterialsAdminPage {
     
     public function __construct() {
-        // 移交给 ContentAuto_AdminMenu 统一注册，以便控制顺序
+        // 移交给 Yali_AI_Writer_AdminMenu 统一注册，以便控制顺序
         // add_action('admin_menu', [$this, 'register_menu'], 20);
-        add_action('wp_ajax_content_auto_search_material_process', [$this, 'handle_ajax_process']);
-        add_action('wp_ajax_content_auto_save_material_result', [$this, 'handle_ajax_save']);
-        add_action('wp_ajax_content_auto_extension_material_process', [$this, 'handle_extension_ajax_process']);
-        add_action('wp_ajax_content_auto_check_task_result', [$this, 'handle_check_task_result']);
+        add_action('wp_ajax_yali_ai_writer_search_material_process', [$this, 'handle_ajax_process']);
+        add_action('wp_ajax_yali_ai_writer_save_material_result', [$this, 'handle_ajax_save']);
+        add_action('wp_ajax_yali_ai_writer_extension_material_process', [$this, 'handle_extension_ajax_process']);
+        add_action('wp_ajax_yali_ai_writer_check_task_result', [$this, 'handle_check_task_result']);
     }
 
     public function register_menu() {
@@ -115,347 +115,12 @@ class ContentAuto_SearchMaterialsAdminPage {
                     </div>
                 </div>
             </div>
-            
-            <script>
-            jQuery(document).ready(function($) {
-                // 标签切换逻辑
-                $('.yali-tab-item').on('click', function(e) {
-                    e.preventDefault();
-                    var tabId = $(this).data('tab');
-                    
-                    $('.yali-tab-item').removeClass('active');
-                    $(this).addClass('active');
-                    
-                    $('.tab-content').hide();
-                    $('#tab-' + tabId).show();
-                });
-                
-                // =============== 搜索引擎模式逻辑 ===============
-                var currentSummary = '';
-
-                function appendLog(logs) {
-                    if (!logs || !logs.length) return;
-                    var logHtml = '';
-                    logs.forEach(function(l) {
-                        logHtml += l + '<br>';
-                    });
-                    var $logDiv = $('#material_log');
-                    $logDiv.append(logHtml);
-                    $logDiv.scrollTop($logDiv[0].scrollHeight);
-                }
-
-                function doStep(topicId, step, retryCount) {
-                    retryCount = retryCount || 0;
-                    var maxRetries = 3;
-
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            action: 'content_auto_search_material_process',
-                            topic_id: topicId,
-                            step: step,
-                            nonce: '<?php echo wp_create_nonce('content_auto_material_nonce'); ?>'
-                        },
-                        timeout: 180000, 
-                        success: function(res) {
-                            if (res.success) {
-                                appendLog(res.data.log);
-                                
-                                if (res.data.data && res.data.data.summary) {
-                                    currentSummary = res.data.data.summary;
-                                    $('#hidden_summary_data').val(currentSummary);
-                                    
-                                    var summary = currentSummary;
-                                    var html = summary
-                                        .replace(/\n/g, '<br>')
-                                        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                                        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                                        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                                        .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>');
-
-                                    $('#material_summary').html(html);
-                                    $('#btn_save_material').show();
-                                }
-
-                                if (res.data.next_step && res.data.next_step !== 'done') {
-                                    doStep(topicId, res.data.next_step, 0);
-                                } else {
-                                    $('#material_spinner').removeClass('is-active');
-                                    $('#btn_start_material').prop('disabled', false).css('opacity', '');
-                                    appendLog(['<strong>====== 流程全部结束 ======</strong>']);
-                                }
-                            } else {
-                                var msg = res.data ? res.data.message : (res.message || 'Unknown Error');
-                                appendLog(res.data && res.data.log ? res.data.log : []);
-                                appendLog(['<span style="color:red; font-weight:bold;">错误中断: ' + msg + '</span>']);
-                                $('#material_spinner').removeClass('is-active');
-                                $('#btn_start_material').prop('disabled', false).css('opacity', '');
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            if (retryCount < maxRetries) {
-                                var nextRetry = retryCount + 1;
-                                appendLog(['<span style="color:#d63638;">请求失败 (' + status + ')，2秒后自动重试 (' + nextRetry + '/' + maxRetries + ')...</span>']);
-                                setTimeout(function() {
-                                    doStep(topicId, step, nextRetry);
-                                }, 2000);
-                                return;
-                            }
-
-                            $('#material_spinner').removeClass('is-active');
-                            $('#btn_start_material').prop('disabled', false);
-                            var errorMsg = error;
-                            if (status === 'timeout') {
-                                errorMsg = '请求超时 (超过180秒)。任务可能仍在后台运行，请刷新页面查看进度或重试。';
-                            } else if (xhr.responseText) {
-                                var match = xhr.responseText.match(/<b>Fatal error<\/b>:(.*?)<br/);
-                                if (match) errorMsg = 'PHP错误: ' + match[1];
-                            }
-                            appendLog(['<span style="color:red;">❌ 网络请求最终失败: ' + errorMsg + '</span>']);
-                            console.error('Task failed:', status, error, xhr.responseText);
-                        }
-                    });
-                }
-
-                $('#btn_start_material').on('click', function() {
-                    var topicId = $('#topic_id').val();
-                    if (!topicId) {
-                        alert('<?php echo esc_js(__("请输入主题ID", "yali-ai-writer")); ?>');
-                        return;
-                    }
-                    
-                    $('#material_result_area').show();
-                    $('#btn_save_material').hide();
-                    $('#material_log').html('');
-                    $('#material_summary').html('<p style="color:#666;"><?php echo esc_js(__("等待处理完成...", "yali-ai-writer")); ?></p>');
-                    $('#material_spinner').addClass('is-active');
-                    $(this).prop('disabled', true).css('opacity', '0.7');
-                    
-                    appendLog(['<strong><?php echo esc_js(__("开始执行任务...", "yali-ai-writer")); ?></strong>']);
-                    doStep(topicId, 'init');
-                });
-
-                $('#btn_save_material').on('click', function() {
-                    var topicId = $('#topic_id').val();
-                    var summary = $('#hidden_summary_data').val();
-                    
-                    if (!topicId || !summary) {
-                        alert('<?php echo esc_js(__("数据也不完整，无法保存", "yali-ai-writer")); ?>');
-                        return;
-                    }
-
-                    if (!confirm('<?php echo esc_js(__("确定要将此内容保存为该主题的参考资料吗？原有资料将被覆盖。", "yali-ai-writer")); ?>')) {
-                        return;
-                    }
-
-                    var $btn = $(this);
-                    $btn.prop('disabled', true).text('<?php echo esc_js(__("正在保存...", "yali-ai-writer")); ?>');
-
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            action: 'content_auto_save_material_result',
-                            topic_id: topicId,
-                            summary: summary,
-                            nonce: '<?php echo wp_create_nonce('content_auto_material_nonce'); ?>'
-                        },
-                        success: function(res) {
-                            $btn.prop('disabled', false).text('<?php echo esc_js(__("保存为主题参考资料", "yali-ai-writer")); ?>');
-                            if (res.success) {
-                                alert('<?php echo esc_js(__("保存成功！", "yali-ai-writer")); ?>');
-                            } else {
-                                alert('<?php echo esc_js(__("保存失败: ", "yali-ai-writer")); ?>' + (res.data.message || res.message || '<?php echo esc_js(__("未知错误", "yali-ai-writer")); ?>'));
-                            }
-                        },
-                        error: function() {
-                            $btn.prop('disabled', false).text('<?php echo esc_js(__("保存为主题参考资料", "yali-ai-writer")); ?>');
-                            alert('<?php echo esc_js(__("网络错误，保存失败", "yali-ai-writer")); ?>');
-                        }
-                    });
-                });
-                
-                // =============== 浏览器插件模式逻辑 ===============
-                var extSummary = '';
-                var pollInterval = null;
-                
-                function updateExtStatus(status, type) {
-                    var icons = {
-                        'pending': '⏳',
-                        'processing': '🔄',
-                        'success': '✅',
-                        'error': '❌'
-                    };
-                    var colors = {
-                        'pending': '#666',
-                        'processing': '#0073aa',
-                        'success': '#46b450',
-                        'error': '#dc3232'
-                    };
-                    $('#ext_status').html('<p style="margin: 0; color: ' + colors[type] + ';">' + icons[type] + ' ' + status + '</p>');
-                }
-                
-                function startExtensionTask(topicId) {
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            action: 'content_auto_extension_material_process',
-                            topic_id: topicId,
-                            is_test: true, // Enable Test Mode
-                            nonce: '<?php echo wp_create_nonce('content_auto_material_nonce'); ?>'
-                        },
-                        success: function(res) {
-                            if (res.success) {
-                                var taskId = res.data.task_id; // Capture Task ID
-                                updateExtStatus('<?php echo esc_js(__("任务已分发 (ID: ", "yali-ai-writer")); ?>'+taskId.substring(0,8)+')，<?php echo esc_js(__("等待浏览器插件响应...", "yali-ai-writer")); ?>', 'pending');
-                                
-                                // 开始轮询检查结果
-                                pollInterval = setInterval(function() {
-                                    checkExtensionResult(taskId); // Pass Task ID instead of Topic ID
-                                }, 3000);
-                                
-                                // 3分钟超时
-                                setTimeout(function() {
-                                    if (pollInterval) {
-                                        clearInterval(pollInterval);
-                                        pollInterval = null; // Mark explicitly as stopped
-                                        updateExtStatus('<?php echo esc_js(__('请求超时。请确保浏览器插件已运行并连接。', 'yali-ai-writer')); ?>', 'error');
-                                        $('#ext_spinner').removeClass('is-active');
-                                        $('#btn_start_extension').prop('disabled', false).css('opacity', '');
-                                    }
-                                }, 180000);
-                            } else {
-                                updateExtStatus('<?php echo esc_js(__('任务分发失败', 'yali-ai-writer')); ?>: ' + (res.data.message || '<?php echo esc_js(__('未知错误', 'yali-ai-writer')); ?>'), 'error');
-                                $('#ext_spinner').removeClass('is-active');
-                                $('#btn_start_extension').prop('disabled', false);
-                            }
-                        },
-                        error: function() {
-                            updateExtStatus('<?php echo esc_js(__('网络请求失败', 'yali-ai-writer')); ?>', 'error');
-                            $('#ext_spinner').removeClass('is-active');
-                            $('#btn_start_extension').prop('disabled', false);
-                        }
-                    });
-                }
-                
-                function checkExtensionResult(topicId) {
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            action: 'content_auto_check_task_result', // Use new check action
-                            task_id: topicId, // variable name is topicId but parameter is task_id (passed from caller)
-                            nonce: '<?php echo wp_create_nonce('content_auto_material_nonce'); ?>'
-                        },
-                        success: function(res) {
-                            // Guard: If polling stopped (e.g. timeout occurred), ignore this late response
-                            if (!pollInterval) return;
-
-                            if (res.success && res.data.status === 'completed') {
-                                clearInterval(pollInterval);
-                                pollInterval = null;
-                                
-                                extSummary = res.data.result || '';
-                                $('#hidden_ext_summary_data').val(extSummary);
-                                
-                                var html = extSummary
-                                    .replace(/\n/g, '<br>')
-                                    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-                                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-                                    .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>');
-                                
-                                $('#ext_summary').html(html);
-                                $('#btn_save_ext_material').show();
-                                
-                                updateExtStatus('<?php echo esc_js(__('知识库搜索完成', 'yali-ai-writer')); ?>', 'success');
-                                $('#ext_spinner').removeClass('is-active');
-                                $('#btn_start_extension').prop('disabled', false).css('opacity', '');
-                            } else if (res.data && res.data.status === 'waiting_for_extension') {
-                                updateExtStatus('<?php echo esc_js(__('等待浏览器插件处理中...', 'yali-ai-writer')); ?>', 'processing');
-                            } else if (res.data && res.data.status === 'failed') {
-                                clearInterval(pollInterval);
-                                pollInterval = null;
-                                var errMsg = res.data.error || '<?php echo esc_js(__('未知错误', 'yali-ai-writer')); ?>';
-                                updateExtStatus('<?php echo esc_js(__('搜索失败', 'yali-ai-writer')); ?>: ' + errMsg, 'error');
-                                $('#ext_spinner').removeClass('is-active');
-                                $('#btn_start_extension').prop('disabled', false).css('opacity', '');
-                            }
-                        }
-                    });
-                }
-                
-                $('#btn_start_extension').on('click', function() {
-                    var topicId = $('#ext_topic_id').val();
-                    if (!topicId) {
-                        alert('<?php echo esc_js(__('请输入主题ID', 'yali-ai-writer')); ?>');
-                        return;
-                    }
-
-                    $('#ext_result_area').show();
-                    $('#btn_save_ext_material').hide();
-                    $('#ext_summary').html('<p style="color:#666;"><?php echo esc_js(__('正在知识库中搜索...', 'yali-ai-writer')); ?></p>');
-                    $('#ext_spinner').addClass('is-active');
-                    $(this).prop('disabled', true).css('opacity', '0.7');
-                    
-                    updateExtStatus('<?php echo esc_js(__("正在连接浏览器插件...", "yali-ai-writer")); ?>', 'processing');
-                    startExtensionTask(topicId);
-                });
-                
-                $('#btn_save_ext_material').on('click', function() {
-                    var topicId = $('#ext_topic_id').val();
-                    var summary = $('#hidden_ext_summary_data').val();
-                    
-                    if (!topicId || !summary) {
-                        alert('<?php echo esc_js(__("数据不完整，无法保存", "yali-ai-writer")); ?>');
-                        return;
-                    }
-
-                    if (!confirm('<?php echo esc_js(__("确定要将此内容保存为该主题的参考资料吗？原有资料将被覆盖。", "yali-ai-writer")); ?>')) {
-                        return;
-                    }
-
-                    var $btn = $(this);
-                    $btn.prop('disabled', true).text('<?php echo esc_js(__("正在保存...", "yali-ai-writer")); ?>');
-
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            action: 'content_auto_save_material_result',
-                            topic_id: topicId,
-                            summary: summary,
-                            nonce: '<?php echo wp_create_nonce('content_auto_material_nonce'); ?>'
-                        },
-                        success: function(res) {
-                            $btn.prop('disabled', false).text('<?php echo esc_js(__("保存为主题参考资料", "yali-ai-writer")); ?>');
-                            if (res.success) {
-                                alert('<?php echo esc_js(__("保存成功！", "yali-ai-writer")); ?>');
-                            } else {
-                                alert('<?php echo esc_js(__("保存失败: ", "yali-ai-writer")); ?>' + (res.data.message || res.message || '<?php echo esc_js(__("未知错误", "yali-ai-writer")); ?>'));
-                            }
-                        },
-                        error: function() {
-                            $btn.prop('disabled', false).text('<?php echo esc_js(__("保存为主题参考资料", "yali-ai-writer")); ?>');
-                            alert('<?php echo esc_js(__("网络错误，保存失败", "yali-ai-writer")); ?>');
-                        }
-                    });
-                });
-            });
-            </script>
         </div>
         <?php
     }
 
     public function handle_ajax_process() {
-        check_ajax_referer('content_auto_material_nonce', 'nonce');
+        check_ajax_referer('yali_ai_writer_material_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('权限不足', 'yali-ai-writer')]);
@@ -468,11 +133,11 @@ class ContentAuto_SearchMaterialsAdminPage {
             wp_send_json_error(['message' => __('无效的主题ID', 'yali-ai-writer')]);
         }
         
-        if (!class_exists('ContentAuto_SearchMaterialsService')) {
+        if (!class_exists('Yali_AI_Writer_SearchMaterialsService')) {
             require_once plugin_dir_path(__FILE__) . 'class-search-materials-service.php';
         }
         
-        $service = new ContentAuto_SearchMaterialsService();
+        $service = new Yali_AI_Writer_SearchMaterialsService();
         $result = $service->process_step($step, $topic_id);
         
         if ($result['success']) {
@@ -483,7 +148,7 @@ class ContentAuto_SearchMaterialsAdminPage {
     }
 
     public function handle_ajax_save() {
-        check_ajax_referer('content_auto_material_nonce', 'nonce');
+        check_ajax_referer('yali_ai_writer_material_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('权限不足', 'yali-ai-writer')]);
@@ -496,11 +161,11 @@ class ContentAuto_SearchMaterialsAdminPage {
             wp_send_json_error(['message' => __('参数无效', 'yali-ai-writer')]);
         }
 
-        if (!class_exists('ContentAuto_SearchMaterialsService')) {
+        if (!class_exists('Yali_AI_Writer_SearchMaterialsService')) {
             require_once plugin_dir_path(__FILE__) . 'class-search-materials-service.php';
         }
         
-        $service = new ContentAuto_SearchMaterialsService();
+        $service = new Yali_AI_Writer_SearchMaterialsService();
         $result = $service->save_material_to_topic($topic_id, $summary);
         
         if (is_wp_error($result)) {
@@ -514,7 +179,7 @@ class ContentAuto_SearchMaterialsAdminPage {
      * 处理浏览器插件模式的请求
      */
     public function handle_extension_ajax_process() {
-        check_ajax_referer('content_auto_material_nonce', 'nonce');
+        check_ajax_referer('yali_ai_writer_material_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('权限不足', 'yali-ai-writer')]);
@@ -528,7 +193,7 @@ class ContentAuto_SearchMaterialsAdminPage {
         }
         
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 获取主题信息
         $topic = $wpdb->get_row($wpdb->prepare(
@@ -554,13 +219,13 @@ class ContentAuto_SearchMaterialsAdminPage {
         }
         
         // 分发任务到浏览器插件
-        if (!defined('CONTENT_AUTO_MANAGER_PLUGIN_DIR')) {
+        if (!defined('YALI_AI_WRITER_PLUGIN_DIR')) {
             wp_send_json_error(['message' => __('环境错误：PLUGIN_DIR未定义', 'yali-ai-writer')]);
         }
         
         // 加载必需的控制器类（包括父类）
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-base-controller.php';
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rest-api/controllers/class-task-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-base-controller.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'rest-api/controllers/class-task-controller.php';
         
         $query = $topic['title'];
         
@@ -589,7 +254,7 @@ class ContentAuto_SearchMaterialsAdminPage {
         ]);
     }
     public function handle_check_task_result() {
-        check_ajax_referer('content_auto_material_nonce', 'nonce');
+        check_ajax_referer('yali_ai_writer_material_nonce', 'nonce');
         
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('权限不足', 'yali-ai-writer')]);

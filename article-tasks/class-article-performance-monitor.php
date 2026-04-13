@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ArticlePerformanceMonitor {
+class Yali_AI_Writer_ArticlePerformanceMonitor {
     
     private $logger;
     private $start_times;
@@ -16,7 +16,7 @@ class ContentAuto_ArticlePerformanceMonitor {
     private $error_stats;
     
     public function __construct() {
-        $this->logger = new ContentAuto_LoggingSystem();
+        $this->logger = new Yali_AI_Writer_LoggingSystem();
         $this->start_times = array();
         $this->performance_data = array();
         $this->error_stats = array();
@@ -36,7 +36,7 @@ class ContentAuto_ArticlePerformanceMonitor {
         );
         
         // 仅在调试模式下记录性能开始日志
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $this->logger->log_debug('PERF_START', "开始性能监控: {$operation_name}", $context);
         }
     }
@@ -50,7 +50,7 @@ class ContentAuto_ArticlePerformanceMonitor {
      */
     public function end_timing($operation_name, $success = true, $additional_data = array()) {
         if (!isset($this->start_times[$operation_name])) {
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $this->logger->log_warning('PERF_WARNING', "未找到操作的开始时间: {$operation_name}");
             }
             return;
@@ -77,7 +77,7 @@ class ContentAuto_ArticlePerformanceMonitor {
         $this->performance_data[] = $performance_metrics;
         
         // 仅在调试模式下记录性能完成日志
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $log_message = sprintf(
                 "性能监控完成: %s - 耗时: %sms, 内存使用: %sMB, 状态: %s",
                 $operation_name,
@@ -132,7 +132,7 @@ class ContentAuto_ArticlePerformanceMonitor {
         }
         
         // 仅在调试模式下记录错误统计日志
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $this->logger->log_info('ERROR_STATS', "错误统计更新: {$error_key}, 总计: {$this->error_stats[$error_key]['count']} 次", $context);
         }
     }
@@ -157,7 +157,7 @@ class ContentAuto_ArticlePerformanceMonitor {
         $this->performance_data[] = $api_stats;
         
         // 仅在调试模式下记录API统计日志
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $status = $success ? '成功' : '失败';
             $this->logger->log_info('API_STATS', 
                 "API统计: {$api_name} - 响应时间: {$api_stats['response_time_ms']}ms, 状态: {$status}", 
@@ -167,7 +167,7 @@ class ContentAuto_ArticlePerformanceMonitor {
         
         // 检查API响应时间阈值
         if ($api_stats['response_time_ms'] > 30000) { // 30秒
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $this->logger->log_warning('API_SLOW_RESPONSE', 
                     "API响应时间过长: {$api_name} - {$api_stats['response_time_ms']}ms", 
                     $api_stats
@@ -287,7 +287,7 @@ class ContentAuto_ArticlePerformanceMonitor {
     private function check_performance_thresholds($metrics) {
         // 检查执行时间阈值
         if ($metrics['duration_ms'] > 60000) { // 60秒
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $this->logger->log_warning('PERF_SLOW_OPERATION', 
                     "操作执行时间过长: {$metrics['operation']} - {$metrics['duration_ms']}ms", 
                     $metrics
@@ -297,7 +297,7 @@ class ContentAuto_ArticlePerformanceMonitor {
         
         // 检查内存使用阈值
         if ($metrics['memory_used_mb'] > 100) { // 100MB
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $this->logger->log_warning('PERF_HIGH_MEMORY', 
                     "操作内存使用过高: {$metrics['operation']} - {$metrics['memory_used_mb']}MB", 
                     $metrics
@@ -307,7 +307,7 @@ class ContentAuto_ArticlePerformanceMonitor {
         
         // 检查峰值内存阈值
         if ($metrics['peak_memory_mb'] > 256) { // 256MB
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $this->logger->log_warning('PERF_HIGH_PEAK_MEMORY', 
                     "系统峰值内存使用过高: {$metrics['peak_memory_mb']}MB", 
                     $metrics

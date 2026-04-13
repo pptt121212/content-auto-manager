@@ -7,18 +7,18 @@ if (!defined('ABSPATH')) {
  * 搜索物料服务类
  * 负责执行搜索、AI筛选、抓取和汇总的核心业务逻辑
  */
-class ContentAuto_SearchMaterialsService {
+class Yali_AI_Writer_SearchMaterialsService {
     
     private $unified_api;
     private $log;
 
     public function __construct() {
         // 确保统一API处理器已加载
-        if (!class_exists('ContentAuto_UnifiedApiHandler')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+        if (!class_exists('Yali_AI_Writer_UnifiedApiHandler')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
         }
         
-        $this->unified_api = new ContentAuto_UnifiedApiHandler();
+        $this->unified_api = new Yali_AI_Writer_UnifiedApiHandler();
         $this->log = [];
     }
 
@@ -29,14 +29,14 @@ class ContentAuto_SearchMaterialsService {
      * @return array ['use_english' => bool, 'language_instruction' => string, 'language_name' => string]
      */
     private function get_language_context() {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
         
         // 1. 获取发布语言
-        if (!class_exists('ContentAuto_Database')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/database/class-database.php';
+        if (!class_exists('Yali_AI_Writer_Database')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/database/class-database.php';
         }
-        $database = new ContentAuto_Database();
-        $publish_rule = $database->get_row('content_auto_publish_rules', array('id' => 1));
+        $database = new Yali_AI_Writer_Database();
+        $publish_rule = $database->get_row('yali_ai_writer_publish_rules', array('id' => 1));
         $publish_language = isset($publish_rule['publish_language']) ? $publish_rule['publish_language'] : 'zh-CN';
         
         // 2. 获取系统语言
@@ -48,9 +48,9 @@ class ContentAuto_SearchMaterialsService {
         $use_english = !$publish_is_chinese || !$locale_is_chinese;
         
         // 4. 获取语言指令
-        $validated_language = content_auto_validate_language_code($publish_language);
-        $language_instruction = content_auto_get_language_instructions($validated_language);
-        $language_name = content_auto_get_language_ai_name($validated_language);
+        $validated_language = yali_ai_writer_validate_language_code($publish_language);
+        $language_instruction = yali_ai_writer_get_language_instructions($validated_language);
+        $language_name = yali_ai_writer_get_language_ai_name($validated_language);
         
         return [
             'use_english' => $use_english,
@@ -165,7 +165,7 @@ class ContentAuto_SearchMaterialsService {
         $this->add_log("AI生成的联合搜索策略: " . implode(", ", $search_queries));
         
         //获取单次搜索配置的最大数量，如果用户没配则默认为 10
-        $search_settings = get_option('content_auto_search_settings', []);
+        $search_settings = get_option('yali_ai_writer_search_settings', []);
         $max_results_per_query = isset($search_settings['max_results']) ? intval($search_settings['max_results']) : 10;
         
         // 存储按搜索词分组的结果
@@ -174,7 +174,7 @@ class ContentAuto_SearchMaterialsService {
         foreach ($search_queries as $query) {
             $this->add_log(__('正在检索', 'yali-ai-writer') . ': [' . $query . '] ...');
             // 尊重用户配置，申请更大的初选池
-            $search_response = content_auto_search($query, $max_results_per_query);
+            $search_response = yali_ai_writer_search($query, $max_results_per_query);
             
             // 容错：单个搜索词失败不应导致整体失败，除非全部失败
             if (is_wp_error($search_response) || empty($search_response['success']) || empty($search_response['results'])) {
@@ -182,7 +182,7 @@ class ContentAuto_SearchMaterialsService {
             }
             
             // 获取全局黑名单配置
-            $global_blacklist = get_option('content_auto_material_search_blacklist', ['csdn.net', 'zhihu.com']);
+            $global_blacklist = get_option('yali_ai_writer_material_search_blacklist', ['csdn.net', 'zhihu.com']);
 
             $valid_items_for_query = [];
             foreach ($search_response['results'] as $item) {
@@ -812,7 +812,7 @@ class ContentAuto_SearchMaterialsService {
 
         // 检查是否有配置 API Key
         // 如果是重试模式 ($retry_without_key)，强制不使用 Key
-        $jina_key = $retry_without_key ? '' : get_option('content_auto_jina_api_key', '');
+        $jina_key = $retry_without_key ? '' : get_option('yali_ai_writer_jina_api_key', '');
         
         if (!empty($jina_key)) {
             $headers['Authorization'] = 'Bearer ' . $jina_key;
@@ -1056,7 +1056,7 @@ class ContentAuto_SearchMaterialsService {
 
     public function save_material_to_topic($topic_id, $summary) {
         global $wpdb;
-        $table = $wpdb->prefix . 'content_auto_topics';
+        $table = $wpdb->prefix . 'yali_ai_writer_topics';
         $result = $wpdb->update($table, ['reference_material' => $summary], ['id' => $topic_id], ['%s'], ['%d']);
         if ($result === false) return new WP_Error('db_error', '数据库更新失败: ' . $wpdb->last_error);
         return true;
@@ -1150,7 +1150,7 @@ class ContentAuto_SearchMaterialsService {
 
     private function get_topic_info($topic_id) {
         global $wpdb;
-        $table = $wpdb->prefix . 'content_auto_topics';
+        $table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table} WHERE id = %d", $topic_id));
         

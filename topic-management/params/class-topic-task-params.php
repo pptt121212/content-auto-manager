@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_TopicTaskParams {
+class Yali_AI_Writer_TopicTaskParams {
     public $topic_task_id = '';
     public $rule_id = 0;
     public $topic_count_per_item = 0;
@@ -15,7 +15,7 @@ class ContentAuto_TopicTaskParams {
     public $total_expected_topics = 0;
     public $current_processing_item = 0;
     public $generated_topics_count = 0;
-    public $status = CONTENT_AUTO_STATUS_PENDING;
+    public $status = YALI_AI_WRITER_STATUS_PENDING;
     public $error_message = '';
     
     /**
@@ -31,7 +31,7 @@ class ContentAuto_TopicTaskParams {
         $params->total_expected_topics = isset($data['total_expected_topics']) ? intval($data['total_expected_topics']) : 0;
         $params->current_processing_item = isset($data['current_processing_item']) ? intval($data['current_processing_item']) : 0;
         $params->generated_topics_count = isset($data['generated_topics_count']) ? intval($data['generated_topics_count']) : 0;
-        $params->status = isset($data['status']) ? sanitize_text_field($data['status']) : CONTENT_AUTO_STATUS_PENDING;
+        $params->status = isset($data['status']) ? sanitize_text_field($data['status']) : YALI_AI_WRITER_STATUS_PENDING;
         $params->error_message = isset($data['error_message']) ? sanitize_text_field($data['error_message']) : '';
         
         return $params;
@@ -71,7 +71,7 @@ class ContentAuto_TopicTaskParams {
         }
         
         // 验证状态
-        $valid_statuses = array(CONTENT_AUTO_STATUS_PENDING, CONTENT_AUTO_STATUS_RUNNING, CONTENT_AUTO_STATUS_COMPLETED, CONTENT_AUTO_STATUS_FAILED, CONTENT_AUTO_STATUS_PAUSED);
+        $valid_statuses = array(YALI_AI_WRITER_STATUS_PENDING, YALI_AI_WRITER_STATUS_RUNNING, YALI_AI_WRITER_STATUS_COMPLETED, YALI_AI_WRITER_STATUS_FAILED, YALI_AI_WRITER_STATUS_PAUSED);
         if (!in_array($this->status, $valid_statuses)) {
             $errors[] = __('无效的任务状态', 'yali-ai-writer');
         }

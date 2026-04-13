@@ -1,0 +1,43 @@
+/* 模态框特定样式 */
+.warning-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.warning-box p {
+    margin: 0 0 10px 0;
+    color: #856404;
+    font-weight: bold;
+}
+
+/* 加载动画 */
+.clearing-queue {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.clearing-queue .button-danger {
+    position: relative;
+}
+
+.clearing-queue .button-danger::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

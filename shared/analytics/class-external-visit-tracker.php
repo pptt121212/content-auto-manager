@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ExternalVisitTracker {
+class Yali_AI_Writer_ExternalVisitTracker {
     
     private $meta_key = '_external_visit_count';
     private $cookie_name = 'cam_internal_session';
@@ -22,7 +22,7 @@ class ContentAuto_ExternalVisitTracker {
         }
         
         // 为管理员提供查看统计的钩子
-        add_action('wp_ajax_get_external_visit_stats', array($this, 'ajax_get_visit_stats'));
+        add_action('wp_ajax_yali_ai_writer_get_external_visit_stats', array($this, 'ajax_get_visit_stats'));
     }
     
     /**
@@ -315,5 +315,5 @@ class ContentAuto_ExternalVisitTracker {
 }
 
 // 全局实例
-global $content_auto_external_visit_tracker;
-$content_auto_external_visit_tracker = new ContentAuto_ExternalVisitTracker();
+global $yali_ai_writer_external_visit_tracker;
+$yali_ai_writer_external_visit_tracker = new Yali_AI_Writer_ExternalVisitTracker();

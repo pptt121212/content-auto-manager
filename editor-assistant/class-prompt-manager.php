@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_Editor_Prompt_Manager {
+class Yali_AI_Writer_Editor_Prompt_Manager {
 
     /**
      * 获取默认提示词列表
@@ -192,6 +192,14 @@ class ContentAuto_Editor_Prompt_Manager {
             }
         }
         unset($prompt);
+
+        // 从JSON配置文件加载图像生成提示词并合并
+        if (class_exists('Yali_AI_Writer_Image_Prompts_Loader')) {
+            $image_prompts = Yali_AI_Writer_Image_Prompts_Loader::load_image_prompts();
+            if (!empty($image_prompts)) {
+                $prompts_array = array_merge($prompts_array, $image_prompts);
+            }
+        }
 
         // 仅返回符合当前界面语言的一个分组，杜绝“中英双重菜单”或“英文双重菜单”导致的重复和混淆
         return array(

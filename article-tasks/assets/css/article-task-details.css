@@ -1,0 +1,134 @@
+.task-details-container {
+    max-width: 100%;
+}
+
+.task-basic-info {
+    margin-bottom: 30px;
+}
+
+.progress-container {
+    min-width: 200px;
+}
+
+.stats-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.success-stat {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.failed-stat {
+    color: #dc3232;
+    font-weight: 600;
+}
+
+.success-rate {
+    color: #666;
+    font-size: 12px;
+}
+
+.error-message {
+    color: #dc3232;
+    font-weight: 500;
+}
+
+.subtasks-section {
+    margin-top: 30px;
+}
+
+.subtasks-summary {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    flex-wrap: wrap;
+}
+
+.summary-item {
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.summary-item.pending {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.summary-item.processing {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.summary-item.completed {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.summary-item.failed {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.subtasks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.subtasks-table th,
+.subtasks-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.subtasks-table th {
+    background: #f1f1f1;
+    font-weight: 600;
+}
+
+.subtask-row:nth-child(even) {
+    background: #f9f9f9;
+}
+
+.article-link {
+    margin-top: 4px;
+}
+
+.article-link a {
+    font-size: 12px;
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.article-link a:hover {
+    text-decoration: underline;
+}
+
+.retry-info {
+    margin-top: 2px;
+}
+
+.retry-info small {
+    color: #666;
+}
+
+.no-error {
+    color: #999;
+}
+
+.no-subtasks {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}

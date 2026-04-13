@@ -9,12 +9,12 @@ if (!defined('ABSPATH')) {
 }
 
 // 确保依赖类已加载
-if (!class_exists('ContentAuto_VectorApiHandler')) {
-    require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
+if (!class_exists('Yali_AI_Writer_VectorApiHandler')) {
+    require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
 }
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-safety-sentinel.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-safety-sentinel.php';
 
-class ContentAuto_VectorGenerator {
+class Yali_AI_Writer_VectorGenerator {
     
     private $database;
     private $vector_handler;
@@ -32,18 +32,18 @@ class ContentAuto_VectorGenerator {
      * 构造函数
      */
     public function __construct($logger = null) {
-        $this->database = new ContentAuto_Database();
-        $this->vector_handler = new ContentAuto_VectorApiHandler($logger);
+        $this->database = new Yali_AI_Writer_Database();
+        $this->vector_handler = new Yali_AI_Writer_VectorApiHandler($logger);
         $this->logger = $logger;
         
         // 初始化速率限制器
-        $this->rate_limiter = new ContentAuto_VectorRateLimiter(self::VECTOR_RPM, self::VECTOR_TPM);
+        $this->rate_limiter = new Yali_AI_Writer_VectorRateLimiter(self::VECTOR_RPM, self::VECTOR_TPM);
         
         // 初始化分类向量管理器
-        if (!class_exists('ContentAuto_CategoryVectorManager')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-category-vector-manager.php';
+        if (!class_exists('Yali_AI_Writer_CategoryVectorManager')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-category-vector-manager.php';
         }
-        $this->category_manager = new ContentAuto_CategoryVectorManager($logger);
+        $this->category_manager = new Yali_AI_Writer_CategoryVectorManager($logger);
     }
     
     /**
@@ -51,7 +51,7 @@ class ContentAuto_VectorGenerator {
      */
     public function process_vector_generation($job = array()) {
         // 【安全哨兵】开始前检查任务是否还存在
-        if (!ContentAuto_SafetySentinel::is_execution_valid(array('job_queue_id' => $job['id']))) {
+        if (!Yali_AI_Writer_SafetySentinel::is_execution_valid(array('job_queue_id' => $job['id']))) {
             if ($this->logger) $this->logger->log('向量任务已失效，停止执行。', 'WARNING', array('job_id' => $job['id']));
             return array('success' => false, 'message' => 'Job aborted: deleted or inactive');
         }
@@ -151,7 +151,7 @@ class ContentAuto_VectorGenerator {
      */
     private function process_batch_results($api_result, $topics) {
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
 
         // API调用如果完全失败，则将本次所有请求的主题标记为失败并增加重试次数
         if ($api_result === false || !isset($api_result['embeddings'])) {
@@ -236,7 +236,7 @@ class ContentAuto_VectorGenerator {
         global $wpdb;
         
         // 检查主题任务状态
-        $topic_tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
+        $topic_tasks_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
         $active_topic_tasks = $wpdb->get_var($wpdb->prepare("
             SELECT COUNT(*) FROM {$topic_tasks_table} 
             WHERE status IN (%s, %s, %s)
@@ -292,7 +292,7 @@ class ContentAuto_VectorGenerator {
      */
     private function should_auto_match_category($topic_id) {
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $topic = $wpdb->get_row($wpdb->prepare(
             "SELECT rule_id, matched_category FROM {$topics_table} WHERE id = %d",
@@ -327,7 +327,7 @@ class ContentAuto_VectorGenerator {
     public function get_topics_needing_vectors($limit = 10) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $topics = $wpdb->get_results($wpdb->prepare("
             SELECT id, title, source_angle, user_value, seo_keywords, matched_category, vector_retry_count
@@ -348,7 +348,7 @@ class ContentAuto_VectorGenerator {
     public function get_vector_generation_stats() {
         global $wpdb;
 
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
 
         // 总主题数
         $total_topics = $wpdb->get_var("SELECT COUNT(*) FROM {$topics_table}");
@@ -376,7 +376,7 @@ class ContentAuto_VectorGenerator {
 /**
  * 向量API速率限制器
  */
-class ContentAuto_VectorRateLimiter {
+class Yali_AI_Writer_VectorRateLimiter {
     
     private $rpm_limit;
     private $tpm_limit;
@@ -450,11 +450,11 @@ class ContentAuto_VectorRateLimiter {
 /**
  * 便捷函数：启动向量生成调度器
  */
-function content_auto_start_vector_generation() {
+function yali_ai_writer_start_vector_generation() {
     static $generator = null;
     
     if ($generator === null) {
-        $generator = new ContentAuto_VectorGenerator();
+        $generator = new Yali_AI_Writer_VectorGenerator();
     }
     
     return $generator->start_vector_generation_scheduler();
@@ -463,11 +463,11 @@ function content_auto_start_vector_generation() {
 /**
  * 便捷函数：获取向量生成统计
  */
-function content_auto_get_vector_stats() {
+function yali_ai_writer_get_vector_stats() {
     static $generator = null;
     
     if ($generator === null) {
-        $generator = new ContentAuto_VectorGenerator();
+        $generator = new Yali_AI_Writer_VectorGenerator();
     }
     
     return $generator->get_vector_generation_stats();
@@ -476,11 +476,11 @@ function content_auto_get_vector_stats() {
 /**
  * 便捷函数：刷新分类向量缓存
  */
-function content_auto_refresh_category_cache() {
+function yali_ai_writer_refresh_category_cache() {
     static $generator = null;
     
     if ($generator === null) {
-        $generator = new ContentAuto_VectorGenerator();
+        $generator = new Yali_AI_Writer_VectorGenerator();
     }
     
     return $generator->refresh_category_cache();
@@ -489,11 +489,11 @@ function content_auto_refresh_category_cache() {
 /**
  * 便捷函数：获取分类缓存状态
  */
-function content_auto_get_category_cache_status() {
+function yali_ai_writer_get_category_cache_status() {
     static $generator = null;
     
     if ($generator === null) {
-        $generator = new ContentAuto_VectorGenerator();
+        $generator = new Yali_AI_Writer_VectorGenerator();
     }
     
     return $generator->get_category_cache_status();

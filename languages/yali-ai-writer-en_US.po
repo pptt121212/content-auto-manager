@@ -7,6 +7,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "已清理 %d 条 postmeta 记录，并重置 %d 篇文章的配图状态。"
+msgstr "Cleared %d postmeta records and reset featured image status for %d articles."
+
 msgid "仅插件官方API支持配额查询"
 msgstr "Quota query is only supported for the official plugin API"
 
@@ -48,6 +51,21 @@ msgstr "Cannot connect to Pollinations interface: "
 
 msgid "获取到的模型数据格式不正确。"
 msgstr "The model data format obtained is incorrect."
+
+msgid "已过滤：仅显示免费的文本生成模型"
+msgstr "Filtered: Only showing free text generation models"
+
+msgid "<strong>免费模型推荐：</strong>openai-fast (极速)、deepseek (推理)、kimi (多智能体)。<br>点击\"同步多模型\"获取最新可用免费模型列表（已自动过滤语音/图像/视频生成模型）。付费模型标记为 [💎]，需要账户有充足余额。"
+msgstr "<strong>Free Models:</strong> openai-fast (fast), deepseek (reasoning), kimi (multi-agent).<br>Click 'Sync Models' for latest free models (voice/image/video filtered). Paid models marked [💎] require sufficient balance."
+
+msgid "<strong>模型获取方式：</strong>点击\"同步多模型\"按钮从 Pollinations 获取最新可用模型列表。<br>系统会自动过滤语音/图像/视频生成模型，仅显示文本生成模型。"
+msgstr "<strong>Model Source:</strong> Click 'Sync Models' to fetch latest available models from Pollinations.<br>System auto-filters voice/image/video models, only text generation models shown."
+
+msgid "↗️ 请先点击\"同步多模型\"获取可用模型列表"
+msgstr "↗️ Please click 'Sync Models' to get available models"
+
+msgid "当前保存的模型"
+msgstr "Currently saved model"
 
 msgid "当前只有1个激活的API配置，建议增加更多配置以提高可靠性和负载均衡能力"
 msgstr "Currently only 1 active API configuration, suggest adding more for reliability and load balancing"
@@ -442,6 +460,24 @@ msgstr "Standard (Non-Stream): OK"
 msgid "Stream: OK"
 msgstr "Stream: OK"
 
+msgid "Gemini Stream Error: "
+msgstr "Gemini Stream Error: "
+
+msgid "Stream API Error: "
+msgstr "Stream API Error: "
+
+msgid "Stream Request Failed: "
+msgstr "Stream Request Failed: "
+
+msgid "Stream HTTP Error: "
+msgstr "Stream HTTP Error: "
+
+msgid "Stream: OK！模型：%1$s，生成内容：\"%2$s\"，响应时间：%3$s秒"
+msgstr "Stream: OK! Model: %1$s, Content: \"%2$s\", Response Time: %3$ss"
+
+msgid "Standard: OK！模型：%1$s，生成内容：\"%2$s\"，响应时间：%3$s秒"
+msgstr "Standard: OK! Model: %1$s, Content: \"%2$s\", Response Time: %3$ss"
+
 msgid "Gemini Request Failed: "
 msgstr "Gemini Request Failed: "
 
@@ -599,7 +635,7 @@ msgid "配置创建失败。"
 msgstr "Configuration creation failed."
 
 msgid "向量API测试方法不存在"
-msgstr "Vector API test method does not exist."
+msgstr "Vector API test method does not exist"
 
 msgid "向量API连接成功！向量维度：%d，模型：%s，响应时间：%.2f秒"
 msgstr "Vector API connected! Dimensions: %d, Model: %s, Time: %.2f seconds"
@@ -613,8 +649,8 @@ msgstr "OpenAI Compatible"
 msgid "选择API类型后，下方配置项会根据所选类型自动调整默认值"
 msgstr "After selecting an API type, the configuration fields below will automatically adjust their default values."
 
-msgid "\\nTokens: %1$s"
-msgstr "\\nTokens: %1$s"
+msgid "\nTokens: %1$s"
+msgstr "\nTokens: %1$s"
 
 msgid "例如: https://generativelanguage.googleapis.com/v1beta/models"
 msgstr "e.g., https://generativelanguage.googleapis.com/v1beta/models"
@@ -676,11 +712,11 @@ msgstr "%d active configs | %d vector ready"
 msgid "发布配置状态"
 msgstr "Publish Config"
 
-msgid "确定要清空图像API设置吗？\\\\n\\\\n此操作将删除所有图像API提供商的配置，且无法恢复！\\\\n\\\\n请确认您已备份重要配置后再继续。"
-msgstr "Are you sure you want to clear Image API settings?\\\\n\\\\nThis will delete all image API provider configurations and cannot be recovered!\\\\n\\\\nPlease confirm you have backed up important configurations before continuing."
+msgid "确定要清空图像API设置吗？\\\n\\\n此操作将删除所有图像API提供商的配置，且无法恢复！\\\n\\\n请确认您已备份重要配置后再继续。"
+msgstr "Are you sure you want to clear Image API settings?\\\n\\\nThis will delete all image API provider configurations and cannot be recovered!\\\n\\\nPlease confirm you have backed up important configurations before continuing."
 
-msgid "确定要重置图像API设置为默认值吗？\\\\n\\\\n此操作将覆盖所有当前配置，且无法恢复！\\\\n\\\\n请确认您已备份重要配置后再继续。"
-msgstr "Are you sure you want to reset Image API settings to default values?\\\\n\\\\nThis will overwrite all current configurations and cannot be recovered!\\\\n\\\\nPlease confirm you have backed up important configurations before continuing."
+msgid "确定要重置图像API设置为默认值吗？\\\n\\\n此操作将覆盖所有当前配置，且无法恢复！\\\n\\\n请确认您已备份重要配置后再继续。"
+msgstr "Are you sure you want to reset Image API settings to default values?\\\n\\\nThis will overwrite all current configurations and cannot be recovered!\\\n\\\nPlease confirm you have backed up important configurations before continuing."
 
 msgid "API配置"
 msgstr "API Config"
@@ -728,7 +764,7 @@ msgid "存储生成的主题内容及结构化数据，包括API配置信息和�
 msgstr "Stores generated topic content and structured data"
 
 msgid "关联的API配置ID，用于指定生成文章时使用的API配置"
-msgstr "Related API config ID"
+msgstr "Related API Config ID for article generation"
 
 msgid "关联的API配置名称，记录生成文章时使用的具体API配置名称"
 msgstr "Related API config name"
@@ -773,19 +809,19 @@ msgid "前往助手配置"
 msgstr "Go to Assistant Configuration"
 
 msgid "编辑器AI助手配置"
-msgstr "Editor Assistant Settings"
+msgstr "Editor AI Assistant Settings"
 
 msgid "此语言下暂无提示词配置。"
-msgstr "There are no prompt configurations for this language."
+msgstr "No prompt configuration available for this language."
 
 msgid "恢复默认配置"
-msgstr "Restore Default Settings"
+msgstr "Restore Default Configuration"
 
 msgid "确定要恢复默认配置吗？这将覆盖您当前所有语言的修改！"
-msgstr "Are you sure you want to restore the default settings? This will overwrite your modifications for all languages!"
+msgstr "Are you sure you want to restore default configuration? This will overwrite your current modifications for all languages!"
 
 msgid "已恢复默认配置，请点击【保存配置】按钮使其生效。"
-msgstr "Default settings have been restored. Please click the [Save Config] button to apply."
+msgstr "Default configuration restored. Please click the [Save Configuration] button to apply."
 
 msgid "API Key 配置"
 msgstr "API Key Configuration"
@@ -982,6 +1018,63 @@ msgstr "[Optional Variable] When specific depth configured, guides AI to adopt a
 msgid "【可选变量】当用户配置了特定的读者角色时，指导AI针对该受众群体调整表达方式和内容重点"
 msgstr "[Optional Variable] When specific audience configured, guides AI to adjust tone and focus"
 
+msgid "共 %d 个文本生成模型（%d 免费 / %d 付费）"
+msgstr "Total %d text generation models (%d free / %d paid)"
+
+msgid "网络请求失败 (cURL): "
+msgstr "Network request failed (cURL): "
+
+msgid "API配置 \"%s\" 的URL格式无效"
+msgstr "Invalid URL format for API configuration \"%s\""
+
+msgid "API配置 \"%s\" 的temperature值不在推荐范围内 (0-2)"
+msgstr "Temperature value for API configuration \"%s\" is out of recommended range (0-2)"
+
+msgid "API配置 \"%s\" 的max_tokens值不在推荐范围内 (1-10000)"
+msgstr "Max_tokens value for API configuration \"%s\" is out of recommended range (1-10000)"
+
+msgid "✅ 当前有 %d 个激活的API配置，这是推荐的配置方式，提供智能轮询、负载均衡和容错能力"
+msgstr "✅ Currently there are %d active API configurations. This is the recommended approach, providing smart polling, load balancing, and fault tolerance."
+
+msgid "Jina Reader"
+msgstr "Jina Reader"
+
+msgid "智谱清言"
+msgstr "Zhipu AI (GLM)"
+
+msgid "插件官方API服务，通过授权码验证使用。<br><strong>如何申请使用：</strong><br>1. 联系插件作者微信：qn006699 获取插件授权码后使用<br>2. 在发布规则中配置授权码<br>3. 即可开始使用官方API服务"
+msgstr "Plugin's official API service, verified by authorization code.<br><strong>How to apply:</strong><br>1. Contact plugin author via WeChat: qn006699 to get an auth code<br>2. Configure the auth code in Publish Rules<br>3. Start using the official API service"
+
+msgid "Key 预算 (Pollen)"
+msgstr "Key Budget (Pollen)"
+
+msgid "❌ 获取失败: "
+msgstr "❌ Fetch failed: "
+
+msgid "请先点击\"同步多模型\"获取可用模型列表"
+msgstr "Please click 'Sync Multi-Models' first to get the list of available models"
+
+msgid "由 Pollinations 提供的多种顶级开源、商业模型。点击\"同步多模型\"获取最新可用模型列表。"
+msgstr "A variety of top-tier open source and commercial models provided by Pollinations. Click 'Sync Multi-Models' to fetch the latest available models list."
+
+msgid "API response error (HTTP "
+msgstr "API response error (HTTP "
+
+msgid "配置ID无效"
+msgstr "Invalid configuration ID"
+
+msgid "模型列表同步成功！"
+msgstr "Model list synchronized successfully!"
+
+msgid "Stream Request Failed (WP HTTP): "
+msgstr "Stream Request Failed (WP HTTP): "
+
+msgid "网络请求失败 (WP HTTP): "
+msgstr "Network request failed (WP HTTP): "
+
+msgid "未获取到内容响应, 原始响应前500字: "
+msgstr "No content response obtained, original response first 500 chars: "
+
 msgid "=== Content Angle Types ==="
 msgstr ""
 
@@ -1072,6 +1165,18 @@ msgstr "Total Structures"
 msgid "数据驱动结构"
 msgstr "Data Driven Structures"
 
+msgid "调整智能选择算法的参数。修改后点击\"保存配置\"生效。"
+msgstr "Adjust the parameters of the intelligent selection algorithm. Changes take effect after clicking \"Save Configuration\"."
+
+msgid "智能优化功能未启用"
+msgstr "Smart optimization feature is not enabled"
+
+msgid "✅ 成功生成1个新结构"
+msgstr "✅ Successfully generated 1 new structure"
+
+msgid "✅ 成功生成1个新结构并生成了向量"
+msgstr "✅ Successfully generated 1 new structure with vectors"
+
 msgid "进度: {current} / {total} 篇（已创建: {created} 个结构）"
 msgstr "Progress: {current} / {total} articles (Created: {created} structures)"
 
@@ -1086,6 +1191,9 @@ msgstr "Processed %d articles, created %d new structures."
 
 msgid "已更新 %d 个结构的受欢迎度指数"
 msgstr "Updated popularity index for %d structures"
+
+msgid "清理过程中发生错误："
+msgstr "Error occurred during cleanup: "
 
 msgid "智能结构分析"
 msgstr "Smart Structure Analysis"
@@ -1276,6 +1384,60 @@ msgstr "[Optional Variable] Tells AI to strictly follow the selected structure's
 msgid "💡 建议紧跟在STRUCTURE_BLOCK之后，强化执行力度"
 msgstr "💡 Suggest placing immediately after STRUCTURE_BLOCK to reinforce execution"
 
+msgid "成功创建结构"
+msgstr "Structure created successfully"
+
+msgid "结构提取失败"
+msgstr "Structure extraction failed"
+
+msgid "分析已跳过："
+msgstr "Analysis skipped: "
+
+msgid "未创建新结构（可能提取失败）。"
+msgstr "No new structure created (extraction may have failed)."
+
+msgid "分析失败"
+msgstr "Analysis failed"
+
+msgid "无效的文章 ID"
+msgstr "Invalid article ID"
+
+msgid "文章不存在"
+msgstr "Article does not exist"
+
+msgid "未提供内容角度。"
+msgstr "Content angle not provided."
+
+msgid "文章结构已删除"
+msgstr "Article structure deleted"
+
+msgid "缺少文章 ID"
+msgstr "Missing article ID"
+
+msgid "生成失败，请检查 API 配置或稍后重试"
+msgstr "Generation failed, please check API configuration or try again later"
+
+msgid "生成失败，请检查 API 配置"
+msgstr "Generation failed, please check API configuration"
+
+msgid "无效的 ID"
+msgstr "Invalid ID"
+
+msgid "生成失败，请检查API配置或稍后重试"
+msgstr "Generation failed, please check the API configuration or try again later"
+
+msgid "生成失败，请检查API配置"
+msgstr "Generation failed, please check the API configuration"
+
+msgid "无效的ID"
+msgstr "Invalid ID"
+
+msgid "成功删除动态角度\"%s\"：%d个主题已重新分配到固定角度，%d个相关结构已删除，%d个文章关联已清理"
+msgstr "Successfully deleted dynamic angle \"%s\": %d topics reassigned to fixed angles, %d related structures deleted, and %d article associations cleared"
+
+msgid "确定要删除动态角度 \"%s\" 吗？"
+msgstr "Are you sure you want to delete the dynamic angle \"%s\"?"
+
 msgid "安装失败，请重试或查看日志。"
 msgstr "Installation failed, please retry or check logs."
 
@@ -1381,20 +1543,11 @@ msgstr "Subtask Execution Status"
 msgid "待处理: "
 msgstr "Pending: "
 
-msgid "待处理"
-msgstr "Pending"
-
 msgid "已完成: "
 msgstr "Completed: "
 
-msgid "已完成"
-msgstr "Completed"
-
 msgid "失败: "
 msgstr "Failed: "
-
-msgid "失败"
-msgstr "Failed"
 
 msgid "重试次数: "
 msgstr "Retry Count: "
@@ -1604,7 +1757,7 @@ msgid "搜索失败"
 msgstr "Search failed"
 
 msgid "加载失败"
-msgstr "Failed to load."
+msgstr "Loading failed"
 
 msgid "刷新失败"
 msgstr "Refresh Failed"
@@ -1641,9 +1794,6 @@ msgstr "Channel already exists, save failed."
 
 msgid "测试失败: "
 msgstr "Test failed: "
-
-msgid "已暂停"
-msgstr "Paused"
 
 msgid "文章任务管理"
 msgstr "Article Task Management"
@@ -1847,7 +1997,7 @@ msgid "每日自动分析任务的执行时间。"
 msgstr "Execution time of the daily automatic analysis task."
 
 msgid "恢复默认"
-msgstr "Reset to Default"
+msgstr "Restore Defaults"
 
 msgid "手动触发分析任务或更新受欢迎度指数。"
 msgstr "Manually trigger analysis tasks or update the popularity index."
@@ -1939,8 +2089,8 @@ msgstr "Initializing clustering task..."
 msgid "聚类任务已在后台成功启动。"
 msgstr "Clustering task has been successfully started in the background."
 
-msgid "\\n[Error] 后台授权验证失败，任务中止。"
-msgstr "\\n[Error] Background authorization validation failed, task aborted."
+msgid "\n[Error] 后台授权验证失败，任务中止。"
+msgstr "\n[Error] Background authorization validation failed, task aborted."
 
 msgid "任务执行状态"
 msgstr "Task Execution Status"
@@ -2065,11 +2215,11 @@ msgstr "Topic Tasks"
 msgid "文章任务"
 msgstr "Article Task"
 
-msgid "确定要清空所有日志文件吗？\\\\n\\\\n此操作将永久删除logs目录下的所有.log文件，且无法恢复！\\\\n\\\\n请确认您已备份重要日志后再继续。"
-msgstr "Are you sure you want to clear all log files?\\\\n\\\\nThis will permanently delete all .log files in the logs directory and cannot be recovered!\\\\n\\\\nPlease confirm you have backed up important logs before continuing."
+msgid "确定要清空所有日志文件吗？\\\n\\\n此操作将永久删除logs目录下的所有.log文件，且无法恢复！\\\n\\\n请确认您已备份重要日志后再继续。"
+msgstr "Are you sure you want to clear all log files?\\\n\\\nThis will permanently delete all .log files in the logs directory and cannot be recovered!\\\n\\\nPlease confirm you have backed up important logs before continuing."
 
-msgid "确定要清理自动配图postmeta数据吗？\\\\n\\\\n此操作将永久删除所有自动配图相关的postmeta记录，且无法恢复！\\\\n\\\\n请确认您已备份重要数据后再继续。"
-msgstr "Are you sure you want to clear auto-image postmeta data?\\\\n\\\\nThis will permanently delete all postmeta records related to auto-imaging and cannot be recovered!\\\\n\\\\nPlease confirm you have backed up important data before continuing."
+msgid "确定要清理自动配图postmeta数据吗？\\\n\\\n此操作将永久删除所有自动配图相关的postmeta记录，且无法恢复！\\\n\\\n请确认您已备份重要数据后再继续。"
+msgstr "Are you sure you want to clear auto-image postmeta data?\\\n\\\nThis will permanently delete all postmeta records related to auto-imaging and cannot be recovered!\\\n\\\nPlease confirm you have backed up important data before continuing."
 
 msgid "检查失败："
 msgstr "Check failed: "
@@ -2194,7 +2344,7 @@ msgstr "Subtask status (JSON)"
 msgid "任务类型（topic_task、article等）"
 msgstr "Job type (topic_task, article, etc.)"
 
-msgid "关联的任务ID（指向具体任务表的主键ID，根据job_type字段确定具体表，如content_auto_topic_tasks表的id）"
+msgid "关联的任务ID（指向具体任务表的主键ID，根据job_type字段确定具体表，如yali_ai_writer_topic_tasks表的id）"
 msgstr "Related task ID"
 
 msgid "子任务ID，用于唯一标识同一任务中的不同子任务"
@@ -2209,7 +2359,7 @@ msgstr "Retry count"
 msgid "计划执行时间，用于定时任务调度"
 msgstr "Scheduled execution time"
 
-msgid "关联的主题任务唯一标识符（来自content_auto_topic_tasks表的topic_task_id字段）"
+msgid "关联的主题任务唯一标识符（来自yali_ai_writer_topic_tasks表的topic_task_id字段）"
 msgstr "Related topic task unique identifier"
 
 msgid "任务ID，用于全局查询的唯一ID"
@@ -2240,10 +2390,10 @@ msgid "生成失败"
 msgstr "Generation failed"
 
 msgid "保存失败："
-msgstr "Failed to save: "
+msgstr "Save failed: "
 
 msgid "网络请求失败，请稍后重试。"
-msgstr "Network request failed. Please try again later."
+msgstr "Network request failed, please try again later."
 
 msgid "⏳ 正在创建任务..."
 msgstr "⏳ Creating task..."
@@ -2266,8 +2416,8 @@ msgstr "Test failed:"
 msgid "轮询请求失败:"
 msgstr "Polling request failed:"
 
-msgid "关键数据加载失败，插件无法正常工作。请联系管理员。\\n\\n请在浏览器控制台查看详细错误信息。"
-msgstr "Key data failed to load, plugin cannot work properly. Please contact the administrator.\\n\\nPlease check the browser console for details."
+msgid "关键数据加载失败，插件无法正常工作。请联系管理员。\n\n请在浏览器控制台查看详细错误信息。"
+msgstr "Key data failed to load, plugin cannot work properly. Please contact the administrator.\n\nPlease check the browser console for details."
 
 msgid "正在初始化挖掘任务 [{dataSourcesText}]..."
 msgstr "Initializing mining task [{dataSourcesText}]..."
@@ -2327,7 +2477,7 @@ msgid "授权验证失败"
 msgstr "License verification failed"
 
 msgid "授权码验证失败：%s"
-msgstr "License key verification failed: %s"
+msgstr "License verification failed: %s"
 
 msgid "授权签名验证失败！响应可能被篡改。"
 msgstr "License signature verification failed! Response may have been tampered with."
@@ -2421,9 +2571,6 @@ msgstr "Network error, save failed"
 
 msgid "任务已分发 (ID: "
 msgstr "Task dispatched (ID: "
-
-msgid "重试中"
-msgstr "Retrying"
 
 msgid "批量任务"
 msgstr "Batch Task"
@@ -2692,14 +2839,38 @@ msgstr "[Data Source] topic_count_per_item parameter during task creation<br>[Lo
 msgid "告诉AI需要为当前规则项目生成多少个主题，这个数量由用户在创建主题任务时指定"
 msgstr "Tells AI how many topics to generate for the current rule item, as specified by the user"
 
-msgid "【数据来源】从content_auto_topics表查询状态为unused和queued的主题<br>【处理逻辑】调用get_existing_topics()方法，获取最近的主题（默认限制30个候选，智能去重后返回最多5个）<br>【去重算法】使用向量余弦相似度或字符相似度，阈值0.8<br>【输出格式】每个主题标题占一行，前缀6个空格"
-msgstr "[Data Source] Queries content_auto_topics table for unused/queued topics<br>[Logic] Calls get_existing_topics(), fetches recent topics (30 candidates, returns max 5 after dedup)<br>[Algorithm] Cosine similarity or character similarity, threshold 0.8<br>[Output] One topic per line, 6-space prefix"
+msgid "【数据来源】从yali_ai_writer_topics表查询状态为unused和queued的主题<br>【处理逻辑】调用get_existing_topics()方法，获取最近的主题（默认限制30个候选，智能去重后返回最多5个）<br>【去重算法】使用向量余弦相似度或字符相似度，阈值0.8<br>【输出格式】每个主题标题占一行，前缀6个空格"
+msgstr "[Data Source] Queries yali_ai_writer_topics table for unused/queued topics<br>[Logic] Calls get_existing_topics(), fetches recent topics (30 candidates, returns max 5 after dedup)<br>[Algorithm] Cosine similarity or character similarity, threshold 0.8<br>[Output] One topic per line, 6-space prefix"
 
-msgid "【数据来源】content_auto_article_structures表的向量匹配结果<br>【获取方法】get_dynamic_article_structure()方法<br>【匹配逻辑】1)检查主题向量 2)获取同内容角度的候选结构 3)计算余弦相似度 4)取前20个中随机选择 5)更新使用次数<br>【回退机制】向量匹配失败时自动调用get_fallback_structure()，使用预设的专业5段式结构<br>【条件生成】仅在规范化输出启用时生成，保证始终有结构指导"
-msgstr "[Data Source] Vector matching results from content_auto_article_structures<br>[Method] get_dynamic_article_structure()<br>[Logic] 1) Check topic vector 2) Get candidates with same angle 3) Calculate cosine similarity 4) Random from top 20 5) Update usage count<br>[Fallback] Calls get_fallback_structure() on failure, uses preset 5-section structure<br>[Conditional] Only when normalized output is enabled"
+msgid "【数据来源】yali_ai_writer_article_structures表的向量匹配结果<br>【获取方法】get_dynamic_article_structure()方法<br>【匹配逻辑】1)检查主题向量 2)获取同内容角度的候选结构 3)计算余弦相似度 4)取前20个中随机选择 5)更新使用次数<br>【回退机制】向量匹配失败时自动调用get_fallback_structure()，使用预设的专业5段式结构<br>【条件生成】仅在规范化输出启用时生成，保证始终有结构指导"
+msgstr "[Data Source] Vector matching results from yali_ai_writer_article_structures<br>[Method] get_dynamic_article_structure()<br>[Logic] 1) Check topic vector 2) Get candidates with same angle 3) Calculate cosine similarity 4) Random from top 20 5) Update usage count<br>[Fallback] Calls get_fallback_structure() on failure, uses preset 5-section structure<br>[Conditional] Only when normalized output is enabled"
 
 msgid "【可选变量】为AI提供专业的文章结构框架，优先使用向量匹配结果，失败时使用预设的专业结构，确保内容组织的专业性和逻辑性"
 msgstr "[Optional Variable] Provides professional article structure, uses vector matching first, falls back to preset structure"
+
+msgid "确定要删除此任务吗？此操作不可撤销。"
+msgstr "Are you sure you want to delete this task? This action cannot be undone."
+
+msgid "没有待处理的高表现文章"
+msgstr "No pending high-performing articles"
+
+msgid "在文件 %1$s 的第 %2$d 行发生异常：%3$s"
+msgstr "Exception occurred at line %2$d in file %1$s: %3$s"
+
+msgid "Article content generation failed"
+msgstr "Article content generation failed"
+
+msgid "Failed to create WordPress post"
+msgstr "Failed to create WordPress post"
+
+msgid "Task does not exist"
+msgstr "Task does not exist"
+
+msgid "缺少文章ID"
+msgstr "Missing article ID"
+
+msgid "无效的文章ID"
+msgstr "Invalid article ID"
 
 msgid "基于插件授权的内置搜索服务。用于在生成内容前进行联网搜索，为 AI 提供最新的背景资料 and 事实支撑。"
 msgstr "Built-in search service. Provides real-time web search results as context for AI fact-checking and background data."
@@ -2920,11 +3091,95 @@ msgstr "Will Delete"
 msgid "保存中"
 msgstr "Saving"
 
+msgid "待处理"
+msgstr "Pending"
+
 msgid "进行中"
 msgstr "Running"
 
+msgid "已完成"
+msgstr "Completed"
+
+msgid "失败"
+msgstr "Failed"
+
+msgid "已暂停"
+msgstr "Paused"
+
+msgid "重试中"
+msgstr "Retrying"
+
 msgid "处理中"
 msgstr "Processing"
+
+msgid "操作成功。"
+msgstr "Operation successful."
+
+msgid "操作失败。"
+msgstr "Operation failed."
+
+msgid "Dismiss this notice"
+msgstr "Dismiss this notice"
+
+msgid "初始化增量聚类任务 (定时触发)..."
+msgstr "Initializing incremental clustering task (scheduled trigger)..."
+
+msgid "只有一个候选，无需大模型精选"
+msgstr "Only one candidate, no need for LLM selection"
+
+msgid "大模型精选失败，回退到相似度最高的候选"
+msgstr "LLM selection failed, falling back to highest similarity candidate"
+
+msgid "大模型精选成功"
+msgstr "LLM selection successful"
+
+msgid "大模型返回的 ID 无效，回退到相似度最高的候选"
+msgstr "LLM returned invalid ID, falling back to highest similarity candidate"
+
+msgid "超过速率限制，请稍后再试"
+msgstr "Rate limit exceeded, please try again later"
+
+msgid "您没有权限查看此统计"
+msgstr "You do not have permission to view this statistic"
+
+msgid "接口连接异常或权限不足"
+msgstr "API connection exception or insufficient permission"
+
+msgid "向量 API 测试异常："
+msgstr "Vector API test exception: "
+
+msgid "不支持的语言。"
+msgstr "Unsupported language."
+
+msgid "缺少必要的数据表：%s"
+msgstr "Missing required database table: %s"
+
+msgid "✅ 当前有 %d 个激活的 API 配置，这是推荐的配置方式，提供智能轮询、负载均衡和容错能力"
+msgstr "✅ Currently %d active API configurations. This is recommended for smart polling, load balancing, and fault tolerance."
+
+msgid "插件可使用 %d/%d 个分类（已启用分类过滤）"
+msgstr "Plugin can use %d/%d categories (category filter enabled)"
+
+msgid "删除任务时发生错误："
+msgstr "Error occurred while deleting task: "
+
+msgid "成功提交 %d 个任务的重试请求，%d 个任务失败。"
+msgstr "Successfully submitted retry requests for %d tasks, %d tasks failed."
+
+msgid "字段验证功能已简化，插件自动管理数据结构。"
+msgstr "Field validation simplified. Plugin manages data structure automatically."
+
+msgid "配置验证功能已简化，插件自动管理配置。"
+msgstr "Config validation simplified. Plugin manages configuration automatically."
+
+msgid "验证功能已移除，插件自动管理数据库结构。"
+msgstr "Validation removed. Plugin manages database structure automatically."
+
+msgid "主题不存在。"
+msgstr "Topic does not exist."
+
+msgid "搜索未知错误"
+msgstr "Search unknown error"
 
 msgid "进度统计"
 msgstr "Progress Statistics"
@@ -3094,6 +3349,9 @@ msgstr "Debug mode enabled"
 msgid "调试模式已关闭"
 msgstr "Debug mode disabled"
 
+msgid "调试模式已启用。现在将记录文章生成过程的详细日志。"
+msgstr "Debug mode enabled. Detailed logs of article generation process will now be recorded."
+
 msgid "暂无调试日志内容"
 msgstr "No debug log content"
 
@@ -3166,6 +3424,87 @@ msgstr "Executing recall test, please wait..."
 msgid "调试信息"
 msgstr "Debug Info"
 
+msgid "注意：清理postmeta数据不会删除已生成的图片文件，只会删除相关的元数据记录。插件表中的auto_images_processed和auto_images_count字段可通过上方的\"清空所有表数据\"操作清理。"
+msgstr "Note: Cleaning postmeta data will not delete generated image files, only related metadata records. The auto_images_processed and auto_images_count fields in plugin tables can be cleaned via the 'Clear All Table Data' operation above."
+
+msgid "品牌/产品名称"
+msgstr "Brand/Product Name"
+
+msgid "关联的API配置ID，用于指定生成主题时使用的API配置"
+msgstr "Related API Config ID for topic generation"
+
+msgid "API配置名称，记录生成主题时使用的具体API配置名称"
+msgstr "API Config Name used for topic generation"
+
+msgid "API配置名称，记录生成文章时使用的具体API配置名称"
+msgstr "API Config Name used for article generation"
+
+msgid "子任务 %s 已标记为失败 (卡住 %d 秒)"
+msgstr "Subtask %s marked as failed (stuck for %d seconds)"
+
+msgid "父任务 %d (%s) 状态已更新为 %s"
+msgstr "Parent task %d (%s) status updated to %s"
+
+msgid "最后确认：\n\n您真的要删除所有日志文件吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。"
+msgstr "Final confirmation:\n\nDo you really want to delete all log files?\n\nClick \"OK\" to continue, click \"Cancel\" to abort."
+
+msgid "确定要清空图像API设置吗？\n\n此操作将删除所有图像API提供商的配置，且无法恢复！\n\n请确认您已备份重要配置后再继续。"
+msgstr "Are you sure you want to clear image API settings?\n\nThis will delete all image API provider configurations and cannot be recovered!\n\nPlease confirm you have backed up important configurations before continuing."
+
+msgid "确定要重置图像API设置为默认值吗？\n\n此操作将覆盖所有当前配置，且无法恢复！\n\n请确认您已备份重要配置后再继续。"
+msgstr "Are you sure you want to reset image API settings to defaults?\n\nThis will overwrite all current configurations and cannot be recovered!\n\nPlease confirm you have backed up important configurations before continuing."
+
+msgid "确定要清理自动配图postmeta数据吗？\n\n此操作将永久删除所有自动配图相关的postmeta记录，且无法恢复！\n\n请确认您已备份重要数据后再继续。"
+msgstr "Are you sure you want to clear auto-image postmeta data?\n\nThis will permanently delete all auto-image related postmeta records and cannot be recovered!\n\nPlease confirm you have backed up important data before continuing."
+
+msgid "确定要清空所有日志文件吗？\n\n此操作将永久删除logs目录下的所有.log文件，且无法恢复！\n\n请确认您已备份重要日志后再继续。"
+msgstr "Are you sure you want to clear all log files?\n\nThis will permanently delete all .log files in the logs directory and cannot be undone!\n\nPlease confirm you have backed up important logs before continuing."
+
+msgid "已清理 %d 条postmeta记录，并重置 %d 篇文章的配图状态。"
+msgstr "Cleaned up %d postmeta records and reset the featured image status of %d articles."
+
+msgid "最后确认：\n\n您真的要清空图像API设置吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。"
+msgstr "Final Confirmation:\n\nAre you sure you want to clear the Image API settings?\n\nClick 'OK' to continue deleting, or 'Cancel' to abort the operation."
+
+msgid "最后确认：\n\n您真的要重置图像API设置吗？\n\n点击\"确定\"将继续重置，点击\"取消\"将放弃操作。"
+msgstr "Final Confirmation:\n\nAre you sure you want to reset the Image API settings?\n\nClick 'OK' to continue resetting, or 'Cancel' to abort the operation."
+
+msgid "最后确认：\n\n您真的要清理自动配图postmeta数据吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。"
+msgstr "Final Confirmation:\n\nAre you sure you want to clean up the auto-image postmeta data?\n\nClick 'OK' to continue deleting, or 'Cancel' to abort the operation."
+
+msgid "最后确认：\n\n您真的要清理所有已完成的队列任务记录吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。"
+msgstr "Final Confirmation:\n\nAre you sure you want to clean up all completed queue task records?\n\nClick 'OK' to continue deleting, or 'Cancel' to abort the operation."
+
+msgid "确定要清理历史队列任务吗？\n\n此操作将删除以下三个表中所有状态为\"completed\"的记录：\n\n• wp_yali_ai_writer_job_queue\n• wp_yali_ai_writer_topic_tasks\n• wp_yali_ai_writer_article_tasks\n\n此操作无法恢复！\n\n请确认您已备份重要数据后再继续。"
+msgstr "Are you sure you want to clean up historical queue tasks?\n\nThis action will delete all 'completed' records from the following tables:\n\n• wp_yali_ai_writer_job_queue\n• wp_yali_ai_writer_topic_tasks\n• wp_yali_ai_writer_article_tasks\n\nThis operation cannot be undone!\n\nPlease make sure you have backed up important data before proceeding."
+
+msgid "深度写作需要打开%s，每篇文章约执行5~30分钟"
+msgstr "Deep Writing requires %s, and each article usually takes about 5 to 30 minutes to complete."
+
+msgid "深度写作需要打开鸭梨AI浏览器扩展，每篇文章约执行5~30分钟"
+msgstr "Deep Writing requires the Yali AI Browser Extension, and each article usually takes about 5 to 30 minutes to complete."
+
+msgid "在此期间不要关闭%s。"
+msgstr "Do not close %s during this time."
+
+msgid "在此期间不要关闭鸭梨AI浏览器扩展。"
+msgstr "Do not close the Yali AI Browser Extension during this time."
+
+msgid "完成后会将文章发布到文章列表，转为草稿，请校对没问题后发布。"
+msgstr "When finished, the article will be sent to the Articles list as a draft. Please review it carefully before publishing."
+
+msgid "完成后会将文章发布到文章列表，转来为草稿，请校对没问题后发布。"
+msgstr "When finished, the article will be sent to the Articles list as a draft. Please review it carefully before publishing."
+
+msgid "文章中会自动配图，请提前配置好图像API。"
+msgstr "Images will be generated automatically for the article, so please configure the image API in advance."
+
+msgid "鸭梨AI浏览器扩展"
+msgstr "Yali AI Browser Extension"
+
+msgid "确认写作"
+msgstr "Confirm Writing"
+
 msgid "使用的提示词模板"
 msgstr "Prompt Template Used"
 
@@ -3197,7 +3536,7 @@ msgid "未找到匹配的提示词"
 msgstr "No matching prompts found"
 
 msgid "请先在编辑器中选中要处理的文字。"
-msgstr "Please select the text you want to process in the editor."
+msgstr "Please select text in the editor first."
 
 msgid "鸭梨AI助手 — AI 写作辅助"
 msgstr "Yali AI Assistant — AI Writing Assistant"
@@ -3229,8 +3568,8 @@ msgstr "Actual Instruction to AI (Prompt)"
 msgid "定义AI在生成文章时的角色和专业能力。这个描述将作为提示词模板中的&lt;role&gt;标签内容，影响AI的写作风格和专业度。留空将使用默认角色描述。"
 msgstr "Defines the AI's role and professional capabilities for article generation. This description will be used as the <role> tag content in the prompt template, influencing the AI's writing style and professionalism. Leave blank to use the default role description."
 
-msgid "选择文章自动配图的默认提示词模式。选择非“默认”模式时，将使用系统内置的优质配图提示词，自定义输入框将被隐藏。"
-msgstr "Select the default prompt mode for auto-image insertion. Choosing a non-default mode will use built-in premium prompts and hide the custom input box."
+msgid "选择文章自动配图的默认提示词模式。选择非\"默认\"模式时，将使用系统内置的优质配图提示词，自定义输入框将被隐藏。"
+msgstr "Select the default prompt mode for auto-image insertion. Choosing a non-\"default\" mode will use built-in premium prompts and hide the custom input box."
 
 msgid "自动配图提示词"
 msgstr "Auto-Image Prompt"
@@ -3255,6 +3594,384 @@ msgstr "💡 Suggest placing at the beginning of the prompt to establish AI role
 
 msgid "【可选变量】指导AI在文章适当位置插入HTML注释格式的图片生成提示词，用于后续的图片自动生成"
 msgstr "[Optional Variable] Guides AI to insert HTML comment format image prompts at appropriate positions"
+
+msgid "_PROMPT_TITLES_"
+msgstr "=== Prompt Titles ==="
+
+msgid "写一段话"
+msgstr "Write a paragraph on this"
+
+msgid "续写文本"
+msgstr "Continue this text"
+
+msgid "生成创意"
+msgstr "Generate ideas on this"
+
+msgid "写一篇文章"
+msgstr "Write an article about this"
+
+msgid "生成摘要(TL;DR)"
+msgstr "Generate a TL;DR"
+
+msgid "总结"
+msgstr "Summarize"
+
+msgid "简洁总结"
+msgstr "Summarize (concise)"
+
+msgid "要点总结"
+msgstr "Summarize (bullet points)"
+
+msgid "改写"
+msgstr "Paraphrase"
+
+msgid "讽刺改写"
+msgstr "Paraphrase (sarcastic)"
+
+msgid "幽默改写"
+msgstr "Paraphrase (humorous)"
+
+msgid "生成小标题"
+msgstr "Generate subtitle"
+
+msgid "转为广告文案"
+msgstr "Turn into advertisement"
+
+msgid "向5岁孩子解释"
+msgstr "Explain to a 5 years old kid"
+
+msgid "生成名言金句"
+msgstr "Generate famous quotes"
+
+msgid "生成配图描述"
+msgstr "Generate image description"
+
+msgid "🖼️ 生成配图 - 默认高级商务风"
+msgstr "🖼️ Generate Image - Default Business Style"
+
+msgid "🖼️ 生成配图 - 结构与流程图"
+msgstr "🖼️ Generate Image - Flowchart & Structure"
+
+msgid "🖼️ 生成配图 - 情境匹配插图"
+msgstr "🖼️ Generate Image - Context Matching Illustration"
+
+msgid "🖼️ 生成配图 - 文字海报风格"
+msgstr "🖼️ Generate Image - Typography Poster Style"
+
+msgid "内容重写"
+msgstr "Content Rewriter"
+
+msgid "写客户评价/测评"
+msgstr "Write a testimonials / reviews on this"
+
+msgid "写博客标题"
+msgstr "Write a blog title"
+
+msgid "写常见问题(FAQ)"
+msgstr "Write FAQ"
+
+msgid "写FAQ回答"
+msgstr "Write FAQ Answer"
+
+msgid "_PROMPT_DESCRIPTIONS_"
+msgstr "=== Prompt Descriptions ==="
+
+msgid "根据选中文本生成段落，使用不同的词汇表达相同的意思。"
+msgstr "Use the same ideas using different words while maintaining the original meaning."
+
+msgid "在当前文本的基础上继续撰写下一段内容。"
+msgstr "Continue with the text you would like to continue with in the next paragraph."
+
+msgid "解锁你的创造力，为项目头脑风暴或寻求灵感。"
+msgstr "Unlock your creativity with our idea generator. Whether you're brainstorming for a project or seeking inspiration, this will help spark your imagination."
+
+msgid "优化你的博客文章以提升流量和参与度，撰写信息丰富且对搜索引擎友好的文章。"
+msgstr "Optimize your blog posts to boost traffic and engagement by writing informative yet search engine-friendly posts."
+
+msgid "将长文本总结为简洁的片段。提供简要概述，以便快速掌握要点。"
+msgstr "Generate summarizes lengthy text into concise snippets. It saves time by providing a brief overview, allowing you to grasp the main points quickly."
+
+msgid "简明扼要地总结文本，使其易于理解。"
+msgstr "Summarize any text short and concisely to make it easy to understand."
+
+msgid "将文本浓缩为简洁的摘要，捕捉其精髓。"
+msgstr "Condense the text into a concise summary, capturing its essence in a brief"
+
+msgid "将给定文本总结为简洁的要点，以便更好地理解和快速参考。"
+msgstr "Summarize a given text into concise bullet points for better understanding and quick reference."
+
+msgid "使用不同的词汇表达相同的意思，同时保持原意。"
+msgstr "Use the same ideas using different words while maintaining the original meaning."
+
+msgid "以讽刺的口吻使用不同的词汇表达相同的意思。"
+msgstr "Use the same ideas using different words while maintaining the original meaning."
+
+msgid "以幽默的口吻使用不同的词汇表达相同的意思。"
+msgstr "Use the same ideas using different words while maintaining the original meaning."
+
+msgid "自动为文本生成准确的小标题，使内容更加清晰易读。"
+msgstr "Automatically generates accurate and synchronized subtitles for videos, making them more accessible and engaging for viewers."
+
+msgid "将你的广告提升到一个新的水平并取得成功。"
+msgstr "Take your advertisement to the next level and make it successful."
+
+msgid "用简单的词汇向5岁孩子解释，就像讲故事一样帮助他们理解。"
+msgstr "Explaining to a 5-year-old means using simple words. It's like telling a story that helps them understand things easily."
+
+msgid "根据选中文本的主题，智能匹配相关的名言警句、金句或经典语录，为文章增添文采。"
+msgstr "Intelligently match relevant famous quotes and classic sayings based on selected text theme to add literary grace."
+
+msgid "根据选中文本生成图像创意描述文字（仅生成文字描述，不生成实际图片）。"
+msgstr "Generate image creative description text based on selected text (text description only, no actual image)."
+
+msgid "【默认高级商务风】生成简洁专业的商务配图，适合文章配图、概念说明等场景"
+msgstr "[Default Business Style] Generate clean and professional business images, suitable for article illustrations and concept explanations."
+
+msgid "【结构与流程图】生成流程图、架构图、拓扑图等结构化图表，适合说明流程和系统结构"
+msgstr "[Flowchart & Structure] Generate flowcharts, architecture diagrams, topology charts, suitable for explaining processes and system structures."
+
+msgid "【内容高度匹配情境图】生成与文本内容高度匹配的高质量情境插图或摄影风格图片"
+msgstr "[Context Matching] Generate high-quality situational illustrations or photography-style images that closely match the text content."
+
+msgid "【带自适应文字的配图】生成包含文字的艺术海报风格配图，文字与图像融为一体"
+msgstr "[Typography Poster] Generate artistic poster-style images with integrated text, where text blends with the image."
+
+msgid "轻松转换你的书面材料，通过产生新鲜的变体来提高可读性和独特性。"
+msgstr "Transform your written material effortlessly. Enhance readability and uniqueness by generating fresh variations with ease."
+
+msgid "深入了解引人入胜的评价和深刻的评论，激发并告知你的决策过程。"
+msgstr "Dive into a collection of captivating testimonials and insightful reviews that will inspire and inform your decision-making process."
+
+msgid "释放语言的力量，打造一个引人注目的博客标题，吸引读者的注意力。"
+msgstr "Unleash the Power of Words to Craft a Compelling Blog Title that Grabs Readers' Attention"
+
+msgid "精心制作全面的常见问题，解决普遍疑问，为用户提供清晰简洁的答案。"
+msgstr "Craft comprehensive FAQs to address common queries, providing users with clear and concise answers. Enhance user experience and satisfaction."
+
+msgid "精心制作简洁且信息丰富的常见问题解答，以解决普遍疑问并增强用户理解。"
+msgstr "Craft concise and informative FAQ answers to address common queries and enhance user understanding"
+
+msgid "_JS_TRANSLATIONS_"
+msgstr "=== JavaScript Translations ==="
+
+msgid "AI生成配图"
+msgstr "AI-generated image"
+
+msgid "配图："
+msgstr "Image: "
+
+msgid "配图生成成功"
+msgstr "Image generation successful"
+
+msgid "请在上方输入主题，或在编辑器中选中文字"
+msgstr "Enter a topic above, or select text in the editor"
+
+msgid "已选中文字（"
+msgstr "Selected text ("
+
+msgid " 字）"
+msgstr " chars)"
+
+msgid "输入主题或关键词"
+msgstr "Enter topic or keywords"
+
+msgid "在此输入主题、关键词或粘贴要处理的文字…"
+msgstr "Enter a topic, keywords, or paste text to process…"
+
+msgid "✍️ 文本生成"
+msgstr "✍️ Text Generation"
+
+msgid "🖼️ 图像生成"
+msgstr "🖼️ Image Generation"
+
+msgid "_CLASSIC_EDITOR_"
+msgstr "=== Classic Editor Translations ==="
+
+msgid "网络错误"
+msgstr "Network error"
+
+msgid "返回发布规则"
+msgstr "Back to Publish Rules"
+
+msgid "说明："
+msgstr "Note:"
+
+msgid "您可以在此管理编辑器AI助手的快捷生成提示词。"
+msgstr "Manage quick generation prompts for the Editor AI Assistant here."
+
+msgid "✍️ 文本生成提示词"
+msgstr "✍️ Text Generation Prompts"
+
+msgid "🖼️ 图像生成提示词"
+msgstr "🖼️ Image Generation Prompts"
+
+msgid "文本生成提示词"
+msgstr "Text Generation Prompts"
+
+msgid "图像生成提示词"
+msgstr "Image Generation Prompts"
+
+msgid "提示：以下配置用于编辑器中的图像生成功能。修改后请保存，系统会自动加载新的配置。"
+msgstr "Tip: The following configuration is for image generation in the editor. Please save after modification, and the system will automatically load the new configuration."
+
+msgid "保存成功！"
+msgstr "Saved successfully!"
+
+msgid "菜单显示标题"
+msgstr "Menu Title"
+
+msgid "功能描述说明"
+msgstr "Feature Description"
+
+msgid "预计生成字数"
+msgstr "Expected generated words"
+
+msgid "保存中..."
+msgstr "Saving..."
+
+msgid "未知错误"
+msgstr "Unknown error"
+
+msgid "保存图像提示词"
+msgstr "Save Image Prompts"
+
+msgid "提示词结构说明"
+msgstr "Prompt Structure Description"
+
+msgid "显示在编辑器菜单中的标题"
+msgstr "Title displayed in the editor menu"
+
+msgid "发送给AI的完整提示词指令"
+msgstr "Complete prompt instruction sent to AI"
+
+msgid "标记是否为图像生成提示词"
+msgstr "Mark whether this is an image generation prompt"
+
+msgid "图像风格标识（default/flowchart/content_match/text_overlay）"
+msgstr "Image style identifier (default/flowchart/content_match/text_overlay)"
+
+msgid "提示：修改后保存即可生效，无需重启服务器。"
+msgstr "Tip: Changes take effect after saving, no server restart required."
+
+msgid "确定要恢复默认的图像提示词配置吗？这将覆盖您当前的修改！"
+msgstr "Are you sure you want to restore default image prompt configuration? This will overwrite your current modifications!"
+
+msgid "JSON格式错误: "
+msgstr "JSON format error: "
+
+msgid "生成图像描述失败："
+msgstr "Failed to generate image description: "
+
+msgid "生成的图像描述为空"
+msgstr "Generated image description is empty"
+
+msgid "图像 API 处理器未找到"
+msgstr "Image API handler not found"
+
+msgid "缺少配置数据"
+msgstr "Missing configuration data"
+
+msgid "重置失败"
+msgstr "Reset failed"
+
+msgid "图像生成提示词编辑器"
+msgstr "Image Generation Prompt Editor"
+
+msgid "在此编辑 AI 编辑助手中的 4 个图像生成提示词。修改后保存即可立即生效。"
+msgstr "Edit the 4 image generation prompts for the AI Editor Assistant here. Changes take effect immediately after saving."
+
+msgid "配置文件位置："
+msgstr "Configuration file location:"
+
+msgid "提示词配置 (JSON 格式)"
+msgstr "Prompt Configuration (JSON format)"
+
+msgid "配置对象，包含 type 和 value"
+msgstr "Configuration object with type and value"
+
+msgid "图像风格标识"
+msgstr "Image style identifier"
+
+msgid "环境错误：PLUGIN_DIR 未定义"
+msgstr "Environment error: PLUGIN_DIR undefined"
+
+msgid "保存失败，请检查文件权限。"
+msgstr "Save failed, please check file permissions."
+
+msgid "配置文件不存在："
+msgstr "Configuration file does not exist: "
+
+msgid "您没有权限访问此页面。"
+msgstr "You do not have permission to access this page."
+
+msgid "未提供提示词数据"
+msgstr "Prompt data not provided"
+
+msgid "无效的 JSON 数据格式"
+msgstr "Invalid JSON data format"
+
+msgid "设置已成功保存！"
+msgstr "Settings saved successfully!"
+
+msgid "未提供配置数据"
+msgstr "Config data not provided"
+
+msgid "无效的 JSON 格式："
+msgstr "Invalid JSON format: "
+
+msgid "图像提示词配置已保存！"
+msgstr "Image prompt configuration saved!"
+
+msgid "英文 (English)"
+msgstr "English"
+
+msgid "中文 (Chinese)"
+msgstr "Chinese (Simplified)"
+
+msgid "日语 (Japanese)"
+msgstr "Japanese"
+
+msgid "韩语 (Korean)"
+msgstr "Korean"
+
+msgid "西班牙语 (Spanish)"
+msgstr "Spanish"
+
+msgid "法语 (French)"
+msgstr "French"
+
+msgid "德语 (German)"
+msgstr "German"
+
+msgid "俄语 (Russian)"
+msgstr "Russian"
+
+msgid "葡萄牙语 (Portuguese)"
+msgstr "Portuguese"
+
+msgid "意大利语 (Italian)"
+msgstr "Italian"
+
+msgid "生成图像描述失败: "
+msgstr "Failed to generate image description: "
+
+msgid "图像API处理器未找到"
+msgstr "Image API processor not found"
+
+msgid "配置文件不存在: "
+msgstr "Configuration file does not exist: "
+
+msgid "在此编辑AI编辑助手中的4个图像生成提示词。修改后保存即可立即生效。"
+msgstr "Edit the 4 image generation prompts for the AI Editor Assistant here. Save after modification to take effect immediately."
+
+msgid "提示词配置 (JSON格式)"
+msgstr "Prompt Configuration (JSON Format)"
+
+msgid "配置对象，包含type和value"
+msgstr "Configuration object, containing type and value"
+
+msgid "无效的JSON格式: "
+msgstr "Invalid JSON format: "
 
 msgid "=== 页面标题与头部 ==="
 msgstr ""
@@ -3721,9 +4438,6 @@ msgstr "Import Successful"
 msgid "导入失败"
 msgstr "Import Failed"
 
-msgid "未知错误"
-msgstr "Unknown error"
-
 msgid "挖掘完成"
 msgstr "Mining Complete"
 
@@ -3883,8 +4597,8 @@ msgstr "Go to Rules"
 msgid "天"
 msgstr "days"
 
-msgid "例如：\\n鸭梨\\nyali\\nkdj"
-msgstr "Example:\\nBrand\\nbrandname\\nkeywords"
+msgid "例如：\n鸭梨\nyali\nkdj"
+msgstr "Example:\nBrand\nbrandname\nkeywords"
 
 msgid "挖掘任务完成。"
 msgstr "Mining task completed."
@@ -4126,6 +4840,45 @@ msgstr "AJAX request failed:"
 msgid "发生未知错误。"
 msgstr "An unknown error occurred."
 
+msgid "同步图像模型"
+msgstr "Sync Image Models"
+
+msgid "正在同步..."
+msgstr "Syncing..."
+
+msgid "点击\"同步图像模型\"按钮从 Pollinations 获取最新可用图像生成模型列表。"
+msgstr "Click 'Sync Image Models' to fetch the latest available image generation models from Pollinations."
+
+msgid "图像模型同步成功！"
+msgstr "Image models synced successfully!"
+
+msgid "免费模型:"
+msgstr "Free models:"
+
+msgid "付费模型:"
+msgstr "Paid models:"
+
+msgid "共 %d 个图像生成模型（%d 免费 / %d 付费）"
+msgstr "Total %d image generation models (%d free / %d paid)"
+
+msgid "模型 (Model)"
+msgstr "Model"
+
+msgid "测试状态:"
+msgstr "Test Status:"
+
+msgid "任务已提交，正在等待结果... "
+msgstr "Task submitted, waiting for results... "
+
+msgid "免费模型"
+msgstr "Free Model"
+
+msgid "付费模型"
+msgstr "Paid Model"
+
+msgid "❌ 获取失败:"
+msgstr "❌ Fetch failed:"
+
 msgid "关键词"
 msgstr "Keyword"
 
@@ -4233,6 +4986,24 @@ msgstr "Enables prefix/suffix extension mining"
 
 msgid "正在执行"
 msgstr "Executing"
+
+msgid "步骤 2/2 失败：趋势数据点为空。"
+msgstr "Step 2/2 failed: Trend data points are empty."
+
+msgid "趋势分析失败：%s"
+msgstr "Trend analysis failed: %s"
+
+msgid "字母前缀-"
+msgstr "Letter Prefix-"
+
+msgid "GEO挖掘-"
+msgstr "GEO Mining-"
+
+msgid "意图挖掘-"
+msgstr "Intent Mining-"
+
+msgid "正在执行 [{engines}] - {description} ({current}/{total})"
+msgstr "Executing [{engines}] - {description} ({current}/{total})"
 
 msgid "鸭梨AI文章智能写手 提示："
 msgstr "Yali AI Writer Notice:"
@@ -4762,9 +5533,6 @@ msgstr "Exception occurred in file %1$s at line %2$d: %3$s"
 msgid "智能优化"
 msgstr "Smart Optimization"
 
-msgid "说明："
-msgstr "Note:"
-
 msgid "关联的文章"
 msgstr "Associated Articles"
 
@@ -4861,6 +5629,36 @@ msgstr "Posts"
 msgid "探索率"
 msgstr "Exploration Rate"
 
+msgid "Random Exploration"
+msgstr "随机探索"
+
+msgid "Mixed Transition"
+msgstr "混合过渡"
+
+msgid "Smart Optimization"
+msgstr "智能优选"
+
+msgid "Posts"
+msgstr "文章数"
+
+msgid "Exploration Rate"
+msgstr "探索率"
+
+msgid "Current Status"
+msgstr "当前状态"
+
+msgid "Phase 1"
+msgstr "阶段 1"
+
+msgid "Phase 2"
+msgstr "阶段 2"
+
+msgid "Phase 3"
+msgstr "阶段 3"
+
+msgid "Phase 4"
+msgstr "阶段 4"
+
 msgid "来源文章"
 msgstr "Source Article"
 
@@ -4914,6 +5712,27 @@ msgstr "Average Visits"
 
 msgid "平均受欢迎度"
 msgstr "Average Popularity"
+
+msgid "Total Used"
+msgstr "总使用次数"
+
+msgid "Average Visits"
+msgstr "平均访问量"
+
+msgid "Average Popularity"
+msgstr "平均受欢迎度"
+
+msgid "AI Random/Generated Structures"
+msgstr "AI 随机/生成结构"
+
+msgid "Data Driven Structures"
+msgstr "数据驱动结构"
+
+msgid "Total Structures"
+msgstr "结构总数"
+
+msgid "Recommended"
+msgstr "推荐"
 
 msgid "推荐"
 msgstr "Recommended"
@@ -5176,36 +5995,6 @@ msgstr " articles, created"
 msgid "篇）"
 msgstr " articles)"
 
-msgid "Knowledge Base"
-msgstr "Knowledge Base"
-
-msgid "Practical Guide"
-msgstr "Practical Guide"
-
-msgid "Problem Solving"
-msgstr "Problem Solving"
-
-msgid "Cases & Scenarios"
-msgstr "Cases & Scenarios"
-
-msgid "Comparison & Analysis"
-msgstr "Comparison & Analysis"
-
-msgid "Resources & Tools"
-msgstr "Resources & Tools"
-
-msgid "Trend Insights"
-msgstr "Trend Insights"
-
-msgid "Opinion & Commentary"
-msgstr "Opinion & Commentary"
-
-msgid "Emotional Resonance"
-msgstr "Emotional Resonance"
-
-msgid "Creative Inspiration"
-msgstr "Creative Inspiration"
-
 msgid "自定义HTML代码是必填项。"
 msgstr "Custom HTML code is required."
 
@@ -5317,8 +6106,8 @@ msgstr "Cluster centers successfully updated and saved."
 msgid "准备开始下一轮迭代微调：第 %d 轮..."
 msgstr "Preparing to start the next round of iteration fine-tuning: Round %d..."
 
-msgid "\\n[System] 进程异常终止，锁定已消失。"
-msgstr "\\n[System] Process terminated abnormally, the lock has disappeared."
+msgid "\n[System] 进程异常终止，锁定已消失。"
+msgstr "\n[System] Process terminated abnormally, the lock has disappeared."
 
 msgid "无活动"
 msgstr "No activity"
@@ -5448,9 +6237,6 @@ msgstr "Success Rate"
 
 msgid "%s秒"
 msgstr "%s sec"
-
-msgid "保存中..."
-msgstr "Saving..."
 
 msgid "工作中"
 msgstr "Working"
@@ -5722,125 +6508,14 @@ msgstr "Error occurred during table creation: "
 msgid "数据库更新过程中出现错误："
 msgstr "Error occurred during database update: "
 
-msgid "已选中文字（"
-msgstr "Selected text ("
-
-msgid " 字）"
-msgstr " chars)"
-
-msgid "网络错误"
-msgstr "Network error"
-
-msgid "写一段话"
-msgstr "Write a paragraph on this"
-
-msgid "续写文本"
-msgstr "Continue this text"
-
-msgid "生成创意"
-msgstr "Generate ideas on this"
-
-msgid "写一篇文章"
-msgstr "Write an article about this"
-
-msgid "生成摘要(TL;DR)"
-msgstr "Generate a TL;DR"
-
-msgid "总结"
-msgstr "Summarize"
-
-msgid "简洁总结"
-msgstr "Summarize (concise)"
-
-msgid "要点总结"
-msgstr "Summarize (bullet points)"
-
-msgid "改写"
-msgstr "Paraphrase"
-
-msgid "讽刺改写"
-msgstr "Paraphrase (sarcastic)"
-
-msgid "幽默改写"
-msgstr "Paraphrase (humorous)"
-
-msgid "转为广告文案"
-msgstr "Turn into advertisement"
-
-msgid "向5岁孩子解释"
-msgstr "Explain to a 5 years old kid"
-
-msgid "内容重写"
-msgstr "Content Rewriter"
-
-msgid "写客户评价/测评"
-msgstr "Write a testimonials / reviews on this"
-
-msgid "写常见问题(FAQ)"
-msgstr "Write FAQ"
-
-msgid "写FAQ回答"
-msgstr "Write FAQ Answer"
-
 msgid "英文"
 msgstr "English"
-
-msgid "根据选中文本生成段落，使用不同的词汇表达相同的意思。"
-msgstr "Use the same ideas using different words while maintaining the original meaning."
-
-msgid "在当前文本的基础上继续撰写下一段内容。"
-msgstr "Continue with the text you would like to continue with in the next paragraph."
-
-msgid "解锁你的创造力，为项目头脑风暴或寻求灵感。"
-msgstr "Unlock your creativity with our idea generator. Whether you're brainstorming for a project or seeking inspiration, this will help spark your imagination."
-
-msgid "将长文本总结为简洁的片段。提供简要概述，以便快速掌握要点。"
-msgstr "Generate summarizes lengthy text into concise snippets. It saves time by providing a brief overview, allowing you to grasp the main points quickly."
-
-msgid "简明扼要地总结文本，使其易于理解。"
-msgstr "Summarize any text short and concisely to make it easy to understand."
-
-msgid "将文本浓缩为简洁的摘要，捕捉其精髓。"
-msgstr "Condense the text into a concise summary, capturing its essence in a brief"
-
-msgid "使用不同的词汇表达相同的意思，同时保持原意。"
-msgstr "Use the same ideas using different words while maintaining the original meaning."
-
-msgid "以讽刺的口吻使用不同的词汇表达相同的意思。"
-msgstr "Use the same ideas using different words while maintaining the original meaning."
-
-msgid "以幽默的口吻使用不同的词汇表达相同的意思。"
-msgstr "Use the same ideas using different words while maintaining the original meaning."
-
-msgid "将你的广告提升到一个新的水平并取得成功。"
-msgstr "Take your advertisement to the next level and make it successful."
-
-msgid "用简单的词汇向5岁孩子解释，就像讲故事一样帮助他们理解。"
-msgstr "Explaining to a 5-year-old means using simple words. It's like telling a story that helps them understand things easily."
 
 msgid "发现与你的思想和情感产生共鸣的完美词句，为各种场合找到匹配的引言。"
 msgstr "Discover the perfect words that resonate with your thoughts and emotions. Explore our vast collection of quotes to find the perfect match for every occasion and mood."
 
 msgid "发现无尽的创意世界。解锁灵感并为你的下一个项目生成独特的视觉效果。"
 msgstr "Discover a world of endless creativity with our image idea generator. Unlock inspiration and generate unique visuals for your next project."
-
-msgid "轻松转换你的书面材料，通过产生新鲜的变体来提高可读性和独特性。"
-msgstr "Transform your written material effortlessly. Enhance readability and uniqueness by generating fresh variations with ease."
-
-msgid "深入了解引人入胜的评价和深刻的评论，激发并告知你的决策过程。"
-msgstr "Dive into a collection of captivating testimonials and insightful reviews that will inspire and inform your decision-making process."
-
-msgid "精心制作全面的常见问题，解决普遍疑问，为用户提供清晰简洁的答案。"
-msgstr "Craft comprehensive FAQs to address common queries, providing users with clear and concise answers. Enhance user experience and satisfaction."
-
-msgid "精心制作简洁且信息丰富的常见问题解答，以解决普遍疑问并增强用户理解。"
-msgstr "Craft concise and informative FAQ answers to address common queries and enhance user understanding"
-
-msgid "功能描述说明"
-msgstr "Feature Description"
-
-msgid "预计生成字数"
-msgstr "Expected generated words"
 
 msgid "浏览器扩展连接"
 msgstr "Browser Extension Connection"
@@ -6418,9 +7093,6 @@ msgstr "Incomplete data, cannot save"
 msgid "数据不完整，无法保存"
 msgstr "Incomplete data, cannot save"
 
-msgid "保存成功！"
-msgstr "Saved successfully!"
-
 msgid "等待浏览器插件响应..."
 msgstr "Waiting for browser extension response..."
 
@@ -6429,6 +7101,12 @@ msgstr "Connecting to browser extension..."
 
 msgid "已过期"
 msgstr "Expired"
+
+msgid " %s 天后到期（请尽快续期）"
+msgstr " %s days left (please renew soon)"
+
+msgid " %s 天后到期"
+msgstr " %s days left"
 
 msgid "重复"
 msgstr "Duplicate"
@@ -6733,6 +7411,9 @@ msgstr "Internal Linking Strategy"
 msgid "内链标准"
 msgstr "Internal Linking Standard"
 
+msgid "匹配分类"
+msgstr "Matched Category"
+
 msgid "【数据来源】系统动态生成，格式为YYYY年MM月DD日<br>【更新频率】每次生成时实时获取<br>【业务含义】为AI提供准确的时间上下文"
 msgstr "[Data Source] Dynamically generated by system in YYYY-MM-DD format<br>[Update Frequency] Real-time on each generation<br>[Meaning] Provides accurate time context for AI"
 
@@ -6786,6 +7467,105 @@ msgstr "💡 Suggest placing in quality standards with other standard tags"
 
 msgid "💡 建议作为独立功能块放置，避免干扰核心创作指令"
 msgstr "💡 Suggest placing as a separate block to avoid interfering with core prompt"
+
+msgid "文章生成任务已创建。"
+msgstr "Article generation task created."
+
+msgid "文章生成任务创建失败。"
+msgstr "Failed to create article generation task."
+
+msgid "请选择要生成文章的主题。"
+msgstr "Please select topics to generate articles."
+
+msgid "抱歉，您没有权限执行此操作。"
+msgstr "Sorry, you do not have permission to perform this action."
+
+msgid "调试模式已禁用。"
+msgstr "Debug mode disabled."
+
+msgid "缓存刷新成功。"
+msgstr "Cache refreshed successfully."
+
+msgid "缓存刷新失败。"
+msgstr "Cache refresh failed."
+
+msgid "未找到相似的标题。请确保已执行聚类操作。"
+msgstr "No similar titles found. Please ensure clustering has been executed."
+
+msgid "找到 %d 个相似标题"
+msgstr "Found %d similar titles"
+
+msgid "开始查找与 \"%s\" 相似的标题..."
+msgstr "Starting to find titles similar to \"%s\"..."
+
+msgid "相似标题查找成功。"
+msgstr "Similar titles search successful."
+
+msgid "未找到相似标题。"
+msgstr "No similar titles found."
+
+msgid "查找相似标题时出错。"
+msgstr "Error occurred while searching for similar titles."
+
+msgid "图像API设置已保存。"
+msgstr "Image API settings saved."
+
+msgid "设置已保存，正在重新加载..."
+msgstr "Settings saved, reloading..."
+
+msgid "操作失败，数据库异常。"
+msgstr "Operation failed, database error."
+
+msgid "YouTube"
+msgstr "YouTube"
+
+msgid "360"
+msgstr "360"
+
+msgid "Bing"
+msgstr "Bing"
+
+msgid "前"
+msgstr "ago"
+
+msgid "数据库错误："
+msgstr "Database error: "
+
+msgid "创建规则失败，ID 未生成。"
+msgstr "Failed to create rule, ID not generated."
+
+msgid "无效的规则 ID。"
+msgstr "Invalid rule ID."
+
+msgid "插件目录不可写。<br>请手动操作：<br>1. <a href=\"%s\" target=\"_blank\">点击下载 commonmark.zip</a><br>2. 解压后上传到：<br><code>%s</code>"
+msgstr "The plugin directory is not writable.<br>Please perform the following steps manually:<br>1. <a href=\"%s\" target=\"_blank\">Click to download commonmark.zip</a><br>2. Extract and upload it to:<br><code>%s</code>"
+
+msgid "步骤2/2失败：趋势数据点为空。"
+msgstr "Step 2/2 failed: Trend data points are empty."
+
+msgid "必应"
+msgstr "Bing"
+
+msgid "无效的JSON数据格式"
+msgstr "Invalid JSON data format"
+
+msgid "初始化增量聚类任务(定时触发)..."
+msgstr "Initializing incremental clustering task (cron trigger)..."
+
+msgid "大模型返回的ID无效，回退到相似度最高的候选"
+msgstr "LLM returned invalid ID, falling back to the highest similarity candidate"
+
+msgid "向量API测试异常："
+msgstr "Vector API test exception: "
+
+msgid "缺少必要的数据表: %s"
+msgstr "Missing required database table: %s"
+
+msgid "Standard Request HTTP %1$s%2$s"
+msgstr "Standard Request HTTP %1$s%2$s"
+
+msgid "搜索失败，请重试"
+msgstr "Search failed, please try again"
 
 msgid "发布日期"
 msgstr "Publish Date"
@@ -6858,6 +7638,15 @@ msgstr "Go to Yali AI to Apply for Free License Key (Unlimited Renewal)"
 
 msgid "请输入授权码。"
 msgstr "Please enter a license key."
+
+msgid "设置已保存。"
+msgstr "Settings saved."
+
+msgid "授权码验证失败。"
+msgstr "License verification failed."
+
+msgid "选择文章自动配图的默认提示词模式。选择非“默认”模式时，将使用系统内置的优质配图提示词，自定义输入框将被隐藏。"
+msgstr "Select the default prompt mode for automatic article images. When choosing a non-'Default' mode, built-in premium image prompts will be used and the custom input box will be hidden."
 
 msgid "发现 %d 个孤立的规则项目记录"
 msgstr "Found %d orphaned rule item records"
@@ -7054,9 +7843,6 @@ msgstr "Current Status: Debug Mode"
 msgid "规则"
 msgstr "Rules"
 
-msgid "返回发布规则"
-msgstr "Back to Publish Rules"
-
 msgid "连接状态检测"
 msgstr "Connection Status Check"
 
@@ -7090,11 +7876,50 @@ msgstr "The plugin can currently use all categories"
 msgid "管理可用分类"
 msgstr "Manage Available Categories"
 
+msgid "规则正在被 %d 个主题任务和 %d 个文章任务使用，无法修改。请等待所有相关任务完成后再试。"
+msgstr "Rule is in use by %d topic tasks and %d article tasks. Cannot modify. Please wait for all related tasks to complete."
+
+msgid "规则正在被 %d 个主题任务和 %d 个文章任务使用，无法删除。请等待所有相关任务完成后再试。"
+msgstr "Rule is in use by %d topic tasks and %d article tasks. Cannot delete. Please wait for all related tasks to complete."
+
+msgid "规则数据验证失败。"
+msgstr "Rule data validation failed."
+
+msgid "规则更新失败。"
+msgstr "Rule update failed."
+
+msgid "规则更新成功。"
+msgstr "Rule updated successfully."
+
+msgid "规则删除失败。"
+msgstr "Rule deletion failed."
+
+msgid "规则正在使用中，无法修改。"
+msgstr "Rule is in use, cannot modify."
+
+msgid "保存失败，请重试。"
+msgstr "Save failed, please try again."
+
+msgid "文本内容超出限制：当前%d个字符，最多允许 3000 个字符。请在文本内容区域删减后再保存。"
+msgstr "Text content exceeds limit: Currently %d characters, maximum 3000 characters allowed. Please reduce text content before saving."
+
+msgid "无法获取网页内容，请检查网址是否正确或网络连接。"
+msgstr "Cannot retrieve webpage content, please check URL or network connection."
+
+msgid "无法从网页中提取正文内容。"
+msgstr "Cannot extract main content from webpage."
+
 msgid "分类层级提示："
 msgstr "Category Hierarchy Tip:"
 
 msgid "如果您只选择了子分类而未选择其父分类，在某些功能中可能无法正常显示分类层级结构。建议同时选择相关的父分类以确保最佳体验。"
 msgstr "If only subcategories are selected without their parent categories, the hierarchy may not display correctly in some features. It is recommended to select relevant parent categories for the best experience."
+
+msgid "%s (%d)"
+msgstr "%s (%d)"
+
+msgid "提示词内容"
+msgstr "Prompt Content"
 
 msgid "文章状态"
 msgstr "Post Status"
@@ -7285,6 +8110,9 @@ msgstr "Rule deleted successfully"
 msgid "规则已成功删除。"
 msgstr "Rule deleted successfully."
 
+msgid "确定要删除规则 \"%s\" 吗？此操作不可撤销。"
+msgstr "Are you sure you want to delete rule \"%s\"? This action cannot be undone."
+
 msgid "删除规则时发生错误"
 msgstr "An error occurred while deleting the rule"
 
@@ -7375,9 +8203,6 @@ msgstr "You can write prompts in your native language. As long as the {{LANGUAGE
 msgid "网站分类块"
 msgstr "Site Categories Block"
 
-msgid "匹配分类"
-msgstr "Matched Category"
-
 msgid "【数据来源】通过RuleManager::get_content_by_rule_item_id()从规则项目获取内容<br>【处理逻辑】调用build_reference_content_block()方法，根据内容类型生成不同的XML结构<br>【支持类型】上传文本(upload_text)、关键词(keyword)、分类名称(category_name)、文章内容(title+content)"
 msgstr "[Data Source] Retrieved from rule items via RuleManager::get_content_by_rule_item_id()<br>[Logic] Calls build_reference_content_block() to generate XML based on content type<br>[Types] Upload text, keywords, category names, article content"
 
@@ -7385,7 +8210,7 @@ msgid "为AI提供规则项目中的源材料，支持多种内容类型的结�
 msgstr "Provides AI with source material from rule items, supporting structured input for various content types with specific XML tags"
 
 msgid "【数据来源】优先使用ContentAuto_Category_Filter::get_filtered_categories()获取发布规则中允许的分类，如分类过滤器不存在则回退到WordPress的get_categories()获取所有分类<br>【处理逻辑】调用build_site_categories_block()方法，每个分类名称占一行，前缀6个空格进行缩进<br>【限制】最多获取50个分类"
-msgstr "[Data Source] Uses ContentAuto_Category_Filter::get_filtered_categories() for allowed categories, falls back to WordPress get_categories()<br>[Logic] Calls build_site_categories_block(), one category per line with 6-space indent<br>[Limit] Max 50 categories"
+msgstr "[Data Source] Prioritizes filtered categories from publish rules; falls back up to 50 WordPress categories<br>[Logic] One category per line with 6-space indent"
 
 msgid "【数据来源】规则级别的参考资料<br>【处理逻辑】调用build_reference_material_block()方法<br>【功能】提供额外的背景资料或指导文档"
 msgstr "[Data Source] Rule-level reference materials<br>[Logic] Calls build_reference_material_block()<br>[Function] Provides additional background or guidance"
@@ -7398,6 +8223,48 @@ msgstr "💡 Suggest placing in content category or professional requirements se
 
 msgid "【数据来源】发布规则的auto_image_insertion开关<br>【条件生成】仅在自动配图功能启用时生成<br>【内容包含】样式要求、放置规则、上下文模板等完整指导"
 msgstr "[Data Source] auto_image_insertion toggle in publish rules<br>[Conditional] Only when auto image insertion is enabled<br>[Content] Style requirements, placement rules, context templates"
+
+msgid "请输入文本内容，或使用上方网址采集功能（保存时限制3000字符）"
+msgstr "Enter text content, or use the URL collection above (3000 char limit on save)"
+
+msgid "请输入需要上传的文本内容。您可以使用网址采集功能获取网页全文，然后在此处自由删减编辑。保存时文本内容不能超过3000个字符（包括汉字、英文字母、数字、标点符号等）。"
+msgstr "Enter text content to upload. You can use URL collection to fetch full web content, then freely edit and trim here. Content cannot exceed 3000 characters on save (including Chinese, English, numbers, punctuation)."
+
+msgid "（超出限制，保存前请删减）"
+msgstr "(Exceeds limit, please trim before saving)"
+
+msgid "内容采集成功！共"
+msgstr "Content collected successfully! Total: "
+
+msgid "个字符，请删减至3000字符以内再保存"
+msgstr " characters, please trim to under 3000 before saving"
+
+msgid "个字符"
+msgstr " characters"
+
+msgid "文本内容超出限制：当前"
+msgstr "Text content exceeds limit: currently "
+
+msgid "个字符，最多允许3000个字符。请在文本内容区域删减后再保存。"
+msgstr " characters, max 3000 allowed. Please trim in the text content area before saving."
+
+msgid "文本内容超出限制：当前%d 个字符，最多允许 3000 个字符。请在文本内容区域删减后再保存。"
+msgstr "Text content exceeds limit: Currently %d characters, maximum 3000 characters allowed. Please reduce text content before saving."
+
+msgid "数据库错误: "
+msgstr "Database error: "
+
+msgid "创建规则失败，ID未生成。"
+msgstr "Failed to create rule, ID not generated."
+
+msgid "无效的规则ID。"
+msgstr "Invalid rule ID."
+
+msgid "文本内容超出限制：当前%d个字符，最多允许3000个字符。请在文本内容区域删减后再保存。"
+msgstr "Text content exceeds limit: Currently %d characters, maximum 3000 characters allowed. Please trim content before saving."
+
+msgid "个字符，最多允许3000个字符。请删减后再保存。"
+msgstr " characters, maximum 3000 allowed. Please trim before saving."
 
 msgid "请提供有效的网址。"
 msgstr "Please provide a valid URL."
@@ -7482,12 +8349,6 @@ msgstr "Material collection mode"
 
 msgid "是否启用搜索意图推断（0关闭、1启用）"
 msgstr "Enable intent inference"
-
-msgid "优化你的博客文章以提升流量和参与度，撰写信息丰富且对搜索引擎友好的文章。"
-msgstr "Optimize your blog posts to boost traffic and engagement by writing informative yet search engine-friendly posts."
-
-msgid "将给定文本总结为简洁的要点，以便更好地理解和快速参考。"
-msgstr "Summarize a given text into concise bullet points for better understanding and quick reference."
 
 msgid "启用网络搜索"
 msgstr "Enable Web Search"
@@ -7600,6 +8461,9 @@ msgstr "Optional: Guides AI in search intent analysis to improve content relevan
 msgid "💡 建议放在输入素材区域，作为创作的重要参考依据"
 msgstr "💡 Suggest placing in input material section as a key creative basis"
 
+msgid "环境错误：PLUGIN_DIR未定义"
+msgstr "Environment error: PLUGIN_DIR undefined"
+
 msgid "发现 %d 个孤立的主题记录（引用不存在的规则）"
 msgstr "Found %d orphaned topic records (referencing non-existent rules)"
 
@@ -7695,9 +8559,6 @@ msgstr "Find Similar Titles"
 
 msgid "错误：未找到可供聚类的向量。"
 msgstr "Error: No vectors found for clustering."
-
-msgid "未找到相似的标题。请确保已执行聚类操作。"
-msgstr "No similar titles found. Please ensure clustering has been executed."
 
 msgid "找到 %d 个相似标题："
 msgstr "Found %d similar titles:"
@@ -7821,30 +8682,6 @@ msgstr "Topic-level reference material"
 
 msgid "关联的主题ID列表（JSON格式）"
 msgstr "Related topic ID list (JSON)"
-
-msgid "输入主题或关键词"
-msgstr "Enter topic or keywords"
-
-msgid "在此输入主题、关键词或粘贴要处理的文字…"
-msgstr "Enter a topic, keywords, or paste text to process…"
-
-msgid "请在上方输入主题，或在编辑器中选中文字"
-msgstr "Enter a topic above, or select text in the editor"
-
-msgid "生成小标题"
-msgstr "Generate subtitle"
-
-msgid "写博客标题"
-msgstr "Write a blog title"
-
-msgid "自动为文本生成准确的小标题，使内容更加清晰易读。"
-msgstr "Automatically generates accurate and synchronized subtitles for videos, making them more accessible and engaging for viewers."
-
-msgid "释放语言的力量，打造一个引人注目的博客标题，吸引读者的注意力。"
-msgstr "Unleash the Power of Words to Craft a Compelling Blog Title that Grabs Readers' Attention"
-
-msgid "菜单显示标题"
-msgstr "Menu Title"
 
 msgid "手动选择：使用预设的分类；自动选择：根据主题的推荐分类自动匹配。"
 msgstr "Manual Selection: Use preset categories; Auto Selection: Automatically match based on recommended categories from the topic."
@@ -8152,26 +8989,59 @@ msgstr "Provides AI with site categories to help select appropriate classificati
 msgid "【必需变量】AI基于此标题创作文章内容，决定文章的方向和价值承诺"
 msgstr "[Required Variable] AI creates content based on this title, determining direction and value"
 
-msgid "【数据来源】content_auto_topics表的title字段<br>【业务含义】AI生成的主题标题，是文章创作的核心依据"
-msgstr "[Data Source] title field in content_auto_topics table<br>[Meaning] AI-generated topic title, core basis for article creation"
+msgid "【数据来源】yali_ai_writer_topics表的title字段<br>【业务含义】AI生成的主题标题，是文章创作的核心依据"
+msgstr "[Data Source] title field in yali_ai_writer_topics table<br>[Meaning] AI-generated topic title, core basis for article creation"
 
-msgid "【数据来源】content_auto_topics表的source_angle字段<br>【可选值】知识科普、实操指导、问题解决、案例与场景、对比分析、资源工具、趋势洞察、观点评论、情感共鸣、创新启发"
-msgstr "[Data Source] source_angle field in content_auto_topics table<br>[Options] Knowledge sharing, practical guidance, problem solving, cases & scenarios, comparison, resources, trends, opinions, emotional resonance, inspiration"
+msgid "【数据来源】yali_ai_writer_topics表的source_angle字段<br>【可选值】知识科普、实操指导、问题解决、案例与场景、对比分析、资源工具、趋势洞察、观点评论、情感共鸣、创新启发"
+msgstr "[Data Source] source_angle field in yali_ai_writer_topics table<br>[Options] Knowledge sharing, practical guidance, problem solving, cases & scenarios, comparison, resources, trends, opinions, emotional resonance, inspiration"
 
-msgid "【数据来源】content_auto_topics表的user_value字段<br>【业务含义】文章为读者提供的核心价值和收益说明"
-msgstr "[Data Source] user_value field in content_auto_topics table<br>[Meaning] Core value and benefit provided to readers"
+msgid "【数据来源】yali_ai_writer_topics表的user_value字段<br>【业务含义】文章为读者提供的核心价值和收益说明"
+msgstr "[Data Source] user_value field in yali_ai_writer_topics table<br>[Meaning] Core value and benefit provided to readers"
 
-msgid "【数据来源】content_auto_topics表的matched_category字段<br>【业务含义】文章归属的内容分类，影响专业术语和内容深度"
-msgstr "[Data Source] matched_category field in content_auto_topics table<br>[Meaning] Content category, affects terminology and depth"
+msgid "【数据来源】yali_ai_writer_topics表的matched_category字段<br>【业务含义】文章归属的内容分类，影响专业术语和内容深度"
+msgstr "[Data Source] matched_category field in yali_ai_writer_topics table<br>[Meaning] Content category, affects terminology and depth"
 
-msgid "【数据来源】content_auto_topics表的seo_keywords字段<br>【处理方法】process_seo_keywords()方法<br>【处理逻辑】1)优先解析JSON格式 2)回退到分隔符分割(支持逗号、顿号、空格) 3)验证质量(≥2字符) 4)最多保留5个有效关键词<br>【输出格式】用顿号(、)连接的字符串"
-msgstr "[Data Source] seo_keywords field in content_auto_topics table<br>[Method] process_seo_keywords()<br>[Logic] 1) Parse JSON first 2) Fallback to delimiter split (comma, Chinese comma, space) 3) Validate (≥2 chars) 4) Max 5 keywords<br>[Output] Connected with Chinese comma (、)"
+msgid "【数据来源】yali_ai_writer_topics表的seo_keywords字段<br>【处理方法】process_seo_keywords()方法<br>【处理逻辑】1)优先解析JSON格式 2)回退到分隔符分割(支持逗号、顿号、空格) 3)验证质量(≥2字符) 4)最多保留5个有效关键词<br>【输出格式】用顿号(、)连接的字符串"
+msgstr "[Data Source] seo_keywords field in yali_ai_writer_topics table<br>[Method] process_seo_keywords()<br>[Logic] 1) Parse JSON first 2) Fallback to delimiter split (comma, Chinese comma, space) 3) Validate (≥2 chars) 4) Max 5 keywords<br>[Output] Connected with Chinese comma (、)"
 
 msgid "【重要变量】指导AI在标题、章节标题和正文中自然融入关键词，提升SEO效果"
 msgstr "[Important Variable] Guides AI to naturally integrate keywords in titles and content for SEO"
 
 msgid "【数据来源】向量相似度匹配的相关文章 + 内链功能开关<br>【条件生成】仅在内链功能启用且存在相似文章时生成<br>【匹配逻辑】通过向量相似度自动找到相关文章"
 msgstr "[Data Source] Vector similarity matched related articles + internal linking toggle<br>[Conditional] Only when internal linking enabled and similar articles exist<br>[Matching] Automatically finds related articles via vector similarity"
+
+msgid "子任务更新结果：subtask_id=%1$s, new_retry_count=%2$d, delay=%3$ds"
+msgstr "Subtask update result: subtask_id=%1$s, new_retry_count=%2$d, delay=%3$ds"
+
+msgid "关联的规则不存在"
+msgstr "Associated rule does not exist"
+
+msgid "主题生成提示词完整内容"
+msgstr "Complete topic generation prompt content"
+
+msgid "删除任务时发生错误: "
+msgstr "Error occurred while deleting task: "
+
+msgid "Subtask processing exception: %s"
+msgstr "Subtask processing exception: %s"
+
+msgid "提示：只能删除\"未使用\"状态的主题，队列中和已使用的主题不会被删除。"
+msgstr "Tip: You can only delete topics with the 'unused' status. Queued and used topics will not be deleted."
+
+msgid "只能批量删除\"未使用\"状态的主题，请先在状态筛选中选择\"未使用\""
+msgstr "You can only bulk delete topics with the 'unused' status. Please select 'unused' in the status filter first."
+
+msgid "只能批量删除\"未使用\"状态的主题"
+msgstr "You can only bulk delete topics with the 'unused' status"
+
+msgid "深度写作请求已接受：%d 个主题。"
+msgstr "Deep writing request accepted: %d topic(s)."
+
+msgid "请选择要进行深度写作的主题。"
+msgstr "Please select the topics for deep writing."
+
+msgid "深度写作"
+msgstr "Deep Writing"
 
 msgid "可用变量"
 msgstr "Available Variables"
@@ -8191,11 +9061,14 @@ msgstr "[Data Source] role_description field in publish_rules table (ID=1)<br>[M
 msgid "=== 核心输入数据变量 ==="
 msgstr ""
 
+msgid "【数据来源】优先使用Yali_AI_Writer_Category_Filter::get_filtered_categories()获取发布规则中允许的分类，如分类过滤器不存在则回退到WordPress的get_categories()获取所有分类<br>【处理逻辑】调用build_site_categories_block()方法，每个分类名称占一行，前缀6个空格进行缩进<br>【限制】最多获取50个分类"
+msgstr "[Data Source] Uses Yali_AI_Writer_Category_Filter::get_filtered_categories() for allowed categories, falls back to WordPress get_categories()<br>[Logic] Calls build_site_categories_block(), one category per line with 6-space indent<br>[Limit] Max 50 categories"
+
 msgid "=== 参考资料变量 ==="
 msgstr ""
 
-msgid "【获取方法】get_reference_material()方法，三级优先级<br>【优先级1】主题级：topic_data[\"reference_material\"]字段<br>【优先级2】规则级：content_auto_rules表的reference_material字段<br>【优先级3】品牌资料级：get_brand_profile_reference_material()，从content_auto_brand_profiles表type=\"reference\"记录中向量匹配(相似度≥0.8)<br>【条件生成】仅在存在参考资料时生成，包含htmlspecialchars()转义"
-msgstr "[Method] get_reference_material() with 3-level priority<br>[Priority 1] Topic level: topic_data['reference_material']<br>[Priority 2] Rule level: reference_material field in content_auto_rules<br>[Priority 3] Brand profile level: vector matching (similarity ≥0.8) from content_auto_brand_profiles<br>[Conditional] Only generated when reference exists, with htmlspecialchars() escaping"
+msgid "【获取方法】get_reference_material()方法，三级优先级<br>【优先级1】主题级：topic_data[\"reference_material\"]字段<br>【优先级2】规则级：yali_ai_writer_rules表的reference_material字段<br>【优先级3】品牌资料级：get_brand_profile_reference_material()，从yali_ai_writer_brand_profiles表type=\"reference\"记录中向量匹配(相似度≥0.8)<br>【条件生成】仅在存在参考资料时生成，包含htmlspecialchars()转义"
+msgstr "[Method] get_reference_material() with 3-level priority<br>[Priority 1] Topic level: topic_data['reference_material']<br>[Priority 2] Rule level: reference_material field in yali_ai_writer_rules<br>[Priority 3] Brand profile level: vector matching (similarity ≥0.8) from yali_ai_writer_brand_profiles<br>[Conditional] Only generated when reference exists, with htmlspecialchars() escaping"
 
 msgid "=== 核心内容变量 ==="
 msgstr ""
@@ -8262,4 +9135,37 @@ msgstr "[Important Variable] Provides clear minimum word count to avoid short co
 
 msgid "【可选变量】如果配置了SEO意图，则生成意图推断指令，指导AI分析用户搜索意图"
 msgstr "[Optional Variable] If SEO intent configured, generates intent inference instructions"
+
+msgid "💡 建议与 ROLE_DESCRIPTION 一起放在开头，提供时间背景"
+msgstr "💡 Recommended to place at the beginning with ROLE_DESCRIPTION to provide time context"
+
+msgid "核心内容"
+msgstr "Core Content"
+
+msgid "【数据来源】从content_auto_topics表查询状态为unused和queued的主题<br>【处理逻辑】调用get_existing_topics()方法，获取最近的主题（默认限制30个候选，智能去重后返回最多5个）<br>【去重算法】使用向量余弦相似度或字符相似度，阈值0.8<br>【输出格式】每个主题标题占一行，前缀6个空格"
+msgstr "[Data Source] Queries unused and queued topics from content_auto_topics table<br>[Logic] Calls get_existing_topics() to retrieve recent topics (default 30 candidates, smartly deduplicated to max 5)<br>[Deduplication] Uses vector cosine similarity or character similarity, threshold 0.8<br>[Format] One topic title per line, prefixed with 6 spaces"
+
+msgid "💡 建议与ROLE_DESCRIPTION一起放在开头，提供时间背景"
+msgstr "💡 Recommend placing at the beginning with ROLE_DESCRIPTION to provide temporal context"
+
+msgid "【数据来源】content_auto_topics表的title字段<br>【业务含义】AI生成的主题标题，是文章创作的核心依据"
+msgstr "[Data Source] title field in content_auto_topics table<br>[Meaning] AI-generated topic title, the core basis for article creation"
+
+msgid "【数据来源】content_auto_topics表的source_angle字段<br>【可选值】知识科普、实操指导、问题解决、案例与场景、对比分析、资源工具、趋势洞察、观点评论、情感共鸣、创新启发"
+msgstr "[Data Source] source_angle field in content_auto_topics table<br>[Options] Knowledge/Science, Practical Guide, Problem Solving, Case/Scenario, Comparative Analysis, Resources/Tools, Trend Insights, Opinion/Commentary, Emotional Resonance, Innovation/Inspiration"
+
+msgid "【数据来源】content_auto_topics表的user_value字段<br>【业务含义】文章为读者提供的核心价值和收益说明"
+msgstr "[Data Source] user_value field in content_auto_topics table<br>[Meaning] The core value and benefits the article provides to readers"
+
+msgid "【数据来源】content_auto_topics表的matched_category字段<br>【业务含义】文章归属的内容分类，影响专业术语和内容深度"
+msgstr "[Data Source] matched_category field in content_auto_topics table<br>[Meaning] Content categorization, affecting professional terminology and content depth"
+
+msgid "【数据来源】content_auto_topics表的seo_keywords字段<br>【处理方法】process_seo_keywords()方法<br>【处理逻辑】1)优先解析JSON格式 2)回退到分隔符分割(支持逗号、顿号、空格) 3)验证质量(≥2字符) 4)最多保留5个有效关键词<br>【输出格式】用顿号(、)连接的字符串"
+msgstr "[Data Source] seo_keywords field in content_auto_topics table<br>[Method] process_seo_keywords()<br>[Logic] 1) Priority parse JSON 2) Fallback to delimiter split 3) Validate quality 4) Keep up to 5 valid keywords<br>[Format] String joined by commas"
+
+msgid "【数据来源】content_auto_article_structures表的向量匹配结果<br>【获取方法】get_dynamic_article_structure()方法<br>【匹配逻辑】1)检查主题向量 2)获取同内容角度的候选结构 3)计算余弦相似度 4)取前20个中随机选择 5)更新使用次数<br>【回退机制】向量匹配失败时自动调用get_fallback_structure()，使用预设的专业5段式结构<br>【条件生成】仅在规范化输出启用时生成，保证始终有结构指导"
+msgstr "[Data Source] Vector matching from content_auto_article_structures<br>[Method] get_dynamic_article_structure()<br>[Logic] 1) Check subject vectors 2) Get candidate structures for same angle 3) Cosine similarity 4) Random from top 20 5) Update usage count<br>[Fallback] Uses preset professional 5-paragraph structure if matching fails<br>[Condition] Generated only when standardized output is enabled to ensure structural guidance"
+
+msgid "【获取方法】get_reference_material()方法，三级优先级<br>【优先级1】主题级：topic_data[\"reference_material\"]字段<br>【优先级2】规则级：content_auto_rules表的reference_material字段<br>【优先级3】品牌资料级：get_brand_profile_reference_material()，从content_auto_brand_profiles表type=\"reference\"记录中向量匹配(相似度≥0.8)<br>【条件生成】仅在存在参考资料时生成，包含htmlspecialchars()转义"
+msgstr "[Method] get_reference_material(), 3-tier priority<br>[Priority 1] Topic level: topic_data[\"reference_material\"]<br>[Priority 2] Rule level: reference_material from content_auto_rules<br>[Priority 3] Brand profile level: Vector matching from content_auto_brand_profiles<br>[Condition] Generated only when reference materials exist, includes htmlspecialchars() escaping"
 

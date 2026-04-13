@@ -13,6 +13,7 @@
 #
 #
 
+if (!class_exists('ParsedownExtra', false)) {
 class ParsedownExtra extends Parsedown
 {
     # ~
@@ -683,4 +684,5 @@ class ParsedownExtra extends Parsedown
     #
 
     protected $regexAttribute = '(?:[#.][-\w]+[ ]*)';
+}
 }

@@ -1,6 +1,6 @@
 {
-    "translation-revision-date": "2026-03-16 08:18:40+0800",
-    "generator": "Reconstructed Build Mo Script",
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
     "domain": "messages",
     "locale_data": {
         "messages": {
@@ -9,8 +9,8 @@
                 "plural-forms": "nplurals=2; plural=(n != 1);",
                 "lang": "en_US"
             },
-            "保存配置": [
-                "Save Configuration"
+            "所有数据加载完成": [
+                "All data loaded successfully"
             ],
             "确定要恢复所有配置为默认值吗？": [
                 "Are you sure you want to reset all configurations to default values?"
@@ -18,167 +18,20 @@
             "配置已保存": [
                 "Configuration saved"
             ],
-            "所有配置已保存": [
-                "All configurations saved"
-            ],
-            "配置已恢复为默认值": [
-                "Configuration reset to default values"
-            ],
-            "暂无数据驱动结构。系统会自动从受欢迎文章中提取结构。": [
-                "No data-driven structures found. The system will automatically extract structures from popular articles."
-            ],
-            "选中结构": [
-                "Selected Structure"
-            ],
-            "AI 随机\/生成结构": [
-                "AI Random\/Generated Structures"
-            ],
-            "结构总数": [
-                "Total Structures"
-            ],
-            "数据驱动结构": [
-                "Data Driven Structures"
-            ],
-            "智能结构优化设置": [
-                "Smart Structure Optimization Settings"
-            ],
-            "个结构）": [
-                " structures)"
-            ],
-            " 个新结构。": [
-                " new structures."
-            ],
-            "个新结构。": [
-                " new structures."
-            ],
-            "待处理": [
-                "Pending"
-            ],
-            "失败: ": [
-                "Failed: "
-            ],
-            "失败": [
-                "Failed"
-            ],
-            "保存失败": [
-                "Save Failed"
-            ],
-            "加载失败": [
-                "Failed to load."
-            ],
-            "请求失败": [
-                "Request failed"
-            ],
             "保存失败: ": [
                 "Save failed: "
+            ],
+            "所有配置已保存": [
+                "All configurations saved"
             ],
             "保存失败，请检查网络连接": [
                 "Save failed, please check network connection"
             ],
+            "配置已恢复为默认值": [
+                "Configuration reset to default values"
+            ],
             "重置失败: ": [
                 "Reset failed: "
-            ],
-            "加载冷启动阶段数据失败": [
-                "Failed to load cold start phase data"
-            ],
-            "加载数据驱动结构失败": [
-                "Failed to load data-driven structures"
-            ],
-            "加载性能对比数据失败": [
-                "Failed to load performance comparison data"
-            ],
-            "正在获取待处理文章列表...": [
-                "Getting pending articles list..."
-            ],
-            "获取列表失败: ": [
-                "Failed to get list: "
-            ],
-            "请求失败，请检查网络连接": [
-                "Request failed, please check network connection"
-            ],
-            "分析完成，没有待处理的高表现文章。": [
-                "Analysis complete, no high-performance articles pending."
-            ],
-            "更新失败: ": [
-                "Update failed: "
-            ],
-            "清除失败: ": [
-                "Clear failed: "
-            ],
-            "恢复默认": [
-                "Reset to Default"
-            ],
-            " 篇文章，但未创建新结构（可能已存在相似结构或提取失败）。": [
-                " articles, but no new structures were created (possibly due to existing similar structures or extraction failure)."
-            ],
-            "保存失败:": [
-                "Save failed:"
-            ],
-            "更新失败:": [
-                "Update failed:"
-            ],
-            "清除失败:": [
-                "Clear failed:"
-            ],
-            "获取列表失败:": [
-                "Failed to get list:"
-            ],
-            "重置失败:": [
-                "Reset failed:"
-            ],
-            "篇文章，但未创建新结构（可能已存在相似结构或提取失败）。": [
-                " articles, but no new structures were created (possibly due to existing similar structures or extraction failure)."
-            ],
-            "恢复": [
-                "Resume"
-            ],
-            "是": [
-                "Yes"
-            ],
-            "否": [
-                "No"
-            ],
-            "已保存": [
-                "Saved"
-            ],
-            "刷新数据": [
-                "Refresh"
-            ],
-            "操作": [
-                "Actions"
-            ],
-            "篇": [
-                "articles"
-            ],
-            " 篇": [
-                " articles"
-            ],
-            "确定": [
-                "OK"
-            ],
-            "启用": [
-                "Enabled"
-            ],
-            "来源": [
-                "Source"
-            ],
-            "名称": [
-                "Name"
-            ],
-            "次": [
-                "Times"
-            ],
-            "未知": [
-                "Unknown"
-            ],
-            "刷新": [
-                "Refresh"
-            ],
-            "无数据": [
-                "No Data"
-            ],
-            "所有数据加载完成": [
-                "All data loaded successfully"
             ],
             "已启用": [
                 "Enabled"
@@ -186,8 +39,14 @@
             "已禁用": [
                 "Disabled"
             ],
+            "加载冷启动阶段数据失败": [
+                "Failed to load cold start phase data"
+            ],
             "暂无冷启动阶段数据": [
                 "No cold start phase data"
+            ],
+            "未知": [
+                "Unknown"
             ],
             "随机探索": [
                 "Random Exploration"
@@ -198,11 +57,26 @@
             "智能优选": [
                 "Smart Optimization"
             ],
+            "阶段": [
+                "Phase"
+            ],
+            "当前状态": [
+                "Current Status"
+            ],
             "文章数": [
                 "Posts"
             ],
             "探索率": [
                 "Exploration Rate"
+            ],
+            "加载数据驱动结构失败": [
+                "Failed to load data-driven structures"
+            ],
+            "暂无数据驱动结构。系统会自动从受欢迎文章中提取结构。": [
+                "No data-driven structures found. The system will automatically extract structures from popular articles."
+            ],
+            "结构标题": [
+                "Structure Title"
             ],
             "来源文章": [
                 "Source Article"
@@ -219,6 +93,9 @@
             "角度: ": [
                 "Angle: "
             ],
+            "加载失败": [
+                "Loading failed"
+            ],
             "暂无熵值数据": [
                 "No entropy data"
             ],
@@ -233,6 +110,9 @@
             ],
             "内容角度": [
                 "Content Angle"
+            ],
+            "选中结构": [
+                "Selected Structure"
             ],
             "选择方法": [
                 "Selection Method"
@@ -249,6 +129,15 @@
             "提升": [
                 "Boost"
             ],
+            "加载性能对比数据失败": [
+                "Failed to load performance comparison data"
+            ],
+            "AI 随机\/生成结构": [
+                "AI Random\/Generated Structures"
+            ],
+            "结构总数": [
+                "Total Structures"
+            ],
             "总使用次数": [
                 "Total Used"
             ],
@@ -258,56 +147,41 @@
             "平均受欢迎度": [
                 "Average Popularity"
             ],
+            "数据驱动结构": [
+                "Data Driven Structures"
+            ],
             "推荐": [
                 "Recommended"
+            ],
+            "正在获取待处理文章列表...": [
+                "Getting pending articles list..."
+            ],
+            "获取列表失败: ": [
+                "Failed to get list: "
+            ],
+            "请求失败，请检查网络连接": [
+                "Request failed, please check network connection"
             ],
             "正在分析高表现文章...": [
                 "Analyzing high-performance articles..."
             ],
-            "超时": [
-                "Timeout"
+            "进度: ": [
+                "Progress: "
             ],
-            "错误: ": [
-                "Error: "
+            "篇": [
+                "articles"
             ],
-            "探索": [
-                "Exploration"
+            "（已创建: ": [
+                "(Created: "
             ],
-            "利用": [
-                "Exploitation"
-            ],
-            "回退": [
-                "Fallback"
+            "个结构）": [
+                " structures)"
             ],
             "文章": [
                 "Article"
             ],
-            "缓存已清除": [
-                "Cache cleared"
-            ],
-            "阶段": [
-                "Phase"
-            ],
-            "功能开关": [
-                "Feature Toggle"
-            ],
-            "性能对比": [
-                "Performance Comparison"
-            ],
-            "手动操作": [
-                "Manual Operations"
-            ],
-            "篇文章": [
-                "articles"
-            ],
-            "平均": [
-                "Avg"
-            ],
-            "进度: ": [
-                "Progress: "
-            ],
-            "（已创建: ": [
-                "(Created: "
+            "失败": [
+                "Failed"
             ],
             " 个，跳过: ": [
                 ", Skipped: "
@@ -315,11 +189,20 @@
             "个）": [
                 ")"
             ],
+            "超时": [
+                "Timeout"
+            ],
+            "请求失败": [
+                "Request failed"
+            ],
             "分析完成！已处理 ": [
                 "Analysis complete! Processed "
             ],
             " 篇文章，创建 ": [
                 " articles, created "
+            ],
+            " 个新结构。": [
+                " new structures."
             ],
             "（跳过 ": [
                 "(Skipped "
@@ -330,98 +213,68 @@
             "分析完成，处理了 ": [
                 "Analysis complete, processed "
             ],
+            " 篇文章，但未创建新结构（可能已存在相似结构或提取失败）。": [
+                " articles, but no new structures were created (possibly due to existing similar structures or extraction failure)."
+            ],
+            "分析完成，没有待处理的高表现文章。": [
+                "Analysis complete, no high-performance articles pending."
+            ],
+            "错误: ": [
+                "Error: "
+            ],
             "共 ": [
                 "Total "
             ],
             " 个错误": [
                 " errors"
             ],
-            "共": [
-                "Total"
+            "更新失败: ": [
+                "Update failed: "
             ],
-            "分析完成！已处理": [
-                "Analysis complete! Processed"
+            "缓存已清除": [
+                "Cache cleared"
             ],
-            "分析完成，处理了": [
-                "Analysis complete, processed"
+            "清除失败: ": [
+                "Clear failed: "
             ],
-            "角度:": [
-                "Angle:"
+            "探索": [
+                "Exploration"
             ],
-            "进度:": [
-                "Progress:"
+            "利用": [
+                "Exploitation"
             ],
-            "错误:": [
-                "Error:"
+            "回退": [
+                "Fallback"
             ],
-            "（已创建:": [
-                "(Created:"
+            "知识科普": [
+                "Knowledge Base"
             ],
-            "（跳过": [
-                "(Skipped"
+            "实操指导": [
+                "Practical Guide"
             ],
-            "个错误": [
-                " errors"
+            "问题解决": [
+                "Problem Solving"
             ],
-            "个，跳过:": [
-                ", Skipped:"
+            "案例与场景": [
+                "Cases & Scenarios"
             ],
-            "篇文章，创建": [
-                " articles, created"
+            "对比分析": [
+                "Comparison & Analysis"
             ],
-            "篇）": [
-                " articles)"
+            "资源工具": [
+                "Resources & Tools"
             ],
-            "days": [
-                "days"
+            "趋势洞察": [
+                "Trend Insights"
             ],
-            "存在": [
-                "Exists"
+            "观点评论": [
+                "Opinion & Commentary"
             ],
-            "默认值": [
-                "Default"
+            "情感共鸣": [
+                "Emotional Resonance"
             ],
-            "对比": [
-                "Compare"
-            ],
-            "固定": [
-                "Fixed"
-            ],
-            "中": [
-                "Medium"
-            ],
-            "高": [
-                "High"
-            ],
-            "禁用": [
-                "Disabled"
-            ],
-            "重置": [
-                "Reset"
-            ],
-            "无": [
-                "None"
-            ],
-            "进度": [
-                "Progress"
-            ],
-            "，": [
-                ", "
-            ],
-            "。": [
-                "."
-            ],
-            "当前状态": [
-                "Current Status"
-            ],
-            "状态": [
-                "Status"
-            ],
-            "标题": [
-                "Title"
-            ],
-            "结构标题": [
-                "Structure Title"
+            "创新启发": [
+                "Creative Inspiration"
             ]
         }
     }

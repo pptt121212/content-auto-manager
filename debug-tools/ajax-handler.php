@@ -8,14 +8,14 @@ if (!defined('ABSPATH')) {
 }
 
 // 注册AJAX动作
-add_action('wp_ajax_content_auto_toggle_debug_mode', 'content_auto_handle_toggle_debug_mode');
-add_action('wp_ajax_content_auto_get_debug_logs', 'content_auto_handle_get_debug_logs');
-add_action('wp_ajax_content_auto_clear_debug_logs', 'content_auto_handle_clear_debug_logs');
+add_action('wp_ajax_yali_ai_writer_toggle_debug_mode', 'yali_ai_writer_handle_toggle_debug_mode');
+add_action('wp_ajax_yali_ai_writer_get_debug_logs', 'yali_ai_writer_handle_get_debug_logs');
+add_action('wp_ajax_yali_ai_writer_clear_debug_logs', 'yali_ai_writer_handle_clear_debug_logs');
 
 /**
  * 处理调试模式开关
  */
-function content_auto_handle_toggle_debug_mode() {
+function yali_ai_writer_handle_toggle_debug_mode() {
     // 验证权限
     if (!current_user_can('manage_options')) {
         wp_send_json_error(__('权限不足', 'yali-ai-writer'));
@@ -23,7 +23,7 @@ function content_auto_handle_toggle_debug_mode() {
     }
     
     // 验证nonce
-    if (!wp_verify_nonce($_POST['nonce'], 'debug_mode_toggle')) {
+    if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'debug_mode_toggle')) {
         wp_send_json_error(__('安全验证失败', 'yali-ai-writer'));
         return;
     }
@@ -31,10 +31,10 @@ function content_auto_handle_toggle_debug_mode() {
     $mode = sanitize_text_field($_POST['mode']);
     
     if ($mode === 'enable') {
-        update_option('content_auto_debug_mode', true);
+        update_option('yali_ai_writer_debug_mode', true);
         wp_send_json_success(__('调试模式已启用', 'yali-ai-writer'));
     } elseif ($mode === 'disable') {
-        update_option('content_auto_debug_mode', false);
+        update_option('yali_ai_writer_debug_mode', false);
         wp_send_json_success(__('调试模式已关闭', 'yali-ai-writer'));
     } else {
         wp_send_json_error(__('无效的操作模式', 'yali-ai-writer'));
@@ -44,7 +44,7 @@ function content_auto_handle_toggle_debug_mode() {
 /**
  * 获取调试日志
  */
-function content_auto_handle_get_debug_logs() {
+function yali_ai_writer_handle_get_debug_logs() {
     // 验证权限
     if (!current_user_can('manage_options')) {
         wp_send_json_error(__('权限不足', 'yali-ai-writer'));
@@ -52,15 +52,15 @@ function content_auto_handle_get_debug_logs() {
     }
     
     // 验证nonce
-    if (!wp_verify_nonce($_POST['nonce'], 'debug_logs_view')) {
+    if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'debug_logs_view')) {
         wp_send_json_error(__('安全验证失败', 'yali-ai-writer'));
         return;
     }
     
     try {
         // 使用日志系统获取最新日志
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
-        $logger = new ContentAuto_PluginLogger();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        $logger = new Yali_AI_Writer_PluginLogger();
         
         $recent_logs = $logger->get_recent_logs(50); // 获取最近50条日志
         
@@ -83,9 +83,9 @@ function content_auto_handle_get_debug_logs() {
             if (!empty($log['log_context'])) {
                 if (is_array($log['log_context'])) {
                     if (isset($log['log_context']['prompt_content'])) {
-                        // 截取提示词内容的前1000字符
-                        $prompt_preview = mb_substr($log['log_context']['prompt_content'], 0, 1000, 'UTF-8');
-                        $formatted_logs .= __('提示词内容预览', 'yali-ai-writer') . ": " . $prompt_preview . "...\n";
+                        // 显示完整提示词内容
+                        $prompt_content = $log['log_context']['prompt_content'];
+                        $formatted_logs .= __('提示词内容', 'yali-ai-writer') . ": " . $prompt_content . "\n";
                     } else {
                         $formatted_logs .= __('上下文', 'yali-ai-writer') . ": " . json_encode($log['log_context'], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
                     }
@@ -104,7 +104,7 @@ function content_auto_handle_get_debug_logs() {
 /**
  * 清空调试日志
  */
-function content_auto_handle_clear_debug_logs() {
+function yali_ai_writer_handle_clear_debug_logs() {
     // 验证权限
     if (!current_user_can('manage_options')) {
         wp_send_json_error(__('权限不足', 'yali-ai-writer'));
@@ -112,15 +112,15 @@ function content_auto_handle_clear_debug_logs() {
     }
     
     // 验证nonce
-    if (!wp_verify_nonce($_POST['nonce'], 'debug_logs_clear')) {
+    if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'debug_logs_clear')) {
         wp_send_json_error(__('安全验证失败', 'yali-ai-writer'));
         return;
     }
     
     try {
         // 使用日志系统清空日志
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
-        $logger = new ContentAuto_PluginLogger();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        $logger = new Yali_AI_Writer_PluginLogger();
         
         $result = $logger->clear_log();
         
@@ -136,12 +136,12 @@ function content_auto_handle_clear_debug_logs() {
 }
 
 // 注册修复卡住任务的AJAX动作
-add_action('wp_ajax_content_auto_fix_stuck_tasks', 'content_auto_handle_fix_stuck_tasks');
+add_action('wp_ajax_yali_ai_writer_fix_stuck_tasks', 'yali_ai_writer_handle_fix_stuck_tasks');
 
 /**
  * 修复卡在"处理中"状态的任务
  */
-function content_auto_handle_fix_stuck_tasks() {
+function yali_ai_writer_handle_fix_stuck_tasks() {
     // 验证权限
     if (!current_user_can('manage_options')) {
         wp_send_json_error(__('权限不足', 'yali-ai-writer'));
@@ -149,15 +149,15 @@ function content_auto_handle_fix_stuck_tasks() {
     }
     
     // 验证 nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'content_auto_fix_stuck_tasks')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'yali_ai_writer_fix_stuck_tasks')) {
         wp_send_json_error(__('安全验证失败', 'yali-ai-writer'));
         return;
     }
     
     global $wpdb;
     
-    $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-    $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+    $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+    $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
     
     $results = array(
         'fixed_subtasks' => 0,

@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_Editor_Asset_Loader {
+class Yali_AI_Writer_Editor_Asset_Loader {
 
     public function __construct() {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
@@ -72,7 +72,7 @@ class ContentAuto_Editor_Asset_Loader {
      * 注册 TinyMCE 外部插件路径
      */
     public function add_tinymce_plugin($plugins) {
-        $plugins['yali_classic_plugin'] = CONTENT_AUTO_MANAGER_PLUGIN_URL . 'editor-assistant/classic-editor.js';
+        $plugins['yali_classic_plugin'] = YALI_AI_WRITER_PLUGIN_URL . 'editor-assistant/classic-editor.js';
         return $plugins;
     }
 
@@ -88,8 +88,8 @@ class ContentAuto_Editor_Asset_Loader {
      * 为 TinyMCE 注入必要的样式
      */
     public function add_tinymce_css($mce_css) {
-        $tokens_url = CONTENT_AUTO_MANAGER_PLUGIN_URL . 'shared/assets/css/brand-tokens.css';
-        $style_url = CONTENT_AUTO_MANAGER_PLUGIN_URL . 'dashboard/assets/css/enhanced-dashboard.css';
+        $tokens_url = YALI_AI_WRITER_PLUGIN_URL . 'shared/assets/css/brand-tokens.css';
+        $style_url = YALI_AI_WRITER_PLUGIN_URL . 'dashboard/assets/css/enhanced-dashboard.css';
         
         if (!empty($mce_css)) {
             $mce_css .= ',';
@@ -102,13 +102,13 @@ class ContentAuto_Editor_Asset_Loader {
      * 将 JS 数据（含提示词）直接注入页面，避免异步请求时序问题
      */
     public function localize_classic_editor_data() {
-        if (!class_exists('ContentAuto_Editor_Prompt_Manager')) {
-            if (defined('CONTENT_AUTO_MANAGER_PLUGIN_DIR')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
+        if (!class_exists('Yali_AI_Writer_Editor_Prompt_Manager')) {
+            if (defined('YALI_AI_WRITER_PLUGIN_DIR')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'editor-assistant/class-prompt-manager.php';
             }
         }
 
-        $icon_url = CONTENT_AUTO_MANAGER_PLUGIN_URL . 'dashboard/assets/images/yali-logo-icon.svg';
+        $icon_url = YALI_AI_WRITER_PLUGIN_URL . 'dashboard/assets/images/yali-logo-icon.svg';
 
         $data = array(
             'nonce'   => wp_create_nonce('wp_rest'),
@@ -116,8 +116,8 @@ class ContentAuto_Editor_Asset_Loader {
             'apiUrl'  => rest_url('content-auto-manager/v1/editor-assistant'),
             'iconUrl' => $icon_url,
             // 分组格式的提示词数据
-            'prompts'    => class_exists('ContentAuto_Editor_Prompt_Manager') ? ContentAuto_Editor_Prompt_Manager::get_prompts() : array(),
-            'allPrompts' => class_exists('ContentAuto_Editor_Prompt_Manager') ? ContentAuto_Editor_Prompt_Manager::get_flat_prompts() : array(),
+            'prompts'    => class_exists('Yali_AI_Writer_Editor_Prompt_Manager') ? Yali_AI_Writer_Editor_Prompt_Manager::get_prompts() : array(),
+            'allPrompts' => class_exists('Yali_AI_Writer_Editor_Prompt_Manager') ? Yali_AI_Writer_Editor_Prompt_Manager::get_flat_prompts() : array(),
             // 经典编辑器特定的翻译字符串
             'i18n'       => array(
                 'no_selection'         => __('请先在编辑器中选中要处理的文字。', 'yali-ai-writer'),
@@ -130,7 +130,10 @@ class ContentAuto_Editor_Asset_Loader {
             )
         );
 
-        echo '<script>var contentAutoEditorData = ' . wp_json_encode($data) . ';</script>' . "\n";
+        // 使用 wp_add_inline_script 替代直接 echo，符合 WordPress 编码标准
+        wp_register_script('yali-classic-editor-data', '', array(), YALI_AI_WRITER_VERSION, true);
+        wp_add_inline_script('yali-classic-editor-data', 'var contentAutoEditorData = ' . wp_json_encode($data) . ';', 'before');
+        wp_enqueue_script('yali-classic-editor-data');
     }
 
     /**
@@ -168,7 +171,7 @@ class ContentAuto_Editor_Asset_Loader {
     private function is_feature_enabled() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'");
 
         if (!$table_exists) {
@@ -185,4 +188,4 @@ class ContentAuto_Editor_Asset_Loader {
     }
 }
 
-// 资源加载器将在 content_auto_manager_init 函数中统一初始化
+// 资源加载器将在 yali_ai_writer_manager_init 函数中统一初始化

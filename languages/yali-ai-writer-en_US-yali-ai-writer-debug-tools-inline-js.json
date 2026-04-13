@@ -1,0 +1,92 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "确定要清空所有日志文件吗？\n\n此操作将永久删除logs目录下的所有.log文件，且无法恢复！\n\n请确认您已备份重要日志后再继续。": [
+                "Are you sure you want to clear all log files?\n\nThis will permanently delete all .log files in the logs directory and cannot be undone!\n\nPlease confirm you have backed up important logs before continuing."
+            ],
+            "最后确认：\n\n您真的要删除所有日志文件吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。": [
+                "Final confirmation:\n\nDo you really want to delete all log files?\n\nClick \"OK\" to continue, click \"Cancel\" to abort."
+            ],
+            "确定要清空图像API设置吗？\n\n此操作将删除所有图像API提供商的配置，且无法恢复！\n\n请确认您已备份重要配置后再继续。": [
+                "Are you sure you want to clear image API settings?\n\nThis will delete all image API provider configurations and cannot be recovered!\n\nPlease confirm you have backed up important configurations before continuing."
+            ],
+            "最后确认：\n\n您真的要清空图像API设置吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。": [
+                "Final Confirmation:\n\nAre you sure you want to clear the Image API settings?\n\nClick 'OK' to continue deleting, or 'Cancel' to abort the operation."
+            ],
+            "确定要重置图像API设置为默认值吗？\n\n此操作将覆盖所有当前配置，且无法恢复！\n\n请确认您已备份重要配置后再继续。": [
+                "Are you sure you want to reset image API settings to defaults?\n\nThis will overwrite all current configurations and cannot be recovered!\n\nPlease confirm you have backed up important configurations before continuing."
+            ],
+            "最后确认：\n\n您真的要重置图像API设置吗？\n\n点击\"确定\"将继续重置，点击\"取消\"将放弃操作。": [
+                "Final Confirmation:\n\nAre you sure you want to reset the Image API settings?\n\nClick 'OK' to continue resetting, or 'Cancel' to abort the operation."
+            ],
+            "确定要清理自动配图postmeta数据吗？\n\n此操作将永久删除所有自动配图相关的postmeta记录，且无法恢复！\n\n请确认您已备份重要数据后再继续。": [
+                "Are you sure you want to clear auto-image postmeta data?\n\nThis will permanently delete all auto-image related postmeta records and cannot be recovered!\n\nPlease confirm you have backed up important data before continuing."
+            ],
+            "最后确认：\n\n您真的要清理自动配图postmeta数据吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。": [
+                "Final Confirmation:\n\nAre you sure you want to clean up the auto-image postmeta data?\n\nClick 'OK' to continue deleting, or 'Cancel' to abort the operation."
+            ],
+            "确定要清理历史队列任务吗？\n\n此操作将删除以下三个表中所有状态为\"completed\"的记录：\n\n• wp_yali_ai_writer_job_queue\n• wp_yali_ai_writer_topic_tasks\n• wp_yali_ai_writer_article_tasks\n\n此操作无法恢复！\n\n请确认您已备份重要数据后再继续。": [
+                "Are you sure you want to clean up historical queue tasks?\n\nThis action will delete all 'completed' records from the following tables:\n\n• wp_yali_ai_writer_job_queue\n• wp_yali_ai_writer_topic_tasks\n• wp_yali_ai_writer_article_tasks\n\nThis operation cannot be undone!\n\nPlease make sure you have backed up important data before proceeding."
+            ],
+            "最后确认：\n\n您真的要清理所有已完成的队列任务记录吗？\n\n点击\"确定\"将继续删除，点击\"取消\"将放弃操作。": [
+                "Final Confirmation:\n\nAre you sure you want to clean up all completed queue task records?\n\nClick 'OK' to continue deleting, or 'Cancel' to abort the operation."
+            ],
+            "启用中...": [
+                "Enabling..."
+            ],
+            "启用失败：": [
+                "Enable failed: "
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "启用调试模式": [
+                "Enable Debug Mode"
+            ],
+            "请求失败，请重试": [
+                "Request failed, please try again"
+            ],
+            "关闭中...": [
+                "Disabling..."
+            ],
+            "关闭失败：": [
+                "Disable failed: "
+            ],
+            "关闭调试模式": [
+                "Disable Debug Mode"
+            ],
+            "暂无日志内容": [
+                "No log content"
+            ],
+            "获取日志失败：": [
+                "Failed to get logs: "
+            ],
+            "确定要清空所有调试日志吗？此操作不可逆！": [
+                "Are you sure you want to clear all debug logs? This cannot be undone!"
+            ],
+            "清空中...": [
+                "Clearing..."
+            ],
+            "日志已清空": [
+                "Logs cleared"
+            ],
+            "查看调试日志": [
+                "View Debug Logs"
+            ],
+            "清空失败：": [
+                "Clear failed: "
+            ],
+            "清空日志": [
+                "Clear Logs"
+            ]
+        }
+    }
+}

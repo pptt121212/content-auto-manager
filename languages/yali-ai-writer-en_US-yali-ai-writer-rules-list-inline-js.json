@@ -1,0 +1,44 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "新规则已成功添加": [
+                "New rule added successfully"
+            ],
+            "错误：规则保存失败，请重试": [
+                "Error: Rule saving failed, please try again"
+            ],
+            "规则已成功更新": [
+                "Rule updated successfully"
+            ],
+            "规则已成功删除": [
+                "Rule deleted successfully"
+            ],
+            "删除规则失败，请重试": [
+                "Rule deletion failed, please try again"
+            ],
+            "确定要删除规则 \"%s\" 吗？此操作不可撤销。": [
+                "Are you sure you want to delete rule \"%s\"? This action cannot be undone."
+            ],
+            "网络请求失败": [
+                "Network request failed"
+            ],
+            "删除规则时发生错误": [
+                "An error occurred while deleting the rule"
+            ],
+            "此规则正在被使用中，无法编辑。请等待所有相关任务完成后再试。": [
+                "This rule is currently in use and cannot be edited. Please wait for all related tasks to complete before trying again."
+            ],
+            "此规则正在被使用中，无法删除。请等待所有相关任务完成后再试。": [
+                "This rule is currently in use and cannot be deleted. Please wait for all related tasks to complete before trying again."
+            ]
+        }
+    }
+}

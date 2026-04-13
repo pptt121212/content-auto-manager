@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ApiConfigParams {
+class Yali_AI_Writer_ApiConfigParams {
     public $name;
     public $api_url;
     public $api_key;

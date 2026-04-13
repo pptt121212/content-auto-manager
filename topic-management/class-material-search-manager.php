@@ -11,23 +11,23 @@ if (!defined('ABSPATH')) {
  * - "extension_rag" 模式（知识库搜索）由 job_queue 队列处理器分发到浏览器插件
  * - 这确保了不同模式走不同的执行路径
  */
-class ContentAuto_MaterialSearchManager {
+class Yali_AI_Writer_MaterialSearchManager {
 
     public function __construct() {
         // 注册定时任务Hook
-        add_action('content_auto_material_search_event', array($this, 'process_batch'));
+        add_action('yali_ai_writer_material_search_event', array($this, 'process_batch'));
         
         // 挂载到每分钟的全局心跳，作为兜底机制（防止任务链意外中断）
-        add_action('content_auto_manager_process_queue', array($this, 'schedule_process'));
+        add_action('yali_ai_writer_manager_process_queue', array($this, 'schedule_process'));
     }
 
     /**
      * 触发一次任务调度（通常在保存主题后调用）
      */
     public function schedule_process() {
-        if (!wp_next_scheduled('content_auto_material_search_event')) {
+        if (!wp_next_scheduled('yali_ai_writer_material_search_event')) {
             // 立即调度（异步执行）
-            wp_schedule_single_event(time(), 'content_auto_material_search_event');
+            wp_schedule_single_event(time(), 'yali_ai_writer_material_search_event');
         }
     }
 
@@ -41,8 +41,8 @@ class ContentAuto_MaterialSearchManager {
      */
     public function process_batch() {
         // 1. 检查总开关和模式
-        $db = new ContentAuto_Database();
-        $publish_rules = $db->get_row('content_auto_publish_rules', array('id' => 1));
+        $db = new Yali_AI_Writer_Database();
+        $publish_rules = $db->get_row('yali_ai_writer_publish_rules', array('id' => 1));
         
         // 严格检查：必须开启 'enable_reference_material'
         if (empty($publish_rules['enable_reference_material'])) {
@@ -64,7 +64,7 @@ class ContentAuto_MaterialSearchManager {
 
         // 2. 获取一个待处理任务 (一次只做一个，避免超时和API超限)
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 查找 status=pending 的
         // 并且要再次确认 reference_material 确实是空的（双重检查）
@@ -89,8 +89,8 @@ class ContentAuto_MaterialSearchManager {
         }
 
         // 4. 执行网络搜索（仅 search_engine 模式会到达这里）
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
-        $logger = new ContentAuto_LoggingSystem();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+        $logger = new Yali_AI_Writer_LoggingSystem();
         $logger->log_success('MATERIAL_MANAGER_EXECUTE', "MaterialSearchManager 执行网络搜索", array(
             'topic_id' => $topic['id'],
             'topic_title' => $topic['title'],
@@ -98,10 +98,10 @@ class ContentAuto_MaterialSearchManager {
         ));
         
         // 确保类文件已加载
-        if (!class_exists('ContentAuto_SearchMaterialsService')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
+        if (!class_exists('Yali_AI_Writer_SearchMaterialsService')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
         }
-        $service = new ContentAuto_SearchMaterialsService();
+        $service = new Yali_AI_Writer_SearchMaterialsService();
         
         $result = $service->execute_full_auto_search($topic['id']);
 
@@ -123,7 +123,7 @@ class ContentAuto_MaterialSearchManager {
         
         if ($remaining > 0) {
             // 继续调度下一次（延迟10秒）
-            wp_schedule_single_event(time() + 10, 'content_auto_material_search_event');
+            wp_schedule_single_event(time() + 10, 'yali_ai_writer_material_search_event');
         }
     }
 }

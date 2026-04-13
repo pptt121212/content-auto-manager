@@ -8,17 +8,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_TaskStatusManager {
+class Yali_AI_Writer_TaskStatusManager {
     
     /**
      * 数据库实例
-     * @var ContentAuto_Database
+     * @var Yali_AI_Writer_Database
      */
     private $database;
     
     /**
      * 日志记录器
-     * @var ContentAuto_Logger
+     * @var Yali_AI_Writer_Logger
      */
     private $logger;
     
@@ -26,14 +26,14 @@ class ContentAuto_TaskStatusManager {
      * 状态常量映射
      */
     private $status_constants = array(
-        'pending' => 'CONTENT_AUTO_STATUS_PENDING',
-        'running' => 'CONTENT_AUTO_STATUS_RUNNING',
-        'processing' => 'CONTENT_AUTO_STATUS_PROCESSING',
-        'completed' => 'CONTENT_AUTO_STATUS_COMPLETED',
-        'failed' => 'CONTENT_AUTO_STATUS_FAILED',
-        'paused' => 'CONTENT_AUTO_STATUS_PAUSED',
-        'cancelled' => 'CONTENT_AUTO_STATUS_CANCELLED',
-        'retry' => 'CONTENT_AUTO_STATUS_RETRY'
+        'pending' => 'YALI_AI_WRITER_STATUS_PENDING',
+        'running' => 'YALI_AI_WRITER_STATUS_RUNNING',
+        'processing' => 'YALI_AI_WRITER_STATUS_PROCESSING',
+        'completed' => 'YALI_AI_WRITER_STATUS_COMPLETED',
+        'failed' => 'YALI_AI_WRITER_STATUS_FAILED',
+        'paused' => 'YALI_AI_WRITER_STATUS_PAUSED',
+        'cancelled' => 'YALI_AI_WRITER_STATUS_CANCELLED',
+        'retry' => 'YALI_AI_WRITER_STATUS_RETRY'
     );
     
     /**
@@ -42,7 +42,7 @@ class ContentAuto_TaskStatusManager {
     private $status_labels = array();
     
     public function __construct($database = null, $logger = null) {
-        $this->database = $database ?: new ContentAuto_Database();
+        $this->database = $database ?: new Yali_AI_Writer_Database();
         $this->logger = $logger;
         
         // 初始化翻译后的标签
@@ -107,7 +107,7 @@ class ContentAuto_TaskStatusManager {
      */
     public function get_status_constant($status_string) {
         $normalized = $this->normalize_status($status_string);
-        return isset($this->status_constants[$normalized]) ? constant($this->status_constants[$normalized]) : CONTENT_AUTO_STATUS_PENDING;
+        return isset($this->status_constants[$normalized]) ? constant($this->status_constants[$normalized]) : YALI_AI_WRITER_STATUS_PENDING;
     }
     
     /**
@@ -171,11 +171,11 @@ class ContentAuto_TaskStatusManager {
         // 根据任务类型确定表名
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 break;
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 break;
         }
         
@@ -230,7 +230,7 @@ class ContentAuto_TaskStatusManager {
         }
         
         // 检查队列状态一致性
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $job_type = ($task_type === 'article') ? 'article' : 'topic_task';
         $queue_items = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$queue_table} WHERE job_type = %s AND job_id = %d",
@@ -273,11 +273,11 @@ class ContentAuto_TaskStatusManager {
         // 根据任务类型确定表名
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 break;
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 break;
         }
         
@@ -357,7 +357,7 @@ class ContentAuto_TaskStatusManager {
         }
         
         // 修复队列状态
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $job_type = ($task_type === 'article') ? 'article' : 'topic_task';
         $queue_items = $wpdb->get_results($wpdb->prepare(
             "SELECT * FROM {$queue_table} WHERE job_type = %s AND job_id = %d",
@@ -410,7 +410,7 @@ class ContentAuto_TaskStatusManager {
         }
         
         // 使用插件自定义日志类记录日志
-        $logger = new ContentAuto_PluginLogger();
+        $logger = new Yali_AI_Writer_PluginLogger();
         $logger->info($log_message);
         
         // 可以扩展为写入专门的日志表
@@ -507,11 +507,11 @@ class ContentAuto_TaskStatusManager {
         // 根据任务类型确定表名
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 break;
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 break;
         }
         
@@ -557,11 +557,11 @@ class ContentAuto_TaskStatusManager {
         // 根据任务类型确定表名
         switch ($task_type) {
             case 'article':
-                $table_name = 'content_auto_article_tasks';
+                $table_name = 'yali_ai_writer_article_tasks';
                 break;
             case 'topic_task':
             default:
-                $table_name = 'content_auto_topic_tasks';
+                $table_name = 'yali_ai_writer_topic_tasks';
                 break;
         }
         
@@ -575,9 +575,9 @@ class ContentAuto_TaskStatusManager {
     public function batch_normalize_statuses() {
         global $wpdb;
         
-        $topic_task_table = $wpdb->prefix . 'content_auto_topic_tasks';
-        $article_task_table = $wpdb->prefix . 'content_auto_article_tasks';
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $topic_task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
+        $article_task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         $normalized_count = 0;
         
@@ -729,7 +729,7 @@ class ContentAuto_TaskStatusManager {
             }
         }
         
-        $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         $update_data = array();
         
         if ($task['completed_topics'] != $completed_count) {
@@ -780,8 +780,8 @@ class ContentAuto_TaskStatusManager {
     public function sync_article_task_with_queue($task_id) {
         global $wpdb;
         
-        $task_table = $wpdb->prefix . 'content_auto_article_tasks';
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         $task = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$task_table} WHERE id = %d", $task_id), ARRAY_A);
         if (!$task) {
@@ -874,7 +874,7 @@ class ContentAuto_TaskStatusManager {
     public function batch_fix_article_task_consistency() {
         global $wpdb;
         
-        $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         $tasks = $wpdb->get_results("SELECT id FROM {$task_table}", ARRAY_A);
         
         $fixed_count = 0;

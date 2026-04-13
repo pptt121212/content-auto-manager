@@ -1,0 +1,50 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "加载失败: ": [
+                "Load failed: "
+            ],
+            "服务器错误": [
+                "Server error"
+            ],
+            "重试中...": [
+                "Retrying..."
+            ],
+            "任务重试成功": [
+                "Task retried successfully"
+            ],
+            "重试失败": [
+                "Retry failed"
+            ],
+            "加载中...": [
+                "Loading..."
+            ],
+            "重试": [
+                "Retry"
+            ],
+            "待处理": [
+                "Pending"
+            ],
+            "处理中": [
+                "Processing"
+            ],
+            "已完成": [
+                "Completed"
+            ],
+            "失败": [
+                "Failed"
+            ],
+            "已暂停": [
+                "Paused"
+            ]
+        }
+    }
+}

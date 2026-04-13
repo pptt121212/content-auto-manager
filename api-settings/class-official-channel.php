@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_OfficialChannel {
+class Yali_AI_Writer_OfficialChannel {
     
     /**
      * 获取渠道名称
@@ -77,104 +77,86 @@ class ContentAuto_OfficialChannel {
             'domain' => $domain,
             'prompt' => $prompt,
             'action' => 'generate_content',
-            'stream' => true // 启用流式转发模式
+            'stream' => true // 启用流式转发模式，代理会通过 SSE 发送以防超时
         );
         
-        $ch = curl_init();
-        $headers = array(
-            'Content-Type: application/json',
-            'User-Agent: ContentAutoManager/1.1 (Streaming; WordPress)',
-            'Accept: text/event-stream'
+        $args = array(
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'User-Agent' => 'ContentAutoManager/1.1 (Streaming; WordPress)',
+                'Accept' => 'text/event-stream'
+            ),
+            'body' => wp_json_encode($request_data),
+            'timeout' => 300,          // 5分钟超时
+            'sslverify' => true,
         );
         
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $this->get_api_url(),
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($request_data),
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_RETURNTRANSFER => false, // 使用回调
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_TIMEOUT => 300,          // 5分钟超时
-            CURLOPT_CONNECTTIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        ));
+        $response = wp_remote_post($this->get_api_url(), $args);
+        
+        if (is_wp_error($response)) {
+            return array('success' => false, 'message' => __('请求失败: ', 'yali-ai-writer') . $response->get_error_message());
+        }
+        
+        $http_code = wp_remote_retrieve_response_code($response);
+        if ($http_code !== 200) {
+            return array('success' => false, 'message' => __('服务器响应错误: HTTP ', 'yali-ai-writer') . $http_code);
+        }
+        
+        $response_body = wp_remote_retrieve_body($response);
         
         $accumulated_content = '';
         $usage = array();
-        $buffer = '';
         $stream_error = null;
         
-        // SSE 解析回调
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error, &$usage) {
-            $buffer .= $chunk;
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
-                $line = trim($line);
+        // 解析 SSE 由于我们通过 wp_remote_post 接收了完整的响应体，直接按行解析
+        $lines = explode("\n", $response_body);
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            
+            if (empty($line)) continue;
+            
+            // 1. 忽略 SSE 注释（心跳包，以 : 开头）
+            if (strpos($line, ':') === 0) continue;
+            
+            // 2. 处理错误事件
+            if (strpos($line, 'event: error') === 0) {
+                $stream_error = 'Proxy reported error event';
+                continue;
+            }
+            
+            // 3. 解析数据行 - 兼容两种格式
+            $json_str = null;
+            if (strpos($line, 'data: ') === 0) {
+                $json_str = substr($line, 6);
+            } elseif (strpos($line, 'data:') === 0) {
+                $json_str = substr($line, 5);
+            }
+            
+            if ($json_str !== null) {
+                if (trim($json_str) === '[DONE]') break;
                 
-                if (empty($line)) continue;
-                
-                // 1. 忽略 SSE 注释（心跳包，以 : 开头）
-                if (strpos($line, ':') === 0) continue;
-                
-                // 2. 处理错误事件
-                if (strpos($line, 'event: error') === 0) {
-                    $stream_error = 'Proxy reported error event';
-                    continue;
-                }
-                
-                // 3. 解析数据行 - 兼容两种格式
-                // "data: {...}" (标准格式，有空格) 和 "data:{...}" (非标准格式，无空格)
-                $json_str = null;
-                if (strpos($line, 'data: ') === 0) {
-                    $json_str = substr($line, 6);
-                } elseif (strpos($line, 'data:') === 0) {
-                    $json_str = substr($line, 5);
-                }
-                
-                if ($json_str !== null) {
-                    if (trim($json_str) === '[DONE]') break;
-                    
-                    $data = json_decode($json_str, true);
-                    if ($data) {
-                        if (isset($data['choices'][0]['delta']['content'])) {
-                            $accumulated_content .= $data['choices'][0]['delta']['content'];
-                        } elseif (isset($data['usage'])) {
-                            $usage = $data['usage'];
-                        } elseif (isset($data['status']) && $data['status'] === 'error') {
-                            $stream_error = $data['message'] ?? 'Unknown Error in Stream';
-                        } elseif (isset($data['message']) && $stream_error === 'Proxy reported error event') {
-                            // 这种情况下，上一行是 event: error，这一行是具体的错误信息
-                            $stream_error = $data['message'];
-                        }
+                $data = json_decode($json_str, true);
+                if ($data) {
+                    if (isset($data['choices'][0]['delta']['content'])) {
+                        $accumulated_content .= $data['choices'][0]['delta']['content'];
+                    } elseif (isset($data['usage'])) {
+                        $usage = $data['usage'];
+                    } elseif (isset($data['status']) && $data['status'] === 'error') {
+                        $stream_error = $data['message'] ?? 'Unknown Error in Stream';
+                    } elseif (isset($data['message']) && $stream_error === 'Proxy reported error event') {
+                        // 这种情况下，上一行是 event: error，这一行是具体的错误信息
+                        $stream_error = $data['message'];
                     }
                 }
             }
-            return strlen($chunk);
-        });
-        
-        // 捕获潜在的实时输出冲突
-        ob_start();
-        $success = curl_exec($ch);
-        ob_end_clean();
-        
-        $curl_error = curl_error($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        }
         
         if ($stream_error) {
             return array('success' => false, 'message' => __('API流内部错误: ', 'yali-ai-writer') . $stream_error);
         }
         
-        if ($curl_error) {
-            return array('success' => false, 'message' => __('请求失败 (cURL): ', 'yali-ai-writer') . $curl_error);
-        }
-        
-        if ($http_code !== 200) {
-            return array('success' => false, 'message' => __('服务器响应错误: HTTP ', 'yali-ai-writer') . $http_code);
-        }
-        
-        if (empty($accumulated_content) && $success) {
+        if (empty($accumulated_content)) {
             return array('success' => false, 'message' => __('API未返回任何有效内容', 'yali-ai-writer'));
         }
         
@@ -190,12 +172,12 @@ class ContentAuto_OfficialChannel {
      */
     public function debug_license_info() {
         // 从WordPress选项获取授权码信息
-        $license_key = get_option('content_auto_manager_license_key', '');
-        $license_data = get_option('content_auto_manager_license_data', array());
+        $license_key = get_option('yali_ai_writer_manager_license_key', '');
+        $license_data = get_option('yali_ai_writer_manager_license_data', array());
         
         $debug_info = array();
         $debug_info['storage_location'] = __('wp_options表', 'yali-ai-writer');
-        $debug_info['option_key'] = 'content_auto_manager_license_key';
+        $debug_info['option_key'] = 'yali_ai_writer_manager_license_key';
         $debug_info['license_key'] = $license_key;
         $debug_info['license_key_length'] = strlen($license_key);
         $debug_info['license_status'] = isset($license_data['status']) ? $license_data['status'] : __('未知', 'yali-ai-writer');
@@ -399,7 +381,7 @@ class ContentAuto_OfficialChannel {
      */
     private function get_license_key() {
         // 从WordPress选项中获取授权码（正确的存储位置）
-        $license_key = get_option('content_auto_manager_license_key', '');
+        $license_key = get_option('yali_ai_writer_manager_license_key', '');
         
         // 验证授权码格式
         if (!empty($license_key) && preg_match('/^CMT-[A-F0-9]{32}$/', $license_key)) {

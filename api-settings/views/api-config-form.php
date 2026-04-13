@@ -15,17 +15,17 @@ if (!current_user_can('manage_options')) {
 // 以前的 PHP 表单处理逻辑已移除，现改用 Universal AJAX Handler 处理 (see class-api-ajax-handler.php)
 
 // 初始化预置API类
-$predefined_api = new ContentAuto_PredefinedApi();
+$predefined_api = new Yali_AI_Writer_PredefinedApi();
 
 // 获取要编辑的配置
 $edit_config = null;
 if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
-    $api_config = new ContentAuto_ApiConfig();
-    $edit_config = $api_config->get_config($_GET['id']);
+    $api_config = new Yali_AI_Writer_ApiConfig();
+    $edit_config = $api_config->get_config(intval($_GET['id']));
 }
 
 // 获取所有配置
-$api_config = new ContentAuto_ApiConfig();
+$api_config = new Yali_AI_Writer_ApiConfig();
 $configs = $api_config->get_configs();
 
 // 获取预置API激活状态和渠道信息
@@ -49,7 +49,7 @@ if ($edit_config && !empty($edit_config['predefined_channel'])) {
     $editing_vector_config = true;
 } else if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
     // 检查要编辑的配置类型
-    $config_to_edit = $api_config->get_config($_GET['id']);
+    $config_to_edit = $api_config->get_config(intval($_GET['id']));
     if ($config_to_edit && !empty($config_to_edit['predefined_channel'])) {
         $selected_channel = $config_to_edit['predefined_channel'];
         $editing_predefined_channel = $config_to_edit['predefined_channel'];
@@ -127,8 +127,8 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'custom'
 
 // 如果正在编辑配置，根据配置类型确定应该激活的选项卡
 if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
-    $api_config_obj = new ContentAuto_ApiConfig();
-    $config_to_edit = $api_config_obj->get_config($_GET['id']);
+    $api_config_obj = new Yali_AI_Writer_ApiConfig();
+    $config_to_edit = $api_config_obj->get_config(intval($_GET['id']));
     if ($config_to_edit && !empty($config_to_edit['predefined_channel'])) {
         $active_tab = 'predefined';
     } elseif ($config_to_edit && (!empty($config_to_edit['vector_api_url']) || !empty($config_to_edit['vector_api_key']) || !empty($config_to_edit['vector_model_name']))) {
@@ -177,7 +177,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
             
             <form method="post" action="" class="yali-ajax-form" data-action="cam_save_api_settings" data-nonce="<?php echo wp_create_nonce('cam_save_api_settings'); ?>">
                 <input type="hidden" name="submission_type" value="custom">
-                <?php wp_nonce_field('content_auto_manager_api_config', 'content_auto_manager_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_api_config', 'yali_ai_writer_manager_nonce'); ?>
                 
                 <?php if ($edit_config): ?>
                     <input type="hidden" name="id" value="<?php echo esc_attr($edit_config['id']); ?>">
@@ -303,7 +303,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
             
             <form method="post" action="" class="yali-ajax-form" data-action="cam_save_api_settings" data-nonce="<?php echo wp_create_nonce('cam_save_api_settings'); ?>">
                 <input type="hidden" name="submission_type" value="predefined">
-                <?php wp_nonce_field('content_auto_manager_predefined_api', 'predefined_api_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_predefined_api', 'predefined_api_nonce'); ?>
                 
                 <?php if ($editing_predefined_channel): ?>
                     <input type="hidden" name="editing_predefined_channel" value="<?php echo esc_attr($editing_predefined_channel); ?>">
@@ -346,12 +346,16 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
                         <th scope="row"><?php _e('模型选择', 'yali-ai-writer'); ?></th>
                         <td>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <select class="yali-select" name="predefined_api_model" id="predefined-api-model" style="min-width: 250px;">
+                                <select class="yali-select" name="predefined_api_model" id="predefined-api-model" style="min-width: 250px;" required>
                                     <!-- 由 JS 动态填充 -->
-                                    <?php 
-                                    // 为首屏渲染提供初始值（编辑模式下）
-                                    $current_model = $config_to_edit['model_name'] ?? 'openai-large';
-                                    echo '<option value="' . esc_attr($current_model) . '">' . esc_html($current_model) . '</option>';
+                                    <?php
+                                    // 编辑模式下显示已保存的模型
+                                    if ($edit_config && !empty($edit_config['model_name'])) {
+                                        echo '<option value="' . esc_attr($edit_config['model_name']) . '">' . esc_html($edit_config['model_name']) . ' (' . __('当前保存的模型', 'yali-ai-writer') . ')</option>';
+                                    } else {
+                                        // 新建模式下显示提示选项
+                                        echo '<option value="">↗️ ' . __('请先点击"同步多模型"获取可用模型列表', 'yali-ai-writer') . '</option>';
+                                    }
                                     ?>
                                 </select>
                                 <button type="button" id="refresh-pollinations-models" class="button button-secondary yali-btn yali-btn-secondary yali-btn-small">
@@ -383,7 +387,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
                                 if ($selected_channel === 'official') {
                                     _e('插件官方API服务，通过授权码验证使用。可在发布规则中配置授权码，即刻开启。', 'yali-ai-writer');
                                 } else {
-                                    _e('由 Pollinations 提供的多种顶级开源、商业模型。建议模型: openai-large (Llama 3.3 70B)。', 'yali-ai-writer');
+                                    _e('由 Pollinations 提供的多种顶级开源、商业模型。点击"同步多模型"获取最新可用模型列表。', 'yali-ai-writer');
                                 }
                                 ?>
                             </p>
@@ -478,7 +482,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
                     </tr>
                 </table>
                 <div style="margin: 25px 0 10px 0;">
-                    <a href="<?php echo wp_nonce_url(add_query_arg(array('action' => 'edit', 'id' => $existing_vector_config['id'], 'tab' => 'vector')), 'content_auto_manager_edit_config', 'nonce'); ?>" class="button-primary yali-btn yali-btn-primary">
+                    <a href="<?php echo esc_url(wp_nonce_url(add_query_arg(array('action' => 'edit', 'id' => $existing_vector_config['id'], 'tab' => 'vector')), 'yali_ai_writer_manager_edit_config', 'nonce')); ?>" class="button-primary yali-btn yali-btn-primary">
                         <span class="dashicons dashicons-edit" style="margin-top: 4px;"></span> <?php _e('编辑现有配置', 'yali-ai-writer'); ?>
                     </a>
                 </div>
@@ -499,7 +503,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
             
             <form method="post" action="" class="yali-ajax-form" data-action="cam_save_api_settings" data-nonce="<?php echo wp_create_nonce('cam_save_api_settings'); ?>">
                 <input type="hidden" name="submission_type" value="vector">
-                <?php wp_nonce_field('content_auto_manager_api_config', 'content_auto_manager_vector_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_api_config', 'yali_ai_writer_manager_vector_nonce'); ?>
                 
                 <?php if ($edit_config): ?>
                     <input type="hidden" name="id" value="<?php echo esc_attr($edit_config['id']); ?>">
@@ -562,7 +566,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
             <h2><span class="dashicons dashicons-search"></span> <?php _e('搜索API设置', 'yali-ai-writer'); ?></h2>
             
             <?php 
-            $search_settings = get_option('content_auto_search_settings', []);
+            $search_settings = get_option('yali_ai_writer_search_settings', []);
             $region = isset($search_settings['region']) ? $search_settings['region'] : 'wt-wt';
             $max_results = isset($search_settings['max_results']) ? intval($search_settings['max_results']) : 10;
             $safesearch = isset($search_settings['safesearch']) ? $search_settings['safesearch'] : 'moderate';
@@ -578,7 +582,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
             
             <?php
             // 获取授权信息用于显示
-            $current_license = get_option('content_auto_manager_license_key', '');
+            $current_license = get_option('yali_ai_writer_manager_license_key', '');
             
             // 获取当前域名逻辑 (与类中逻辑保持一致)
             $current_domain = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '';
@@ -602,9 +606,9 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
 
             <form method="post" action="" class="yali-ajax-form" data-action="cam_save_api_settings" data-nonce="<?php echo wp_create_nonce('cam_save_api_settings'); ?>">
                 <input type="hidden" name="submission_type" value="search">
-                <?php wp_nonce_field('content_auto_manager_search_config', 'content_auto_manager_search_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_search_config', 'yali_ai_writer_manager_search_nonce'); ?>
                 <!-- 用于测试连接的nonce -->
-                <?php wp_nonce_field('content_auto_manager_nonce', 'test_search_nonce_field'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_nonce', 'test_search_nonce_field'); ?>
                 
                 <table class="form-table">
                     <tr>
@@ -676,7 +680,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])) {
                 <textarea class="large-text code yali-textarea-code" rows="22" readonly style="font-family: monospace; background: #f6f7f7;">
 // <?php _e('直接调用搜索，自动使用后台配置（推荐）', 'yali-ai-writer'); ?>
 
-$results = content_auto_search('<?php _e('关键词', 'yali-ai-writer'); ?>');
+$results = yali_ai_writer_search('<?php _e('关键词', 'yali-ai-writer'); ?>');
 
 if (!is_wp_error($results) && $results['success']) {
     // <?php _e('处理结果列表', 'yali-ai-writer'); ?>
@@ -734,62 +738,6 @@ if (!is_wp_error($results) && $results['success']) {
                     </div>
                 </div>
             </div>
-            
-            <script>
-            jQuery(document).ready(function($) {
-                $('#search-test-btn').on('click', function() {
-                    var query = $('#search-test-keyword').val();
-                    var resultDiv = $('#search-test-content');
-                    
-                    if (!query) {
-                        alert(<?php echo json_encode(__('请输入搜索关键词', 'yali-ai-writer')); ?>);
-                        return;
-                    }
-                    
-                    resultDiv.html(<?php echo json_encode(__('正在搜索...', 'yali-ai-writer')); ?>);
-                    
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            action: 'content_auto_test_search_api',
-                            nonce: $('#test_search_nonce_field').val(),
-                            query: query
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                var data = response.data;
-                                 var html = '<p><strong>' + <?php echo json_encode(__('找到结果数：', 'yali-ai-writer')); ?> + '</strong> ' + data.count + '</p>';
-                                
-                                if (data.results && data.results.length > 0) {
-                                    $.each(data.results, function(index, item) {
-                                        html += '<div style="margin-bottom:15px; border-bottom:1px solid #ddd; padding-bottom:10px;">';
-                                        html += '<div style="font-weight:bold; margin-bottom:5px;">';
-                                        var pos = (item.position !== undefined) ? item.position : (index + 1);
-                                        html += '<span style="color:#666; margin-right:5px;">[' + pos + ']</span>';
-                                        html += '<a href="' + item.link + '" target="_blank" style="text-decoration:none;">' + item.title + '</a>';
-                                        html += '</div>';
-                                        html += '<div style="font-size:13px; line-height:1.5;">' + item.snippet + '</div>';
-                                        html += '<div style="font-size:12px; color:var(--yali-success); margin-top:3px;">' + item.link + '</div>';
-                                        html += '</div>';
-                                    });
-                                } else {
-                                     html += '<p>' + <?php echo json_encode(__('未找到相关结果。', 'yali-ai-writer')); ?> + '</p>';
-                                }
-                                
-                                resultDiv.html(html);
-                            } else {
-                                 resultDiv.html('<span style="color:#dc3232;">' + <?php echo json_encode(__('错误： ', 'yali-ai-writer')); ?> + (response.data.message || 'Unknown error') + '</span>');
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                             resultDiv.html('<span style="color:#dc3232;">' + <?php echo json_encode(__('系统错误： ', 'yali-ai-writer')); ?> + error + '</span>');
-                        }
-                    });
-                });
-            });
-            </script>
         </div>
     </div>
     
@@ -812,13 +760,13 @@ if (!is_wp_error($results) && $results['success']) {
             
             <form method="post" action="" class="yali-ajax-form" data-action="cam_save_api_settings" data-nonce="<?php echo wp_create_nonce('cam_save_api_settings'); ?>">
                 <input type="hidden" name="submission_type" value="reader">
-                <?php wp_nonce_field('content_auto_manager_reader_config', 'content_auto_manager_reader_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_reader_config', 'yali_ai_writer_manager_reader_nonce'); ?>
                 
                 <table class="form-table">
                     <tr>
                         <th scope="row"><?php _e('API Key', 'yali-ai-writer'); ?></th>
                         <td>
-                            <input type="password" name="jina_api_key" value="<?php echo esc_attr(get_option('content_auto_jina_api_key', '')); ?>" class="regular-text yali-input" placeholder="jina_..." autocomplete="off">
+                            <input type="password" name="jina_api_key" value="<?php echo esc_attr(get_option('yali_ai_writer_jina_api_key', '')); ?>" class="regular-text yali-input" placeholder="jina_..." autocomplete="off">
                             <p class="description yali-desc"><?php _e('请输入您的 Jina Reader API Key。留空则使用匿名模式。', 'yali-ai-writer'); ?></p>
                         </td>
                     </tr>
@@ -826,7 +774,7 @@ if (!is_wp_error($results) && $results['success']) {
                         <th scope="row"><?php _e('搜索结果过滤黑名单', 'yali-ai-writer'); ?></th>
                         <td>
                             <?php 
-                            $blacklist = get_option('content_auto_material_search_blacklist', ['csdn.net', 'zhihu.com']);
+                            $blacklist = get_option('yali_ai_writer_material_search_blacklist', ['csdn.net', 'zhihu.com']);
                             $blacklist_str = is_array($blacklist) ? implode("\n", $blacklist) : $blacklist;
                             ?>
                             <textarea name="material_search_blacklist" rows="6" class="large-text code yali-textarea-code yali-input" placeholder="csdn.net&#10;zhihu.com"><?php echo esc_textarea($blacklist_str); ?></textarea>
@@ -840,617 +788,6 @@ if (!is_wp_error($results) && $results['success']) {
         </div>
     </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    function toggleInput(checkboxId, inputId) {
-        var checkbox = document.getElementById(checkboxId);
-        var input = document.getElementById(inputId);
-
-        if (!checkbox || !input) {
-            return;
-        }
-
-        function updateState() {
-            input.disabled = !checkbox.checked;
-            // Update label text dynamically
-            var labelSpan = checkbox.closest('.yali-switch-group').querySelector('.yali-switch-label');
-            if (labelSpan) {
-                labelSpan.textContent = checkbox.checked ? <?php echo json_encode(__('开启', 'yali-ai-writer')); ?> : <?php echo json_encode(__('关闭', 'yali-ai-writer')); ?>;
-            }
-        }
-
-        checkbox.addEventListener('change', updateState);
-        
-        // Set initial state on page load
-        updateState();
-    }
-
-    toggleInput('temperature_enabled', 'temperature');
-    toggleInput('max_tokens_enabled', 'max_tokens');
-    // 流式输出功能已禁用，移除toggle控制
-    toggleInput('top_p_enabled', 'top_p');
-    
-    
-    // 获取配额信息函数
-    function getQuotaInfo(channel) {
-        var resultElement = document.getElementById('quota-info-result');
-        if (!resultElement) return;
-        
-        // 只有插件官方API才支持获取配额信息
-        if (channel !== 'official') {
-            return;
-        }
-        
-        resultElement.textContent = '<?php _e('正在获取配额信息...', 'yali-ai-writer'); ?>';
-        resultElement.className = 'quota-result';
-        
-        // 发送AJAX请求
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', ajaxurl, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        var quota = response.data.quota_balance || 0;
-                        var color = quota > 10 ? '#28a745' : (quota > 0 ? '#ffc107' : '#dc3545');
-                        var statusText = quota > 10 ? <?php echo json_encode(__('充足', 'yali-ai-writer')); ?> : (quota > 0 ? <?php echo json_encode(__('不足', 'yali-ai-writer')); ?> : <?php echo json_encode(__('已用完', 'yali-ai-writer')); ?>);
-                        resultElement.innerHTML = '<span style="color: ' + color + '; font-size: 18px;">' + quota + ' ' + <?php echo json_encode(__('次', 'yali-ai-writer')); ?> + '</span> <span style="color: #666; font-size: 14px;">(' + statusText + ')</span>';
-                        resultElement.className = 'quota-result success';
-                    } else {
-                        resultElement.innerHTML = '<span style="color: #dc3232;">' + response.data.message + '</span>';
-                        resultElement.className = 'quota-result error';
-                    }
-                } else {
-                    resultElement.innerHTML = '<span style="color: #dc3232;"><?php _e('获取配额信息失败: 服务器错误', 'yali-ai-writer'); ?></span>';
-                    resultElement.className = 'quota-result error';
-                }
-            }
-        };
-        
-        // 准备请求数据
-        var data = 'action=content_auto_get_quota_info&channel=' + encodeURIComponent(channel) + '&nonce=' + contentAutoManager.nonce;
-        xhr.send(data);
-    }
-    
-    // 测试配置列表中的API连接 (使用事件委托，支持动态添加的配置)
-    jQuery(document).on('click', '.test-api-connection', function(e) {
-        e.preventDefault();
-        
-        var $button = jQuery(this);
-        var configId = $button.data('config-id');
-        var originalText = $button.text();
-        
-        // 禁用按钮并加上半透明效果，保留原文字
-        $button.prop('disabled', true).css('opacity', '0.7');
-        
-        // 发送AJAX请求
-        jQuery.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'content_auto_test_api_connection',
-                config_id: configId,
-                nonce: contentAutoManager.nonce
-            },
-            success: function(response) {
-                if (response.success) {
-                    // 显示成功的 toast 消息
-                    if (typeof window.yaliToast === 'function') {
-                        window.yaliToast(response.data.message, 'success');
-                    } else {
-                        alert(response.data.message);
-                    }
-                } else {
-                    // 显示错误的 toast 消息
-                    if (typeof window.yaliToast === 'function') {
-                        window.yaliToast(response.data.message, 'error');
-                    } else {
-                        alert('<?php _e('测试失败: ', 'yali-ai-writer'); ?>' + response.data.message);
-                    }
-                }
-            },
-            error: function(xhr, status, error) {
-                var errorMessage = '<?php _e('连接测试失败: ', 'yali-ai-writer'); ?>';
-                if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
-                    errorMessage += xhr.responseJSON.data.message;
-                } else {
-                    errorMessage += error;
-                }
-                
-                if (typeof window.yaliToast === 'function') {
-                    window.yaliToast(errorMessage, 'error');
-                } else {
-                    alert(errorMessage);
-                }
-            },
-            complete: function() {
-                // 恢复按钮状态
-                $button.prop('disabled', false).css('opacity', '');
-            }
-        });
-    });
-
-    // API类型切换动态处理
-    var apiTypeSelect = document.getElementById('api-type');
-    var apiUrlInput = document.getElementById('api-url');
-    var apiUrlDesc = document.getElementById('api-url-desc');
-    var modelNameInput = document.querySelector('input[name="model_name"]');
-    
-    // API类型对应的默认值配置
-    var apiTypeDefaults = {
-        'openai': {
-            url: '',
-            urlDesc: '<?php _e('例如: https://api.openai.com/v1/chat/completions', 'yali-ai-writer'); ?>',
-            model: 'gpt-3.5-turbo'
-        },
-        'gemini': {
-            url: 'https://generativelanguage.googleapis.com/v1beta/models',
-            urlDesc: '<?php _e('例如: https://generativelanguage.googleapis.com/v1beta/models', 'yali-ai-writer'); ?>',
-            model: 'gemini-3-flash-preview'
-        },
-        'claude': {
-            url: 'https://api.anthropic.com/v1/messages',
-            urlDesc: '<?php _e('例如: https://api.anthropic.com/v1/messages', 'yali-ai-writer'); ?>',
-            model: 'claude-3-5-sonnet-20241022'
-        }
-    };
-    
-    // 收集所有默认URL列表，用于判断当前URL是否为系统预填的默认值
-    var allDefaultUrls = [];
-    for (var key in apiTypeDefaults) {
-        if (apiTypeDefaults[key].url) {
-            allDefaultUrls.push(apiTypeDefaults[key].url);
-        }
-    }
-    
-    // 收集所有默认模型列表
-    var allDefaultModels = [];
-    for (var key in apiTypeDefaults) {
-        if (apiTypeDefaults[key].model) {
-            allDefaultModels.push(apiTypeDefaults[key].model);
-        }
-    }
-    
-    // 更新API类型相关的默认值（isUserSwitch: 用户主动切换时为 true）
-    function updateApiTypeDefaults(isUserSwitch) {
-        if (!apiTypeSelect) return;
-        
-        var selectedType = apiTypeSelect.value;
-        var defaults = apiTypeDefaults[selectedType];
-        
-        if (defaults) {
-            if (apiUrlInput) {
-                // 用户主动切换时：如果URL为空或仍为某个类型的默认URL，则自动更新
-                if (isUserSwitch) {
-                    if (!apiUrlInput.value || allDefaultUrls.indexOf(apiUrlInput.value) !== -1) {
-                        apiUrlInput.value = defaults.url;
-                    }
-                } else {
-                    // 页面初始化：仅在空时填入
-                    if (!apiUrlInput.value) {
-                        apiUrlInput.value = defaults.url;
-                    }
-                }
-            }
-            if (apiUrlDesc) {
-                apiUrlDesc.textContent = defaults.urlDesc;
-            }
-            if (modelNameInput) {
-                if (isUserSwitch) {
-                    if (!modelNameInput.value || allDefaultModels.indexOf(modelNameInput.value) !== -1) {
-                        modelNameInput.value = defaults.model;
-                    }
-                } else {
-                    if (!modelNameInput.value) {
-                        modelNameInput.value = defaults.model;
-                    }
-                }
-            }
-        }
-    }
-    
-    // 监听API类型切换
-    if (apiTypeSelect) {
-        apiTypeSelect.addEventListener('change', function() {
-            updateApiTypeDefaults(true);
-        });
-        // 页面加载时初始化（非用户切换）
-        updateApiTypeDefaults(false);
-    }
-
-    // 预置API渠道切换动态处理
-    var predefinedChannelSelect = document.getElementById('predefined-api-channel');
-    var predefinedApiUrl = document.getElementById('predefined-api-url');
-    var predefinedApiDescription = predefinedApiUrl ? predefinedApiUrl.nextElementSibling : null;
-    var predefinedTokenInput = document.querySelector('input[name="predefined_api_token"]');
-    var predefinedTokenDescription = predefinedTokenInput ? predefinedTokenInput.parentNode.querySelector('.description') : null;
-
-    // 获取当前选择的渠道值（支持编辑模式和新建模式）
-    function getCurrentSelectedChannel() {
-        // 新建模式：从select获取
-        if (predefinedChannelSelect && predefinedChannelSelect.value && !predefinedChannelSelect.disabled) {
-            return predefinedChannelSelect.value;
-        }
-        
-        // 编辑模式：从隐藏字段获取
-        var hiddenChannelInput = document.querySelector('input[name="predefined_api_channel"][type="hidden"]');
-        if (hiddenChannelInput && hiddenChannelInput.value) {
-            return hiddenChannelInput.value;
-        }
-        
-        // 新建模式但select可能被禁用：从选中的option获取
-        if (predefinedChannelSelect) {
-            var selectedOption = predefinedChannelSelect.querySelector('option:checked') || predefinedChannelSelect.querySelector('option[selected]');
-            if (selectedOption && selectedOption.value) {
-                return selectedOption.value;
-            }
-        }
-        
-        // 最后的默认值
-        return '<?php echo esc_js($selected_channel); ?>';
-    }
-
-    function updatePredefinedChannelInfo() {
-        var selectedChannel = getCurrentSelectedChannel();
-        var modelSelect = document.getElementById('predefined-api-model');
-        var savedModel = '<?php echo esc_js($config_to_edit['model_name'] ?? ''); ?>';
-        
-        // 获取相关 DOM 元素
-        var tokenRow = predefinedTokenInput ? predefinedTokenInput.closest('tr') : null;
-        var quotaRow = document.getElementById('quota-info-row');
-        var apiUrlRow = document.getElementById('api-url-row');
-        var modelRow = document.getElementById('predefined-model-row');
-        var refreshBtn = document.getElementById('refresh-pollinations-models');
-
-        // 更新模型选项
-        if (modelSelect) {
-            modelSelect.innerHTML = '';
-            var models = [];
-            
-            if (selectedChannel === 'pollinations') {
-                if (modelRow) modelRow.style.display = '';
-                if (refreshBtn) refreshBtn.style.display = '';
-                
-                models = [
-                    { value: 'openai-large', text: 'openai-large (' + <?php echo json_encode(__('顶级模型，性能最强', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'openai', text: 'openai (' + <?php echo json_encode(__('标准模型，响应快', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'openai-fast', text: 'openai-fast (' + <?php echo json_encode(__('极速模型', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'claude-large', text: 'claude-large (Anthropic Claude 3.5)' },
-                    { value: 'claude', text: 'claude (' + <?php echo json_encode(__('Claude 3 标准版', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'gemini-large', text: 'gemini-large (Google Gemini Pro)' },
-                    { value: 'gemini', text: 'gemini (' + <?php echo json_encode(__('Gemini 标准版', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'deepseek', text: 'deepseek (DeepSeek V3)' },
-                    { value: 'kimi', text: 'kimi (Moonshot AI)' },
-                    { value: 'qwen-coder', text: 'qwen-coder (' + <?php echo json_encode(__('通义千问', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'grok', text: 'grok (xAI Grok 2)' },
-                    { value: 'perplexity-reasoning', text: 'perplexity-reasoning (' + <?php echo json_encode(__('联网搜索推理', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'mistral', text: 'mistral (Mistral AI)' },
-                    { value: 'glm', text: 'glm (' + <?php echo json_encode(__('智谱清言', 'yali-ai-writer')); ?> + ')' },
-                    { value: 'minimax', text: 'minimax (' + <?php echo json_encode(__('海螺 AI', 'yali-ai-writer')); ?> + ')' }
-                ];
-            } else if (selectedChannel === 'official') {
-                if (modelRow) modelRow.style.display = 'none';
-                if (refreshBtn) refreshBtn.style.display = 'none';
-                models = [];
-            }
-            
-            models.forEach(function(m) {
-                var opt = document.createElement('option');
-                opt.value = m.value;
-                opt.text = m.text;
-                if (m.value === savedModel) {
-                    opt.selected = true;
-                }
-                modelSelect.appendChild(opt);
-            });
-        }
-
-        // 更新渠道特定的 UI
-        if (selectedChannel === 'pollinations') {
-            // Pollinations 渠道配置
-            if (predefinedApiUrl) {
-                predefinedApiUrl.textContent = 'https://gen.pollinations.ai/v1/chat/completions';
-            }
-            if (predefinedApiDescription) {
-                predefinedApiDescription.innerHTML = <?php echo json_encode(__('模型: openai-large (默认), 兼容 OpenAI API 格式。支持流式输出。', 'yali-ai-writer')); ?>;
-            }
-            if (predefinedTokenDescription) {
-                predefinedTokenDescription.innerHTML = <?php echo json_encode(__('Pollinations 现在需要 API Key 才能稳定使用。<br><strong>申请地址：</strong><a href="https://enter.pollinations.ai/" target="_blank">https://enter.pollinations.ai/</a><br>使用 API Key 后，不仅连接更稳定，且通过该接口生成的文章内容质量更高。', 'yali-ai-writer')); ?>;
-            }
-            if (predefinedTokenInput) {
-                predefinedTokenInput.setAttribute('required', 'required');
-                predefinedTokenInput.setAttribute('placeholder', <?php echo json_encode(__('请输入您的 API Key', 'yali-ai-writer')); ?>);
-                // 更新 Label
-                var label = tokenRow ? tokenRow.querySelector('th') : null;
-                if (label) label.textContent = <?php echo json_encode(__('API Key (必填)', 'yali-ai-writer')); ?>;
-            }
-            // 显示 TOKEN 输入框
-            if (tokenRow) tokenRow.style.display = '';
-            // 显示 API 地址行
-            if (apiUrlRow) apiUrlRow.style.display = '';
-            // 隐藏配额信息行
-            if (quotaRow) quotaRow.style.display = 'none';
-
-            // 显示 Pollinations 账户信息行
-            var accountRow = document.getElementById('pollinations-account-row');
-            if (accountRow) {
-                accountRow.style.display = '';
-                var apiKey = (predefinedTokenInput) ? predefinedTokenInput.value : '';
-                if (apiKey) {
-                    getPollinationsAccountInfo(apiKey);
-                } else {
-                    var display = document.getElementById('pollinations-account-display');
-                    if (display) display.innerHTML = '<div class="stats-loading">' + <?php echo json_encode(__('请输入 API Key 以查看账户信息', 'yali-ai-writer')); ?> + '</div>';
-                }
-            }
-
-        } else if (selectedChannel === 'official') {
-            // 插件官方 API 渠道配置
-            if (predefinedApiUrl) {
-                predefinedApiUrl.textContent = 'https://key.kdjingpai.com/api-proxy.php';
-            }
-            if (predefinedApiDescription) {
-                predefinedApiDescription.innerHTML = <?php echo json_encode(__('插件官方API服务，通过授权码验证使用。<br><strong>如何申请使用：</strong><br>1. 联系插件作者微信：qn006699 获取插件授权码后使用<br>2. 在发布规则中配置授权码<br>3. 即可开始使用官方API服务', 'yali-ai-writer')); ?>;
-            }
-            // 隐藏 TOKEN 输入框
-            if (tokenRow) tokenRow.style.display = 'none';
-            if (predefinedTokenInput) {
-                predefinedTokenInput.removeAttribute('required');
-            }
-            // 隐藏 API 地址行
-            if (apiUrlRow) apiUrlRow.style.display = 'none';
-            // 隐藏 Pollinations 账户信息行
-            var accountRow = document.getElementById('pollinations-account-row');
-            if (accountRow) accountRow.style.display = 'none';
-            
-            // 显示配额信息行
-            if (quotaRow) {
-                quotaRow.style.display = '';
-                // 自动获取配额信息
-                setTimeout(function() {
-                    getQuotaInfo('official');
-                }, 500);
-            }
-        }
-    }
-
-    // 获取 Pollinations 账户信息
-    function getPollinationsAccountInfo(apiKey) {
-        var display = document.getElementById('pollinations-account-display');
-        if (!display) return;
-        
-        display.innerHTML = '<div class="stats-loading"><span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span>' + <?php echo json_encode(__('正在拉取账户信息...', 'yali-ai-writer')); ?> + '</div>';
-        
-        jQuery.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'content_auto_get_pollinations_account_info',
-                nonce: '<?php echo wp_create_nonce('content_auto_manager_nonce'); ?>',
-                api_key: apiKey
-            },
-            success: function(response) {
-                if (response.success) {
-                    var data = response.data;
-                    var html = '';
-                    var hasData = false;
-                    
-                    // 1. 核心余额 (Pollen)
-                    if (data.balance) {
-                        var pVal = parseFloat(data.balance.pollen || 0);
-                        var label = data.balance.is_budget ? <?php echo json_encode(__('Key 预算 (Pollen)', 'yali-ai-writer')); ?> : <?php echo json_encode(__('花粉余额 (Pollen)', 'yali-ai-writer')); ?>;
-                        var color = data.balance.is_budget ? 'var(--yali-warning)' : 'var(--yali-primary)';
-                        html += '<div class="pollinations-stat-card"><span class="stat-label">' + label + '</span><span class="stat-value" style="color:' + color + '">' + pVal.toFixed(2) + '</span><span class="stat-unit">Credits</span></div>';
-                        
-                        if (!data.balance.is_budget) {
-                            html += '<div class="pollinations-stat-card"><span class="stat-label">' + <?php echo json_encode(__('账户金额 (USD)', 'yali-ai-writer')); ?> + '</span><span class="stat-value">$' + parseFloat(data.balance.usd || 0).toFixed(2) + '</span><span class="stat-unit">USD</span></div>';
-                        }
-                        hasData = true;
-                    }
-                    
-                    // 2. 概览信息 (Tier & Usage)
-                    if (data.profile) {
-                        html += '<div class="pollinations-stat-card"><span class="stat-label">' + <?php echo json_encode(__('账户等级', 'yali-ai-writer')); ?> + '</span><span class="stat-value">' + (data.profile.tier || 'Microbe').toUpperCase() + '</span><span class="stat-unit">' + (data.profile.email || '') + '</span></div>';
-                        hasData = true;
-                    }
-
-                    if (data.usage) {
-                        html += '<div class="pollinations-stat-card"><span class="stat-label">' + <?php echo json_encode(__('累计消耗 (Pollen)', 'yali-ai-writer')); ?> + '</span><span class="stat-value">' + parseFloat(data.usage.pollen_spent || 0).toFixed(2) + '</span><span class="stat-unit">Spent</span></div>';
-                        html += '<div class="pollinations-stat-card"><span class="stat-label">' + <?php echo json_encode(__('累计 Token', 'yali-ai-writer')); ?> + '</span><span class="stat-value">' + parseInt(data.usage.total_tokens || 0).toLocaleString() + '</span><span class="stat-unit">Total</span></div>';
-                        hasData = true;
-                    }
-
-                    // 3. 今日明细
-                    if (data.daily_usage) {
-                        html += '<div class="pollinations-stat-card" style="background: rgba(34, 197, 94, 0.03); border-color: rgba(34, 197, 94, 0.15);"><span class="stat-label">' + <?php echo json_encode(__('今日消耗 (Pollen)', 'yali-ai-writer')); ?> + '</span><span class="stat-value" style="color: var(--yali-success);">' + parseFloat(data.daily_usage.pollen_spent || 0).toFixed(3) + '</span><span class="stat-unit">Credits</span></div>';
-                        html += '<div class="pollinations-stat-card" style="background: rgba(34, 197, 94, 0.03); border-color: rgba(34, 197, 94, 0.15);"><span class="stat-label">' + <?php echo json_encode(__('今日 Token', 'yali-ai-writer')); ?> + '</span><span class="stat-value" style="color: var(--yali-success);">' + parseInt(data.daily_usage.total_tokens || 0).toLocaleString() + '</span><span class="stat-unit">Tokens</span></div>';
-                        hasData = true;
-                    }
-                    
-                    // 4. 权限提醒
-                    var perms = data.permissions || [];
-                    if (!perms.includes('balance') || !perms.includes('usage')) {
-                        html += '<div class="pollinations-stat-card" style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2); text-align:left;">';
-                        html += '<span class="stat-label" style="color:var(--yali-warning)">' + <?php echo json_encode(__('权限提醒 (Missing Scopes)', 'yali-ai-writer')); ?> + '</span>';
-                        html += '<div style="font-size:12px; line-height:1.4; color:var(--yali-text-muted); padding-top:4px;"><?php echo esc_js(__('当前 API Key 缺失 <b>account:balance</b> 或 <b>account:usage</b> 权限。如需查看完整账单，请在 Pollinations 仪表板重新生成 Key 并勾选相应权限。', 'yali-ai-writer')); ?></div></div>';
-                        // 即使没有数据，也要显示这个提醒
-                        hasData = true;
-                    }
-                    
-                    if (!hasData) {
-                        display.innerHTML = '<div class="stats-loading">' + <?php echo json_encode(__('未能获取账户详细数据，请确认 API Key 是否有 account 相关权限。', 'yali-ai-writer')); ?> + '</div>';
-                    } else {
-                        display.innerHTML = html;
-                    }
-                } else {
-                    display.innerHTML = '<div class="stats-loading" style="color: var(--yali-error);">' + <?php echo json_encode(__('获取失败: ', 'yali-ai-writer')); ?> + (response.data ? response.data.message : <?php echo json_encode(__('密钥失效或接口请求频率限制', 'yali-ai-writer')); ?>) + '</div>';
-                }
-            },
-            error: function() {
-                display.innerHTML = '<div class="stats-loading" style="color: var(--yali-error);">' + <?php echo json_encode(__('网络连接异常', 'yali-ai-writer')); ?> + '</div>';
-            }
-        });
-    }
-
-    // 监听 API Key 变化
-    if (predefinedTokenInput) {
-        var timeout = null;
-        predefinedTokenInput.addEventListener('input', function() {
-            clearTimeout(timeout);
-            timeout = setTimeout(function() {
-                var selectedChannel = getCurrentSelectedChannel();
-                if (selectedChannel === 'pollinations' && predefinedTokenInput.value) {
-                    getPollinationsAccountInfo(predefinedTokenInput.value);
-                }
-            }, 800);
-        });
-    }
-
-    // 监听渠道变化（仅在新建模式下存在select元素）
-    if (predefinedChannelSelect) {
-        predefinedChannelSelect.addEventListener('change', updatePredefinedChannelInfo);
-    }
-
-    // 页面加载时初始化（无论是编辑模式还是新建模式都执行）
-    updatePredefinedChannelInfo();
-
-    // 动态获取 Pollinations 模型列表
-    function fetchPollinationsModels() {
-        var refreshBtn = document.getElementById('refresh-pollinations-models');
-        var statusSpan = document.getElementById('model-refresh-status');
-        var modelSelect = document.getElementById('predefined-api-model');
-        var currentSelected = modelSelect ? modelSelect.value : '';
-
-        if (refreshBtn) refreshBtn.disabled = true;
-        if (statusSpan) statusSpan.style.display = '';
-
-        jQuery.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'content_auto_fetch_pollinations_models',
-                nonce: '<?php echo wp_create_nonce('content_auto_manager_nonce'); ?>'
-            },
-            success: function(response) {
-                if (response.success && response.data.models) {
-                    if (modelSelect) {
-                        modelSelect.innerHTML = '';
-                        // 预定义的友好标签映射
-                        var friendlyNames = {
-                            'openai-large': 'openai-large (<?php echo esc_js(__('顶级模型，性能最强', 'yali-ai-writer')); ?>)',
-                            'openai': 'openai (<?php echo esc_js(__('标准模型，响应快', 'yali-ai-writer')); ?>)',
-                            'openai-fast': 'openai-fast (<?php echo esc_js(__('极速模型', 'yali-ai-writer')); ?>)',
-                            'claude-large': 'claude-large (Anthropic Claude 3.5)',
-                            'claude': 'claude (<?php echo esc_js(__('Claude 3 标准版', 'yali-ai-writer')); ?>)',
-                            'gemini-large': 'gemini-large (Google Gemini Pro)',
-                            'gemini': 'gemini (<?php echo esc_js(__('Gemini 标准版', 'yali-ai-writer')); ?>)',
-                            'deepseek': 'deepseek (DeepSeek V3)',
-                            'kimi': 'kimi (Moonshot AI)',
-                            'qwen-coder': 'qwen-coder (<?php echo esc_js(__('通义千问', 'yali-ai-writer')); ?>)',
-                            'grok': 'grok (xAI Grok 2)',
-                            'perplexity-reasoning': 'perplexity-reasoning (<?php echo esc_js(__('联网搜索推理', 'yali-ai-writer')); ?>)',
-                            'mistral': 'mistral (Mistral AI)',
-                            'glm': 'glm (<?php echo esc_js(__('智谱清言', 'yali-ai-writer')); ?>)',
-                            'minimax': 'minimax (<?php echo esc_js(__('海螺 AI', 'yali-ai-writer')); ?>)'
-                        };
-
-                        response.data.models.forEach(function(m) {
-                            var opt = document.createElement('option');
-                            opt.value = m.id;
-                            opt.text = friendlyNames[m.id] || m.id; // 如果没有友好名称则显示 ID
-                            if (m.id === currentSelected) {
-                                opt.selected = true;
-                            }
-                            modelSelect.appendChild(opt);
-                        });
-                        
-                        alert(<?php echo json_encode(__('✨ 模型列表同步成功！现已加载最新可用模型。', 'yali-ai-writer')); ?>);
-                    }
-                } else {
-                    alert(<?php echo json_encode(__('❌ 获取失败: ', 'yali-ai-writer')); ?> + (response.data ? response.data.message : <?php echo json_encode(__('未知错误', 'yali-ai-writer')); ?>));
-                }
-            },
-            error: function() {
-                alert(<?php echo json_encode(__('网络连接错误，请稍后再试。', 'yali-ai-writer')); ?>);
-            },
-            complete: function() {
-                if (refreshBtn) refreshBtn.disabled = false;
-                if (statusSpan) statusSpan.style.display = 'none';
-            }
-        });
-    }
-
-    // 绑定刷新按钮事件
-    var refreshBtn = document.getElementById('refresh-pollinations-models');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', fetchPollinationsModels);
-    }
-
-    // 向量API类型选择动态处理
-    var vectorApiTypeSelect = document.getElementById('vector-api-type');
-    var vectorUrlInput = document.querySelector('input[name="vector_api_url"]');
-    var vectorModelInput = document.getElementById('vector-model-name');
-    var vectorModelDescription = document.getElementById('vector-model-description');
-
-    if (vectorApiTypeSelect) {
-        function updateVectorFields() {
-            var selectedType = vectorApiTypeSelect.value;
-
-            if (selectedType === 'openai') {
-                // OpenAI Embeddings 配置
-                if (vectorUrlInput && vectorUrlInput.value === '') {
-                    vectorUrlInput.value = 'https://api.openai.com/v1/embeddings';
-                }
-                if (vectorModelInput && vectorModelInput.value === '') {
-                    vectorModelInput.value = 'text-embedding-ada-002';
-                }
-                if (vectorModelDescription) {
-                    vectorModelDescription.textContent = <?php echo json_encode(__('用于向量嵌入的模型名称，例如: text-embedding-ada-002', 'yali-ai-writer')); ?>;
-                }
-            } else if (selectedType === 'jina') {
-                // Jina Embeddings v4 配置
-                if (vectorUrlInput && vectorUrlInput.value === '') {
-                    vectorUrlInput.value = 'https://api.jina.ai/v1/embeddings';
-                }
-                if (vectorModelInput && vectorModelInput.value === '') {
-                    vectorModelInput.value = 'jina-embeddings-v4';
-                }
-                if (vectorModelDescription) {
-                    vectorModelDescription.textContent = <?php echo json_encode(__('Jina Embeddings v4 固定为1024维，请使用: jina-embeddings-v4', 'yali-ai-writer')); ?>;
-                }
-                
-                // Jina 可选填 Key
-                var vectorApiKeyInput = document.querySelector('input[name="vector_api_key"]');
-                if (vectorApiKeyInput) {
-                    vectorApiKeyInput.removeAttribute('required');
-                    vectorApiKeyInput.setAttribute('placeholder', <?php echo json_encode(__('Jina v4 可选填密钥，留空则允许', 'yali-ai-writer')); ?>);
-                }
-            }
-            
-            // 补充 OpenAI 配置时的 Key 必填逻辑
-            if (selectedType === 'openai') {
-                var vectorApiKeyInput = document.querySelector('input[name="vector_api_key"]');
-                if (vectorApiKeyInput) {
-                    var isEditConfig = <?php echo (isset($edit_config) && $edit_config) ? 'true' : 'false'; ?>;
-                    // 如果不是编辑模式（新建模式），则OpenAI必须填Key
-                    if (!isEditConfig) {
-                        vectorApiKeyInput.setAttribute('required', 'required');
-                    }
-                    vectorApiKeyInput.setAttribute('placeholder', <?php echo json_encode(__('留空则不修改', 'yali-ai-writer')); ?>);
-                }
-            }
-        }
-
-        // 监听类型变化
-        vectorApiTypeSelect.addEventListener('change', updateVectorFields);
-
-        // 页面加载时初始化
-        updateVectorFields();
-    }
-});
-</script>
 
     
     <!-- 配置列表 -->
@@ -1477,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php foreach ($configs as $config): ?>
                         <tr>
                             <td><strong><?php echo esc_html(__($config['name'], 'yali-ai-writer')); ?></strong></td>
-                            <td><code style="font-size: 12px; background: #f0f0f1; padding: 2px 5px; border-radius: 3px;"><?php echo esc_html(content_auto_manager_truncate_string($config['api_url'], 30)); ?></code></td>
+                            <td><code style="font-size: 12px; background: #f0f0f1; padding: 2px 5px; border-radius: 3px;"><?php echo esc_html(yali_ai_writer_manager_truncate_string($config['api_url'], 30)); ?></code></td>
                             <td><?php echo esc_html(__($config['model_name'], 'yali-ai-writer')); ?></td>
                             <td class="yali-text-center">
                                 <?php if (!empty($config['predefined_channel']) || !empty($config['vector_api_url'])): ?>
@@ -1523,11 +860,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <?php
                                 $tab = (!empty($config['predefined_channel']) ? 'predefined' : ((!empty($config['vector_api_url']) || !empty($config['vector_api_key']) || !empty($config['vector_model_name'])) ? 'vector' : 'custom'));
                                 $edit_url = admin_url('admin.php?page=yali-ai-writer-api&action=edit&id=' . $config['id'] . '&tab=' . $tab);
-                                $edit_url = wp_nonce_url($edit_url, 'content_auto_manager_edit_config', 'nonce');
-                                $delete_url = wp_nonce_url(add_query_arg(array('action' => 'delete', 'id' => $config['id'])), 'content_auto_manager_delete_config', 'nonce');
+                                $edit_url = wp_nonce_url($edit_url, 'yali_ai_writer_manager_edit_config', 'nonce');
+                                $delete_url = wp_nonce_url(add_query_arg(array('action' => 'delete', 'id' => $config['id'])), 'yali_ai_writer_manager_delete_config', 'nonce');
                                 ?>
                                 <div class="yali-btn-group-center">
-                                    <a href="<?php echo $edit_url; ?>" class="yali-btn yali-btn-secondary yali-btn-small">
+                                    <a href="<?php echo esc_url($edit_url); ?>" class="yali-btn yali-btn-secondary yali-btn-small">
                                         <?php _e('编辑', 'yali-ai-writer'); ?>
                                     </a>
                                     <button type="button" class="yali-btn yali-btn-secondary yali-btn-small test-api-connection" data-config-id="<?php echo esc_attr($config['id']); ?>">

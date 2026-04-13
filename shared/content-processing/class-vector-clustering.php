@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_VectorClustering {
+class Yali_AI_Writer_VectorClustering {
 
     private $num_clusters;
     private $max_iterations;

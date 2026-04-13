@@ -26,7 +26,7 @@ jQuery(document).ready(function ($) {
             url: contentAutoManager.ajaxurl, // Use localized ajaxurl
             type: 'POST',
             data: {
-                action: 'content_auto_fetch_url_content',
+                action: 'yali_ai_writer_fetch_url_content',
                 url: url,
                 nonce: contentAutoManager.nonce
             },
@@ -34,11 +34,15 @@ jQuery(document).ready(function ($) {
                 if (response.success) {
                     var content = response.data.content;
                     if (content) {
-                        // 填充到文本框（最多3000字符）
-                        var truncatedContent = content.substring(0, 3000);
-                        textArea.val(truncatedContent);
+                        // 填充完整内容到文本框（不再自动截取，让用户自由编辑删减）
+                        textArea.val(content);
                         updateTextCount();
-                        statusDiv.text(wp.i18n.__('内容采集成功！已截取前3000个字符', 'yali-ai-writer')).css('color', 'green');
+                        var charCount = mb_strlen(content);
+                        if (charCount > 3000) {
+                            statusDiv.text(wp.i18n.__('内容采集成功！共', 'yali-ai-writer') + charCount + wp.i18n.__('个字符，请删减至3000字符以内再保存', 'yali-ai-writer')).css('color', 'orange');
+                        } else {
+                            statusDiv.text(wp.i18n.__('内容采集成功！共', 'yali-ai-writer') + charCount + wp.i18n.__('个字符', 'yali-ai-writer')).css('color', 'green');
+                        }
                     } else {
                         statusDiv.text(wp.i18n.__('采集的内容为空', 'yali-ai-writer')).css('color', 'orange');
                     }
@@ -57,7 +61,6 @@ jQuery(document).ready(function ($) {
     });
 
     // 文本计数功能
-    // 文本计数功能
     function updateTextCount() {
         var $input = $('#upload_text_content');
         if ($input.length === 0) return;
@@ -66,11 +69,13 @@ jQuery(document).ready(function ($) {
         var count = mb_strlen(content);
         $('#current-count').text(count);
 
-        // 超过限制时显示警告颜色
+        // 超过限制时显示警告
         if (count > 3000) {
-            $('#current-count').css('color', 'red');
+            $('#current-count').css('color', '#d63638');
+            $('#char-limit-warning').show();
         } else {
             $('#current-count').css('color', 'inherit');
+            $('#char-limit-warning').hide();
         }
     }
 
@@ -92,9 +97,9 @@ jQuery(document).ready(function ($) {
         }
     }
 
-    // 计算中文字符长度
+    // 计算字符长度（与浏览器 maxlength 保持一致，每个字符都算1个）
     function mb_strlen(str) {
-        return str.replace(/[\u4e00-\u9fa5]/g, 'aa').length;
+        return str.length;
     }
 
     // --- AJAX Form Submission for Rules ---
@@ -117,6 +122,26 @@ jQuery(document).ready(function ($) {
                 console.error('contentAutoManager is undefined');
                 alert(wp.i18n.__('系统错误: 缺少必要组件 (contentAutoManager)，请刷新页面重试。', 'yali-ai-writer'));
                 return;
+            }
+
+            // 检查文本内容字符数限制（仅在选择了上传文本规则类型时）
+            var ruleType = form.find('input[name="rule_type"]:checked').val();
+            if (ruleType === 'upload_text') {
+                var textContent = $('#upload_text_content').val() || '';
+                var charCount = mb_strlen(textContent);
+                if (charCount > 3000) {
+                    var errorMsg = wp.i18n.__('文本内容超出限制：当前', 'yali-ai-writer') + charCount + wp.i18n.__('个字符，最多允许3000个字符。请删减后再保存。', 'yali-ai-writer');
+                    try {
+                        if (typeof window.yaliToast === 'function') {
+                            window.yaliToast(errorMsg, 'error');
+                        } else {
+                            alert(errorMsg);
+                        }
+                    } catch (e) {
+                        alert(errorMsg);
+                    }
+                    return; // 阻止提交
+                }
             }
 
             // Disable button and show loading state

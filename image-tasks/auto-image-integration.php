@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 /**
  * 自动配图集成类
  */
-class ContentAuto_AutoImageIntegration {
+class Yali_AI_Writer_AutoImageIntegration {
     
     private static $instance = null;
     private $initialized = false;
@@ -81,10 +81,10 @@ class ContentAuto_AutoImageIntegration {
 }
 
 // 初始化自动配图集成
-function content_auto_init_auto_image_integration() {
-    $integration = ContentAuto_AutoImageIntegration::get_instance();
+function yali_ai_writer_init_auto_image_integration() {
+    $integration = Yali_AI_Writer_AutoImageIntegration::get_instance();
     $integration->init();
 }
 
 // 在插件加载后初始化
-add_action('plugins_loaded', 'content_auto_init_auto_image_integration', 25);
+add_action('plugins_loaded', 'yali_ai_writer_init_auto_image_integration', 25);

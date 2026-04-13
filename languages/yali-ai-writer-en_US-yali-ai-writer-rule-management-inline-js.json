@@ -1,0 +1,56 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "移除": [
+                "Remove"
+            ],
+            "正在搜索...": [
+                "Searching..."
+            ],
+            "添加": [
+                "Add"
+            ],
+            "未找到文章。": [
+                "No articles found."
+            ],
+            "搜索失败，请重试": [
+                "Search failed, please try again"
+            ],
+            "请输入网址": [
+                "Please enter a URL"
+            ],
+            "请输入有效的网址": [
+                "Please enter a valid URL"
+            ],
+            "采集中...": [
+                "Fetching..."
+            ],
+            "正在采集内容，请稍候...": [
+                "Fetching content, please wait..."
+            ],
+            "内容采集成功！已截取前3000个字符": [
+                "Content fetched successfully! Truncated to the first 3000 characters"
+            ],
+            "采集的内容为空": [
+                "Fetched content is empty"
+            ],
+            "采集失败：": [
+                "Fetch failed: "
+            ],
+            "网络错误": [
+                "Network error"
+            ],
+            "采集内容": [
+                "Fetch Content"
+            ]
+        }
+    }
+}

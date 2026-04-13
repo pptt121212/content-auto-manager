@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ContentFilter {
+class Yali_AI_Writer_ContentFilter {
     
     /**
      * 过滤文章内容，移除外部包装标记
@@ -42,11 +42,11 @@ class ContentAuto_ContentFilter {
         }
 
         // 初始化日志记录器（仅在调试模式下）
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            if (!class_exists('ContentAuto_PluginLogger')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
             }
-            $logger = new ContentAuto_PluginLogger();
+            $logger = new Yali_AI_Writer_PluginLogger();
 
             $logger->debug('CONTENT_FILTER_START', '开始内容过滤处理', array(
                 'original_length' => strlen($content),
@@ -57,25 +57,28 @@ class ContentAuto_ContentFilter {
         $original_content = $content;
         $content = trim($content);
 
+        // 记录处理流程开始
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $logger->debug('CONTENT_FILTER_FLOW_START', '内容过滤流程开始', array(
+                'original_length' => strlen($original_content),
+                'trimmed_length' => strlen($content),
+                'processing_steps' => array()
+            ));
+        }
+
         // 零步骤：过滤Pollinations广告内容
         $content_before_ad_filter = $content;
         $content = $this->remove_pollinations_ads($content);
         
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            if ($content_before_ad_filter !== $content) {
-                $logger->debug('POLLINATIONS_ADS_REMOVED', '移除Pollinations广告内容', array(
-                    'content_before_removal' => $content_before_ad_filter,
-                    'content_after_removal' => $content,
-                    'ads_removed' => true,
-                    'removed_length' => strlen($content_before_ad_filter) - strlen($content)
-                ));
-            }
-            
-            // 添加调试：检查广告移除后的内容长度
-            $logger->debug('DEBUG_AFTER_AD_REMOVAL', '广告移除后的内容状态', array(
-                'content_length_after_ad_removal' => strlen($content),
-                'is_empty_after_ad_removal' => empty($content),
-                'content_preview_after_ad_removal' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $step_changed = ($content_before_ad_filter !== $content);
+            $logger->debug('STEP_1_ADS_FILTER', '步骤1: 过滤Pollinations广告', array(
+                'method_used' => 'remove_pollinations_ads',
+                'input_length' => strlen($content_before_ad_filter),
+                'output_length' => strlen($content),
+                'content_changed' => $step_changed,
+                'change_details' => $step_changed ? 'Ads removed' : 'No ads found',
+                'content_preview' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
             ));
         }
 
@@ -83,28 +86,35 @@ class ContentAuto_ContentFilter {
         $content_before_think_filter = $content;
         $content = $this->remove_think_tags($content);
         
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            if ($content_before_think_filter !== $content) {
-                $logger->debug('THINK_TAGS_REMOVED', '移除思考标签内容', array(
-                    'content_before_removal' => $content_before_think_filter,
-                    'content_after_removal' => $content,
-                    'think_tags_removed' => true,
-                    'removed_length' => strlen($content_before_think_filter) - strlen($content)
-                ));
-            }
-            
-            // 添加调试：检查思考标签移除后的内容长度
-            $logger->debug('DEBUG_AFTER_THINK_REMOVAL', '思考标签移除后的内容状态', array(
-                'content_length_after_think_removal' => strlen($content),
-                'is_empty_after_think_removal' => empty($content),
-                'content_preview_after_think_removal' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $step_changed = ($content_before_think_filter !== $content);
+            $logger->debug('STEP_2_THINK_FILTER', '步骤2: 过滤思考标签', array(
+                'method_used' => 'remove_think_tags',
+                'input_length' => strlen($content_before_think_filter),
+                'output_length' => strlen($content),
+                'content_changed' => $step_changed,
+                'change_details' => $step_changed ? 'Think tags removed' : 'No think tags found',
+                'content_preview' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
             ));
         }
 
         // 第零步：修复转义字符，防止Markdown解析错误
+        $content_before_escape_fix = $content;
         $content = $this->fix_escaped_characters($content);
+        
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $step_changed = ($content_before_escape_fix !== $content);
+            $logger->debug('STEP_3_ESCAPE_FIX', '步骤3: 修复转义字符', array(
+                'method_used' => 'fix_escaped_characters',
+                'input_length' => strlen($content_before_escape_fix),
+                'output_length' => strlen($content),
+                'content_changed' => $step_changed,
+                'change_details' => $step_changed ? 'Escaped characters fixed' : 'No escape fixes needed',
+                'content_preview' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
+            ));
+        }
 
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('ESCAPED_CHARACTERS_FIXED', '修复转义字符', array(
                 'before_fix_length' => strlen(trim($original_content)),
                 'after_fix_length' => strlen($content),
@@ -124,43 +134,67 @@ class ContentAuto_ContentFilter {
         if ($filtered !== $content) {
             $final_content = $this->remove_markdown_wrapper($filtered);
 
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                $logger->debug('JSON_CONTENT_EXTRACTED', '提取JSON字段内容', array(
-                    'content_before_extraction' => $content,
-                    'extracted_json_content' => $filtered,
-                    'final_content' => $final_content,
-                    'extraction_successful' => true
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+                $logger->debug('STEP_4A_JSON_EXTRACT', '步骤4A: 提取JSON字段内容', array(
+                    'method_used' => 'extract_json_content',
+                    'input_length' => strlen($content),
+                    'extracted_length' => strlen($filtered),
+                    'final_length' => strlen($final_content),
+                    'content_changed' => true,
+                    'change_details' => 'JSON content extracted',
+                    'filter_path' => 'json_extraction'
+                ));
+
+                $logger->debug('STEP_4B_WRAPPER_REMOVE', '步骤4B: 移除Markdown包装', array(
+                    'method_used' => 'remove_markdown_wrapper',
+                    'input_length' => strlen($filtered),
+                    'output_length' => strlen($final_content),
+                    'content_changed' => ($filtered !== $final_content),
+                    'change_details' => ($filtered !== $final_content) ? 'Wrapper removed' : 'No wrapper found'
                 ));
 
                 $logger->debug('CONTENT_FILTER_COMPLETE', '内容过滤完成（JSON路径）', array(
                     'original_length' => strlen($original_content),
                     'final_length' => strlen($final_content),
                     'content_reduced' => strlen($original_content) - strlen($final_content),
-                    'filter_path' => 'json_extraction'
+                    'filter_path' => 'json_extraction',
+                    'all_steps' => array(
+                        'step1_ads' => 'remove_pollinations_ads',
+                        'step2_think' => 'remove_think_tags',
+                        'step3_escape' => 'fix_escaped_characters',
+                        'step4a_json' => 'extract_json_content',
+                        'step4b_wrapper' => 'remove_markdown_wrapper'
+                    )
                 ));
             }
 
             return $final_content;
         }
 
+        // 步骤4: 尝试提取JSON（未匹配），继续标准流程
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $logger->debug('STEP_4_JSON_SKIPPED', '步骤4: JSON提取（跳过）', array(
+                'method_used' => 'extract_json_content',
+                'input_length' => strlen($content),
+                'output_length' => strlen($content),
+                'content_changed' => false,
+                'change_details' => 'Content is not JSON, skipped'
+            ));
+        }
+
         // 第二步：移除Markdown代码块包装
         $content_before_wrapper = $content;
         $content = $this->remove_markdown_wrapper($content);
 
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            if ($content_before_wrapper !== $content) {
-                $logger->debug('MARKDOWN_WRAPPER_REMOVED', '移除Markdown包装', array(
-                    'content_before_removal' => $content_before_wrapper,
-                    'content_after_removal' => $content,
-                    'wrapper_removed' => true
-                ));
-            }
-            
-            // 添加调试：检查包装移除后的内容长度
-            $logger->debug('DEBUG_AFTER_WRAPPER_REMOVAL', '包装移除后的内容状态', array(
-                'content_length_after_wrapper_removal' => strlen($content),
-                'is_empty_after_wrapper_removal' => empty($content),
-                'content_preview_after_wrapper_removal' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $step_changed = ($content_before_wrapper !== $content);
+            $logger->debug('STEP_5_WRAPPER_REMOVE', '步骤5: 移除Markdown代码块包装', array(
+                'method_used' => 'remove_markdown_wrapper',
+                'input_length' => strlen($content_before_wrapper),
+                'output_length' => strlen($content),
+                'content_changed' => $step_changed,
+                'change_details' => $step_changed ? 'Markdown wrapper removed' : 'No wrapper found',
+                'content_preview' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
             ));
         }
 
@@ -168,28 +202,58 @@ class ContentAuto_ContentFilter {
         $content_before_optimization = $content;
         $content = $this->optimize_markdown_links($content);
 
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            if ($content_before_optimization !== $content) {
-                $logger->debug('MARKDOWN_LINKS_OPTIMIZED', '优化Markdown链接', array(
-                    'content_before_optimization' => $content_before_optimization,
-                    'content_after_optimization' => $content,
-                    'links_optimized' => true
-                ));
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $step_changed = ($content_before_optimization !== $content);
+            $logger->debug('STEP_6_LINKS_OPTIMIZE', '步骤6: 优化Markdown链接格式', array(
+                'method_used' => 'optimize_markdown_links',
+                'input_length' => strlen($content_before_optimization),
+                'output_length' => strlen($content),
+                'content_changed' => $step_changed,
+                'change_details' => $step_changed ? 'Links optimized' : 'No links to optimize',
+                'content_preview' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
+            ));
+        }
 
-                $logger->debug('CONTENT_FILTER_COMPLETE', '内容过滤完成（标准路径）', array(
-                    'original_length' => strlen($original_content),
-                    'final_length' => strlen($content),
-                    'content_reduced' => strlen($original_content) - strlen($content),
-                    'filter_path' => 'standard_filtering',
-                    'processing_steps' => array(
-                        'ads_filtered' => ($content_before_ad_filter !== $content),
-                        'think_tags_removed' => ($content_before_think_filter !== $content),
-                        'escaped_characters_fixed' => true,
-                        'markdown_wrapper_removed' => ($content_before_wrapper !== $content),
-                        'links_optimized' => ($content_before_optimization !== $content)
-                    )
-                ));
-            }
+        // 第四步：预处理Markdown格式，确保CommonMark正确解析
+        // 这是关键步骤：为标题、列表等元素后添加必要的空行
+        $content_before_preprocessing = $content;
+        $content = $this->preprocess_markdown_format($content);
+
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            $step_changed = ($content_before_preprocessing !== $content);
+            $logger->debug('STEP_7_PREPROCESS', '步骤7: 预处理Markdown格式', array(
+                'method_used' => 'preprocess_markdown_format',
+                'input_length' => strlen($content_before_preprocessing),
+                'output_length' => strlen($content),
+                'content_changed' => $step_changed,
+                'change_details' => $step_changed ? 'Markdown format preprocessed' : 'No preprocessing needed',
+                'rules_applied' => array(
+                    'headers_empty_line' => true,
+                    'lists_empty_line' => true,
+                    'blockquotes_empty_line' => true,
+                    'code_blocks_empty_line' => true,
+                    'separators_empty_line' => true,
+                    'bold_before_lists' => true
+                ),
+                'content_preview' => substr($content, 0, 200) . (strlen($content) > 200 ? '...' : '')
+            ));
+
+            $logger->debug('CONTENT_FILTER_COMPLETE', '内容过滤流程完成', array(
+                'filter_path' => 'standard_filtering',
+                'original_length' => strlen($original_content),
+                'final_length' => strlen($content),
+                'total_reduction' => strlen($original_content) - strlen($content),
+                'all_processing_steps' => array(
+                    array('step' => 1, 'method' => 'remove_pollinations_ads', 'changed' => ($content_before_ad_filter !== $this->remove_pollinations_ads($original_content))),
+                    array('step' => 2, 'method' => 'remove_think_tags', 'changed' => ($content_before_think_filter !== $this->remove_think_tags($content_before_ad_filter))),
+                    array('step' => 3, 'method' => 'fix_escaped_characters', 'changed' => ($content_before_escape_fix !== $content)),
+                    array('step' => 4, 'method' => 'extract_json_content', 'executed' => false, 'reason' => 'Content not JSON'),
+                    array('step' => 5, 'method' => 'remove_markdown_wrapper', 'changed' => ($content_before_wrapper !== $content)),
+                    array('step' => 6, 'method' => 'optimize_markdown_links', 'changed' => ($content_before_optimization !== $content)),
+                    array('step' => 7, 'method' => 'preprocess_markdown_format', 'changed' => $step_changed)
+                ),
+                'final_content_preview' => substr($content, 0, 300) . (strlen($content) > 300 ? '...' : '')
+            ));
         }
 
         return $content;
@@ -258,11 +322,11 @@ class ContentAuto_ContentFilter {
         $cleaned_content = rtrim($cleaned_content, "\n");
         
         // 记录调试信息
-        if ($ad_removed && defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            if (!class_exists('ContentAuto_PluginLogger')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if ($ad_removed && defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
             }
-            $logger = new ContentAuto_PluginLogger();
+            $logger = new Yali_AI_Writer_PluginLogger();
             $logger->debug('POLLINATIONS_ADS_PATTERN_REMOVED', '移除Pollinations广告内容（多种模式）', array(
                 'original_length' => $original_length,
                 'cleaned_length' => strlen($cleaned_content),
@@ -379,10 +443,10 @@ class ContentAuto_ContentFilter {
      */
     private function extract_json_content($content) {
         // 初始化日志
-        if (!class_exists('ContentAuto_PluginLogger')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
-        $logger = new ContentAuto_PluginLogger();
+        $logger = new Yali_AI_Writer_PluginLogger();
         
         $trimmed = trim($content);
         
@@ -574,31 +638,45 @@ class ContentAuto_ContentFilter {
     /**
      * 移除Markdown代码块包装
      * 
+     * 重要：只移除包裹"整个内容"的代码块标记（开头和结尾），
+     * 保留文章内部的代码块，避免破坏代码示例。
+     * 
      * @param string $content 原始内容
      * @return string 移除包装后的内容
      */
     private function remove_markdown_wrapper($content) {
-        // 移除 ```markdown 开头和 ``` 结尾
-        if (strpos($content, '```markdown') === 0) {
-            $content = preg_replace('/^```markdown\s*/', '', $content);
-            $content = preg_replace('/\s*```$/', '', $content);
-            return trim($content);
+        $trimmed = trim($content);
+        
+        // 情况1：内容以 ```markdown 开头，以 ``` 结尾
+        if (strpos($trimmed, '```markdown') === 0 && substr($trimmed, -3) === '```') {
+            // 找到第一个换行后的内容开始位置
+            $first_newline = strpos($trimmed, "\n");
+            if ($first_newline !== false) {
+                // 移除开头的 ```markdown 和结尾的 ```，保留中间所有内容
+                $content = substr($trimmed, $first_newline + 1);
+                $content = substr($content, 0, -3); // 移除结尾的 ```
+                return trim($content);
+            }
         }
         
-        // 移除 ``` 开头和 ``` 结尾
-        if (strpos($content, '```') === 0) {
-            $content = preg_replace('/^```\s*/', '', $content);
-            $content = preg_replace('/\s*```$/', '', $content);
-            return trim($content);
+        // 情况2：内容以 ``` 开头，以 ``` 结尾（且不是文章内部的代码块）
+        if (strpos($trimmed, '```') === 0 && substr($trimmed, -3) === '```') {
+            // 检查是否只有一对代码块标记（包裹整个内容）
+            $code_block_count = substr_count($trimmed, '```');
+            if ($code_block_count === 2) {
+                // 只有开头和结尾各一个，说明是包裹整个文章的
+                $first_newline = strpos($trimmed, "\n");
+                if ($first_newline !== false) {
+                    $content = substr($trimmed, $first_newline + 1);
+                    $content = substr($content, 0, -3); // 移除结尾的 ```
+                    return trim($content);
+                }
+            }
+            // 如果有多个 ```，说明文章内部有代码块，不能移除
         }
         
-        // 移除内容中的 ```markdown 包围
-        $content = preg_replace('/```markdown\s*(.*?)\s*```/s', '$1', $content);
-        
-        // 移除内容中的 ``` 包围
-        $content = preg_replace('/```\s*(.*?)\s*```/s', '$1', $content);
-        
-        return trim($content);
+        // 其他情况：返回原内容，不移除任何代码块
+        return $content;
     }
     
     /**
@@ -675,6 +753,121 @@ class ContentAuto_ContentFilter {
         );
         
         return $content;
+    }
+
+    /**
+     * 预处理Markdown格式，确保CommonMark正确解析
+     * 为标题、列表等元素后添加必要的空行
+     * 
+     * @param string $content Markdown内容
+     * @return string 预处理后的内容
+     */
+    private function preprocess_markdown_format($content) {
+        if (empty($content)) {
+            return $content;
+        }
+
+        $content = $this->normalize_risky_separator_blocks($content);
+
+        // 1. 为标题（# 标记）后添加空行
+        // 匹配 # 标题 后紧跟非空行的情况（包括加粗标记**）
+        $content = preg_replace(
+            '/^(#{1,6}\s+[^\n]+)\n(?![\n#])/m',
+            "$1\n\n",
+            $content
+        );
+
+        // 2. 为列表（-、*、+、数字.）后添加空行
+        // 匹配列表项结束后的非列表内容
+        $content = preg_replace(
+            '/^([\s]*[-\*\+]\s+[^\n]+)\n(?![\s]*[-\*\+]\s|[\s]*\d+\.\s|[\n])/m',
+            "$1\n\n",
+            $content
+        );
+        // 数字列表
+        $content = preg_replace(
+            '/^([\s]*\d+\.\s+[^\n]+)\n(?![\s]*\d+\.\s|[\s]*[-\*\+]\s|[\n])/m',
+            "$1\n\n",
+            $content
+        );
+
+        // 3. 为引用块（>）后添加空行
+        $content = preg_replace(
+            '/^(>\s*[^\n]+)\n(?!>\s*[^\n]|[\n])/m',
+            "$1\n\n",
+            $content
+        );
+
+        // 4. 为代码块（```）后添加空行
+        $content = preg_replace(
+            '/(```[\s\S]*?```)\s*(?!\n\n)/',
+            "$1\n\n",
+            $content
+        );
+
+        // 5. 为分隔线（---、***、___）后添加空行
+        $content = preg_replace(
+            '/^(\s*[-\*_]{3,}\s*)\n(?!\s*[-\*_]{3,}\s*|[\n])/m',
+            "$1\n\n",
+            $content
+        );
+
+        // 5.1 为Markdown表格后添加空行
+        // 匹配表格行（| ... |）后紧跟非表格内容的情况
+        $content = preg_replace(
+            '/^(\|[^\n]+\|)\s*\n(?![\n\|])/m',
+            "$1\n\n",
+            $content
+        );
+
+        // 5.2 为段落后紧跟的加粗标记添加空行
+        // 匹配普通段落后的新行加粗标记
+        $content = preg_replace(
+            '/([^\n])\n(\*\*[^\*]+\*\*)/',
+            "$1\n\n$2",
+            $content
+        );
+
+        // 6. 修复加粗标记后紧跟列表的情况
+        $content = preg_replace('/(\*\*[^\*]+\*\*):?\n?([-\*\+]\s|\d+\.\s)/', "$1\n\n$2", $content);
+
+        // 7. 清理多余的空行（最多保留2个连续换行）
+        $content = preg_replace('/\n{3,}/', "\n\n", $content);
+
+        return $content;
+    }
+
+    private function normalize_risky_separator_blocks($content) {
+        $lines = preg_split('/\r?\n/', $content);
+        if ($lines === false) {
+            return $content;
+        }
+
+        $normalized = array();
+        $lineCount = count($lines);
+
+        for ($i = 0; $i < $lineCount; $i++) {
+            $line = $lines[$i];
+            $trimmed = trim($line);
+            $isSeparator = preg_match('/^[-*_]+$/', $trimmed) === 1;
+
+            if (!$isSeparator) {
+                $normalized[] = $line;
+                continue;
+            }
+
+            if (!empty($normalized) && trim((string) end($normalized)) !== '') {
+                $normalized[] = '';
+            }
+
+            $normalized[] = $trimmed;
+
+            if ($i + 1 < $lineCount && trim($lines[$i + 1]) !== '') {
+                $normalized[] = '';
+            }
+        }
+
+        return implode("\n", $normalized);
     }
     
     /**

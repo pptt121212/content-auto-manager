@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_DiversityController {
+class Yali_AI_Writer_DiversityController {
     
     /**
      * 配置管理器
@@ -38,11 +38,11 @@ class ContentAuto_DiversityController {
     /**
      * 构造函数
      * 
-     * @param ContentAuto_PluginLogger|null $logger 日志记录器
+     * @param Yali_AI_Writer_PluginLogger|null $logger 日志记录器
      */
     public function __construct($logger = null) {
         require_once dirname(__FILE__) . '/class-optimization-config.php';
-        $this->config = new ContentAuto_OptimizationConfig();
+        $this->config = new Yali_AI_Writer_OptimizationConfig();
         $this->logger = $logger;
     }
     
@@ -95,7 +95,7 @@ class ContentAuto_DiversityController {
     public function get_selection_distribution($content_angle, $days = 7) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $results = $wpdb->get_results($wpdb->prepare("
             SELECT used_structure_id, COUNT(*) as count
@@ -204,7 +204,7 @@ class ContentAuto_DiversityController {
     private function get_structure_info($structure_id) {
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         $result = $wpdb->get_row($wpdb->prepare(
             "SELECT id, content_angle, source_type, usage_count 
@@ -356,7 +356,7 @@ class ContentAuto_DiversityController {
         
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         $structure_ids = array_keys($distribution);
         $placeholders = implode(',', array_fill(0, count($structure_ids), '%d'));
         
@@ -406,8 +406,8 @@ class ContentAuto_DiversityController {
     private function get_recent_adjustments($content_angle, $days) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         // 获取最近的选择记录
         $results = $wpdb->get_results($wpdb->prepare("
@@ -471,7 +471,7 @@ class ContentAuto_DiversityController {
     public function get_all_diversity_overview() {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 获取所有不同的 content_angle
         $angles = $wpdb->get_col(
@@ -507,7 +507,7 @@ class ContentAuto_DiversityController {
         } else {
             // 清除所有缓存需要遍历所有 content_angle
             global $wpdb;
-            $topics_table = $wpdb->prefix . 'content_auto_topics';
+            $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
             
             $angles = $wpdb->get_col(
                 "SELECT DISTINCT source_angle FROM {$topics_table} WHERE source_angle != ''"

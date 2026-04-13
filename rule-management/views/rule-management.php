@@ -1,4 +1,8 @@
 <?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 /**
  * 自定义函数，生成带文章计数的、有层级的分类复选框列表
  *
@@ -7,8 +11,8 @@
  */
 function cam_category_checklist_with_count($parent_id = 0, $selected_cats = array()) {
     // 使用分类过滤器获取允许的分类
-    if (class_exists('ContentAuto_Category_Filter')) {
-        $categories = ContentAuto_Category_Filter::get_filtered_categories(array(
+    if (class_exists('Yali_AI_Writer_Category_Filter')) {
+        $categories = Yali_AI_Writer_Category_Filter::get_filtered_categories(array(
             'hide_empty' => 0,
             'parent' => $parent_id,
             'taxonomy' => 'category',
@@ -52,8 +56,8 @@ function cam_hierarchical_category_checklist_with_count($selected_cats = array()
 
     // 获取过滤后的分类ID（用于确定哪些可以选择）
     $allowed_category_ids = array();
-    if (class_exists('ContentAuto_Category_Filter')) {
-        $filtered_categories = ContentAuto_Category_Filter::get_filtered_categories(array(
+    if (class_exists('Yali_AI_Writer_Category_Filter')) {
+        $filtered_categories = Yali_AI_Writer_Category_Filter::get_filtered_categories(array(
             'hide_empty' => 0,
             'taxonomy' => 'category'
         ));
@@ -184,7 +188,7 @@ function cam_render_hierarchical_category_tree($tree, $selected_cats, $allowed_c
 $is_edit_mode = isset($_GET['action']) && $_GET['action'] === 'edit';
 $rule = null;
 $selected_cats = array();
-$selected_articles = array();
+$selected_random_cats = array();
 $selected_articles = array();
 $upload_text_content = '';
 $keywords_content = '';
@@ -192,7 +196,7 @@ $collect_url_content = '';
 
 if ($is_edit_mode && isset($_GET['id'])) {
     global $wpdb;
-    $rules_table = $wpdb->prefix . 'content_auto_rules';
+    $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
     $rule_id = intval($_GET['id']);
 
     // 获取现有规则
@@ -205,6 +209,8 @@ if ($is_edit_mode && isset($_GET['id'])) {
         // 根据规则类型设置已选择的值
         if ($rule->rule_type === 'random_selection' && isset($conditions['categories'])) {
             $selected_cats = $conditions['categories'];
+        } elseif ($rule->rule_type === 'random_categories' && isset($conditions['categories'])) {
+            $selected_random_cats = $conditions['categories'];
         } elseif ($rule->rule_type === 'fixed_articles' && isset($conditions['post_ids'])) {
             $selected_articles = $conditions['post_ids'];
         } elseif ($rule->rule_type === 'upload_text' && isset($conditions['upload_text'])) {
@@ -240,17 +246,17 @@ if ($is_edit_mode && isset($_GET['id'])) {
                 <th scope="row"><?php _e('规则类型', 'yali-ai-writer'); ?></th>
                 <td>
                     <fieldset>
-                        <label><input type="radio" name="rule_type" value="random_selection" <?php echo (!$rule || $rule->rule_type === 'random_selection') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('random_selection'); ?></label>
+                        <label><input type="radio" name="rule_type" value="random_selection" <?php echo (!$rule || $rule->rule_type === 'random_selection') ? 'checked' : ''; ?>> <?php echo Yali_AI_Writer_RuleManager::get_rule_type_label('random_selection'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="fixed_articles" <?php echo ($rule && $rule->rule_type === 'fixed_articles') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('fixed_articles'); ?></label>
+                        <label><input type="radio" name="rule_type" value="fixed_articles" <?php echo ($rule && $rule->rule_type === 'fixed_articles') ? 'checked' : ''; ?>> <?php echo Yali_AI_Writer_RuleManager::get_rule_type_label('fixed_articles'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="upload_text" <?php echo ($rule && $rule->rule_type === 'upload_text') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('upload_text'); ?></label>
+                        <label><input type="radio" name="rule_type" value="upload_text" <?php echo ($rule && $rule->rule_type === 'upload_text') ? 'checked' : ''; ?>> <?php echo Yali_AI_Writer_RuleManager::get_rule_type_label('upload_text'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="import_keywords" <?php echo ($rule && $rule->rule_type === 'import_keywords') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('import_keywords'); ?></label>
+                        <label><input type="radio" name="rule_type" value="import_keywords" <?php echo ($rule && $rule->rule_type === 'import_keywords') ? 'checked' : ''; ?>> <?php echo Yali_AI_Writer_RuleManager::get_rule_type_label('import_keywords'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="random_categories" <?php echo ($rule && $rule->rule_type === 'random_categories') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('random_categories'); ?></label>
+                        <label><input type="radio" name="rule_type" value="random_categories" <?php echo ($rule && $rule->rule_type === 'random_categories') ? 'checked' : ''; ?>> <?php echo Yali_AI_Writer_RuleManager::get_rule_type_label('random_categories'); ?></label>
                         <br>
-                        <label><input type="radio" name="rule_type" value="collect_url_rewrite" <?php echo ($rule && $rule->rule_type === 'collect_url_rewrite') ? 'checked' : ''; ?>> <?php echo ContentAuto_RuleManager::get_rule_type_label('collect_url_rewrite'); ?></label>
+                        <label><input type="radio" name="rule_type" value="collect_url_rewrite" <?php echo ($rule && $rule->rule_type === 'collect_url_rewrite') ? 'checked' : ''; ?>> <?php echo Yali_AI_Writer_RuleManager::get_rule_type_label('collect_url_rewrite'); ?></label>
                     </fieldset>
                 </td>
             </tr>
@@ -303,9 +309,9 @@ if ($is_edit_mode && isset($_GET['id'])) {
                         <div id="fetch_status" style="margin-bottom: 10px;"></div>
                     </div>
 
-                    <textarea id="upload_text_content" name="upload_text_content" rows="10" cols="50" maxlength="3000" class="yali-input" placeholder="<?php esc_attr_e('请输入文本内容，最多3000个字符，或使用上方网址采集功能', 'yali-ai-writer'); ?>"><?php echo esc_textarea($upload_text_content); ?></textarea>
-                    <p class="description yali-desc"><?php _e('请输入需要上传的文本内容，最多允许输入3000个字符（包括汉字、英文字母、数字、标点符号等）。也可以使用上方的网址采集功能自动获取网页内容。', 'yali-ai-writer'); ?></p>
-                    <div id="text-count" class="yali-desc"><?php _e('已输入: ', 'yali-ai-writer'); ?><span id="current-count"><?php echo mb_strlen($upload_text_content, 'UTF-8'); ?></span>/<span id="max-count">3000</span> <?php _e(' 字符', 'yali-ai-writer'); ?></div>
+                    <textarea id="upload_text_content" name="upload_text_content" rows="10" cols="50" class="yali-input" placeholder="<?php esc_attr_e('请输入文本内容，或使用上方网址采集功能（保存时限制3000字符）', 'yali-ai-writer'); ?>"><?php echo esc_textarea($upload_text_content); ?></textarea>
+                    <p class="description yali-desc"><?php _e('请输入需要上传的文本内容。您可以使用网址采集功能获取网页全文，然后在此处自由删减编辑。保存时文本内容不能超过3000个字符（包括汉字、英文字母、数字、标点符号等）。', 'yali-ai-writer'); ?></p>
+                    <div id="text-count" class="yali-desc"><?php _e('已输入: ', 'yali-ai-writer'); ?><span id="current-count"><?php echo mb_strlen($upload_text_content, 'UTF-8'); ?></span>/<span id="max-count">3000</span> <?php _e(' 字符', 'yali-ai-writer'); ?> <span id="char-limit-warning" style="color: #d63638; display: none;"><?php _e('（超出限制，保存前请删减）', 'yali-ai-writer'); ?></span></div>
                 </td>
             </tr>
 
@@ -362,12 +368,6 @@ if ($is_edit_mode && isset($_GET['id'])) {
                     </div>
                     <div id="random-categories-checklist-container" class="category-checklist-container">
                         <?php
-                        // 准备随机分类的已选分类
-                        $selected_random_cats = array();
-                        if ($rule && $rule->rule_type === 'random_categories') {
-                            $conditions = maybe_unserialize($rule->rule_conditions);
-                            $selected_random_cats = isset($conditions['categories']) ? $conditions['categories'] : array();
-                        }
                         // 使用层级分类选择函数，保持完整层级显示
                         cam_hierarchical_category_checklist_with_count($selected_random_cats);
                         ?>
@@ -423,7 +423,7 @@ if ($is_edit_mode && isset($_GET['id'])) {
                         <?php _e('可选字段。输入的参考资料将在主题生成文章时提供给AI作为背景信息，帮助生成更准确、更有深度的文章内容。最多支持800个字符，可留空。', 'yali-ai-writer'); ?>
                     </p>
                     <p class="description">
-                        <strong><?php _e('字符计数：', 'yali-ai-writer'); ?></strong><span id="reference_material_count">0</span>/800
+                        <strong><?php _e('字符计数：', 'yali-ai-writer'); ?></strong><span id="reference-material-count">0</span>/800
                     </p>
                 </td>
             </tr>
@@ -445,499 +445,3 @@ if ($is_edit_mode && isset($_GET['id'])) {
 </div>
 
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 注入 i18n
-    window.camRuleManagementI18n = {
-        remove: '<?php _e('移除', 'yali-ai-writer'); ?>',
-        searching: '<?php _e('正在搜索...', 'yali-ai-writer'); ?>',
-        noArticlesFound: '<?php _e('未找到文章。', 'yali-ai-writer'); ?>',
-        enterUrl: '<?php _e('请输入网址', 'yali-ai-writer'); ?>',
-        enterValidUrl: '<?php _e('请输入有效的网址', 'yali-ai-writer'); ?>',
-        fetching: '<?php _e('采集中...', 'yali-ai-writer'); ?>',
-        fetchingContentWait: '<?php _e('正在采集内容，请稍候...', 'yali-ai-writer'); ?>',
-        fetchSuccess: '<?php _e('内容采集成功！已截取前3000个字符', 'yali-ai-writer'); ?>',
-        fetchEmpty: '<?php _e('采集的内容为空', 'yali-ai-writer'); ?>',
-        fetchFailed: '<?php _e('采集失败：', 'yali-ai-writer'); ?>',
-        networkError: '<?php _e('网络错误', 'yali-ai-writer'); ?>',
-        fetchButtonLabel: '<?php _e('采集内容', 'yali-ai-writer'); ?>'
-    };
-
-    // --- 变量定义 ---
-    const ruleTypeRadios = document.querySelectorAll('input[name="rule_type"]');
-    const randomSelectionRow = document.getElementById('condition-random-selection');
-    const fixedArticlesRow = document.getElementById('condition-fixed-articles');
-    const uploadTextRow = document.getElementById('condition-upload-text');
-    const importKeywordsRow = document.getElementById('condition-import-keywords');
-    const randomCategoriesRow = document.getElementById('condition-random-categories');
-    const articleSearchInput = document.getElementById('article-search-input');
-    const articleSearchButton = document.getElementById('article-search-button');
-    const searchResultsDiv = document.getElementById('search-results');
-    const selectedArticlesList = document.getElementById('selected-articles-list');
-    const selectedArticlesInput = document.getElementById('selected-articles-input');
-    const catChecklistContainer = document.getElementById('category-checklist-container');
-    const selectAllCatsBtn = document.getElementById('select-all-cats');
-    const deselectAllCatsBtn = document.getElementById('deselect-all-cats');
-    const selectAllRandomCatsBtn = document.getElementById('select-all-random-cats');
-    const deselectAllRandomCatsBtn = document.getElementById('deselect-all-random-cats');
-    const uploadTextInput = document.getElementById('upload_text_content');
-    const currentCountSpan = document.getElementById('current-count');
-    const keywordsInput = document.getElementById('keywords_content');
-    const currentKeywordsCountSpan = document.getElementById('current-keywords-count');
-    const collectUrlRewriteRow = document.getElementById('condition-collect-url-rewrite');
-    const collectUrlInput = document.getElementById('collect_url_content');
-    const currentUrlCountSpan = document.getElementById('current-url-count');
-    const rowItemCount = document.getElementById('row-item-count');
-    const rowReferenceMaterial = document.getElementById('row-reference-material');
-    
-    // 初始化已选文章
-    let selectedArticles = [];
-    const initialSelectedArticles = selectedArticlesInput.value;
-    if (initialSelectedArticles) {
-        // 在编辑模式下，我们需要从服务器获取文章标题
-        const articleIds = initialSelectedArticles.split(',').map(id => parseInt(id));
-        articleIds.forEach(id => {
-            if (!isNaN(id)) {
-                selectedArticles.push({ id: id, title: '文章 #' + id }); // 占位符标题
-            }
-        });
-        renderSelectedArticles();
-        
-        // 如果在编辑模式，获取实际的文章标题
-        if (articleIds.length > 0) {
-            fetchArticleTitles(articleIds);
-        }
-    }
-
-    // --- 功能函数 ---
-
-    // 获取文章标题
-    function fetchArticleTitles(articleIds) {
-        const data = new URLSearchParams();
-        data.append('action', 'content_auto_get_article_titles');
-        data.append('nonce', contentAutoManager.nonce);
-        data.append('article_ids', articleIds.join(','));
-
-        fetch(contentAutoManager.ajaxurl, {
-            method: 'POST',
-            body: data
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success && result.data.articles) {
-                // 更新已选文章的标题
-                result.data.articles.forEach(article => {
-                    const item = selectedArticles.find(sa => sa.id === article.id);
-                    if (item) {
-                        item.title = article.title;
-                    }
-                });
-                renderSelectedArticles();
-            }
-        });
-    }
-
-    // 切换规则类型显示
-    function toggleConditions() {
-        const selectedType = document.querySelector('input[name="rule_type"]:checked').value;
-
-        randomSelectionRow.style.display = 'none';
-        fixedArticlesRow.style.display = 'none';
-        uploadTextRow.style.display = 'none';
-        importKeywordsRow.style.display = 'none';
-        randomCategoriesRow.style.display = 'none';
-        collectUrlRewriteRow.style.display = 'none';
-
-        // 默认显示通用字段
-        if (rowItemCount) rowItemCount.style.display = 'table-row';
-        if (rowReferenceMaterial) rowReferenceMaterial.style.display = 'table-row';
-
-        if (selectedType === 'random_selection') {
-            randomSelectionRow.style.display = 'table-row';
-        } else if (selectedType === 'fixed_articles') {
-            fixedArticlesRow.style.display = 'table-row';
-        } else if (selectedType === 'upload_text') {
-            uploadTextRow.style.display = 'table-row';
-        } else if (selectedType === 'import_keywords') {
-            importKeywordsRow.style.display = 'table-row';
-        } else if (selectedType === 'random_categories') {
-            randomCategoriesRow.style.display = 'table-row';
-        } else if (selectedType === 'collect_url_rewrite') {
-            collectUrlRewriteRow.style.display = 'table-row';
-            // 隐藏该类型不需要的字段
-            if (rowItemCount) rowItemCount.style.display = 'none';
-            if (rowReferenceMaterial) rowReferenceMaterial.style.display = 'none';
-        }
-    }
-
-    // 更新隐藏输入框的值
-    function updateSelectedArticlesInput() {
-        selectedArticlesInput.value = selectedArticles.map(item => item.id).join(',');
-    }
-
-    // 渲染已选文章列表
-    function renderSelectedArticles() {
-        selectedArticlesList.innerHTML = '';
-        selectedArticles.forEach((item, index) => {
-            const li = document.createElement('li');
-            li.dataset.id = item.id;
-            li.innerHTML = `${item.title} <button type="button" class="button-link delete" data-index="${index}">${camRuleManagementI18n.remove}</button>`;
-            selectedArticlesList.appendChild(li);
-        });
-        updateSelectedArticlesInput();
-        updateSearchResultsState();
-    }
-
-    // 更新搜索结果的可选状态
-    function updateSearchResultsState() {
-        const resultItems = searchResultsDiv.querySelectorAll('.search-result-item');
-        resultItems.forEach(item => {
-            const id = parseInt(item.dataset.id, 10);
-            if (selectedArticles.find(sa => sa.id === id)) {
-                item.classList.add('selected');
-            } else {
-                item.classList.remove('selected');
-            }
-        });
-    }
-
-    // 执行文章搜索
-    function searchArticles() {
-        const searchTerm = articleSearchInput.value.trim();
-        if (searchTerm.length === 0) {
-            searchResultsDiv.innerHTML = '';
-            return;
-        }
-
-        searchResultsDiv.innerHTML = camRuleManagementI18n.searching;
-
-        const data = new URLSearchParams();
-        data.append('action', 'content_auto_search_articles');
-        data.append('nonce', contentAutoManager.nonce);
-        data.append('search_term', searchTerm);
-
-        fetch(contentAutoManager.ajaxurl, {
-            method: 'POST',
-            body: data
-        })
-        .then(response => response.json())
-        .then(result => {
-            searchResultsDiv.innerHTML = '';
-            if (result.success && result.data.articles.length > 0) {
-                result.data.articles.forEach(article => {
-                    const div = document.createElement('div');
-                    div.classList.add('search-result-item');
-                    div.dataset.id = article.id;
-                    div.dataset.title = article.title;
-                    div.textContent = article.title;
-                    searchResultsDiv.appendChild(div);
-                });
-                updateSearchResultsState();
-            } else {
-                searchResultsDiv.innerHTML = `<div class="no-results">${camRuleManagementI18n.noArticlesFound}</div>`;
-            }
-        });
-    }
-
-    // 计算文本字符数（包括汉字、英文字母、数字等所有字符）
-    function countAllCharacters(text) {
-        // 使用UTF-8编码计算实际字符数，而不是字节数
-        return text.length ? [...text].length : 0;
-    }
-
-    // 更新文本计数
-    function updateTextCount() {
-        if (uploadTextInput) {
-            const text = uploadTextInput.value;
-            const count = countAllCharacters(text);
-            currentCountSpan.textContent = count;
-
-            // 如果超过限制，显示警告
-            if (count > 3000) {
-                currentCountSpan.classList.add('yali-text-danger');
-                currentCountSpan.style.color = ''; // clean up inline style if present
-            } else {
-                currentCountSpan.classList.remove('yali-text-danger');
-                currentCountSpan.style.color = '';
-            }
-        }
-    }
-
-    // 更新关键词计数
-    function updateKeywordsCount() {
-        if (keywordsInput) {
-            const text = keywordsInput.value.trim();
-            const keywords = text.split('\n').filter(keyword => keyword.trim().length > 0);
-            const count = keywords.length;
-            currentKeywordsCountSpan.textContent = count;
-
-            // 如果超过限制，显示警告
-            if (count > 200) {
-                currentKeywordsCountSpan.classList.add('yali-text-danger');
-                currentKeywordsCountSpan.style.color = '';
-            } else {
-                currentKeywordsCountSpan.classList.remove('yali-text-danger');
-                currentKeywordsCountSpan.style.color = '';
-            }
-        }
-    }
-
-    // 更新参考资料字符计数
-    function updateReferenceMaterialCount() {
-        const referenceMaterialTextarea = document.getElementById('reference_material');
-        const referenceMaterialCountSpan = document.getElementById('reference_material_count');
-
-        if (referenceMaterialTextarea && referenceMaterialCountSpan) {
-            const text = referenceMaterialTextarea.value;
-            const count = text.length;
-            referenceMaterialCountSpan.textContent = count;
-            if (count > 800) {
-                referenceMaterialCountSpan.classList.add('yali-text-danger');
-                referenceMaterialCountSpan.style.color = '';
-            } else {
-                referenceMaterialCountSpan.classList.remove('yali-text-danger');
-                referenceMaterialCountSpan.style.color = '';
-            }
-        }
-    }
-
-    // 更新URL计数
-    function updateUrlCount() {
-        if (collectUrlInput) {
-            const text = collectUrlInput.value.trim();
-            // 过滤空行
-            const urls = text.split('\n').filter(url => url.trim().length > 0);
-            const count = urls.length;
-            currentUrlCountSpan.textContent = count;
-
-            if (count > 500) {
-                currentUrlCountSpan.classList.add('yali-text-danger');
-                currentUrlCountSpan.style.color = '';
-            } else {
-                currentUrlCountSpan.classList.remove('yali-text-danger');
-                currentUrlCountSpan.style.color = '';
-            }
-        }
-    }
-
-    // --- 事件监听 ---
-
-    // 监听规则类型切换
-    ruleTypeRadios.forEach(radio => {
-        radio.addEventListener('change', toggleConditions);
-    });
-
-    // 监听文章搜索按钮点击
-    articleSearchButton.addEventListener('click', searchArticles);
-
-    // 监听文章搜索框回车
-    articleSearchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            searchArticles();
-        }
-    });
-
-    // 监听文章搜索结果点击
-    searchResultsDiv.addEventListener('click', function(e) {
-        const target = e.target;
-        if (target && target.classList.contains('search-result-item') && !target.classList.contains('selected')) {
-            const id = parseInt(target.dataset.id, 10);
-            const title = target.dataset.title;
-            
-            if (!selectedArticles.find(item => item.id === id)) {
-                selectedArticles.push({ id, title });
-                renderSelectedArticles();
-            }
-        }
-    });
-
-    // 监听已选文章移除按钮点击
-    selectedArticlesList.addEventListener('click', function(e) {
-        if (e.target && e.target.classList.contains('delete')) {
-            const index = parseInt(e.target.dataset.index, 10);
-            selectedArticles.splice(index, 1);
-            renderSelectedArticles();
-        }
-    });
-
-    // 分类选择逻辑
-    if (catChecklistContainer) {
-        // 全选（只选择启用的分类）
-        selectAllCatsBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            catChecklistContainer.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(cb => cb.checked = true);
-        });
-
-        // 全不选（只取消选择启用的分类）
-        deselectAllCatsBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            catChecklistContainer.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(cb => cb.checked = false);
-        });
-
-        // 父子联动（只影响启用的分类）
-        catChecklistContainer.addEventListener('change', function(e) {
-            if (e.target.type !== 'checkbox') return;
-
-            const parentLi = e.target.closest('li');
-            const childrenUl = parentLi.querySelector('ul.children');
-
-            if (childrenUl) {
-                const descendantCheckboxes = childrenUl.querySelectorAll('input[type="checkbox"]:not([disabled])');
-                descendantCheckboxes.forEach(descendant => {
-                    descendant.checked = e.target.checked;
-                });
-            }
-        });
-    }
-
-    // 随机分类选择逻辑 - 复用随机选择文章的逻辑
-    if (randomCategoriesRow) {
-        const randomCategoriesContainer = document.getElementById('random-categories-checklist-container');
-
-        if (randomCategoriesContainer && selectAllRandomCatsBtn && deselectAllRandomCatsBtn) {
-            // 全选（只选择启用的分类）
-            selectAllRandomCatsBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                randomCategoriesContainer.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(cb => cb.checked = true);
-            });
-
-            // 全不选（只取消选择启用的分类）
-            deselectAllRandomCatsBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                randomCategoriesContainer.querySelectorAll('input[type="checkbox"]:not([disabled])').forEach(cb => cb.checked = false);
-            });
-
-            // 父子联动（只影响启用的分类）
-            randomCategoriesContainer.addEventListener('change', function(e) {
-                if (e.target.type !== 'checkbox') return;
-
-                const parentLi = e.target.closest('li');
-                const childrenUl = parentLi.querySelector('ul.children');
-
-                if (childrenUl) {
-                    const descendantCheckboxes = childrenUl.querySelectorAll('input[type="checkbox"]:not([disabled])');
-                    descendantCheckboxes.forEach(descendant => {
-                        descendant.checked = e.target.checked;
-                    });
-                }
-            });
-        }
-    }
-
-    // 监听文本输入框变化
-    if (uploadTextInput) {
-        uploadTextInput.addEventListener('input', updateTextCount);
-    }
-
-    // 监听关键词输入框变化
-    if (keywordsInput) {
-        keywordsInput.addEventListener('input', updateKeywordsCount);
-    }
-
-    // 监听参考资料输入框变化
-    const referenceMaterialTextarea = document.getElementById('reference_material');
-    if (referenceMaterialTextarea) {
-        referenceMaterialTextarea.addEventListener('input', updateReferenceMaterialCount);
-    }
-
-    // 监听URL输入框变化
-    if (collectUrlInput) {
-        collectUrlInput.addEventListener('input', updateUrlCount);
-    }
-
-    // 网址内容采集功能
-    const fetchContentBtn = document.getElementById('fetch_content_btn');
-    const contentUrlInput = document.getElementById('content_url');
-    const fetchStatusDiv = document.getElementById('fetch_status');
-
-    if (fetchContentBtn && contentUrlInput && fetchStatusDiv) {
-        fetchContentBtn.addEventListener('click', function() {
-            const url = contentUrlInput.value.trim();
-
-            // 验证网址
-            if (!url) {
-                fetchStatusDiv.textContent = camRuleManagementI18n.enterUrl;
-                fetchStatusDiv.classList.add('yali-text-danger');
-                fetchStatusDiv.style.color = '';
-                return;
-            }
-
-            // 简单的URL格式验证
-            try {
-                new URL(url);
-            } catch (e) {
-                fetchStatusDiv.textContent = camRuleManagementI18n.enterValidUrl;
-                fetchStatusDiv.classList.add('yali-text-danger');
-                fetchStatusDiv.style.color = '';
-                return;
-            }
-
-            // 显示加载状态
-            fetchContentBtn.disabled = true;
-            fetchContentBtn.textContent = camRuleManagementI18n.fetching;
-            fetchStatusDiv.textContent = camRuleManagementI18n.fetchingContentWait;
-            fetchStatusDiv.classList.remove('yali-text-danger', 'yali-text-success', 'yali-text-warning');
-            fetchStatusDiv.style.color = '';
-
-            // 发送AJAX请求
-            fetch(contentAutoManager.ajaxurl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'content_auto_fetch_url_content',
-                    url: url,
-                    nonce: contentAutoManager.nonce
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const content = data.data.content;
-                    if (content) {
-                        // 填充到文本框
-                        uploadTextInput.value = content;
-                        updateTextCount();
-                        fetchStatusDiv.textContent = camRuleManagementI18n.fetchSuccess;
-                        fetchStatusDiv.classList.add('yali-text-success');
-                        fetchStatusDiv.classList.remove('yali-text-danger', 'yali-text-warning');
-                        fetchStatusDiv.style.color = '';
-                    } else {
-                        fetchStatusDiv.textContent = camRuleManagementI18n.fetchEmpty;
-                        fetchStatusDiv.classList.add('yali-text-warning');
-                        fetchStatusDiv.classList.remove('yali-text-danger', 'yali-text-success');
-                        fetchStatusDiv.style.color = '';
-                    }
-                } else {
-                    fetchStatusDiv.textContent = camRuleManagementI18n.fetchFailed + data.data.message;
-                    fetchStatusDiv.classList.add('yali-text-danger');
-                    fetchStatusDiv.classList.remove('yali-text-success', 'yali-text-warning');
-                    fetchStatusDiv.style.color = '';
-                }
-            })
-            .catch(error => {
-                console.error('Fetch error:', error);
-                fetchStatusDiv.textContent = camRuleManagementI18n.fetchFailed + camRuleManagementI18n.networkError;
-                fetchStatusDiv.classList.add('yali-text-danger');
-                fetchStatusDiv.classList.remove('yali-text-success', 'yali-text-warning');
-                fetchStatusDiv.style.color = '';
-            })
-            .finally(() => {
-                // 恢复按钮状态
-                fetchContentBtn.disabled = false;
-                fetchContentBtn.textContent = camRuleManagementI18n.fetchButtonLabel;
-            });
-        });
-    }
-
-    // --- 初始化 ---
-    toggleConditions();
-    updateTextCount();
-    updateKeywordsCount();
-    updateKeywordsCount();
-    updateReferenceMaterialCount();
-    updateUrlCount();
-});
-</script>

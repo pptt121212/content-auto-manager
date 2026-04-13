@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_Database {
+class Yali_AI_Writer_Database {
     
     /**
      * 创建数据库表
@@ -20,7 +20,7 @@ class ContentAuto_Database {
         $created_tables = array();
         
         // 大模型API配置表
-        $api_configs_table = $wpdb->prefix . 'content_auto_api_configs';
+        $api_configs_table = $wpdb->prefix . 'yali_ai_writer_api_configs';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $api_configs_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `name` varchar(100) NOT NULL DEFAULT \'\',
@@ -61,7 +61,7 @@ class ContentAuto_Database {
         }
         
         // 规则表
-        $rules_table = $wpdb->prefix . 'content_auto_rules';
+        $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $rules_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `rule_name` varchar(255) NOT NULL,
@@ -87,7 +87,7 @@ class ContentAuto_Database {
         }
 
         // 子规则任务表
-        $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+        $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $rule_items_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `rule_id` bigint(20) NOT NULL,
@@ -117,7 +117,7 @@ class ContentAuto_Database {
         }
         
         // 主题任务表 - 重构版本
-        $topic_tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
+        $topic_tasks_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $topic_tasks_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `topic_task_id` varchar(50) NOT NULL DEFAULT \'\',
@@ -127,7 +127,7 @@ class ContentAuto_Database {
             `total_expected_topics` int(11) NOT NULL DEFAULT \'0\',
             `current_processing_item` int(11) NOT NULL DEFAULT \'0\',
             `generated_topics_count` int(11) NOT NULL DEFAULT \'0\',
-            `status` varchar(20) NOT NULL DEFAULT \'' . CONTENT_AUTO_STATUS_PENDING . '\',
+            `status` varchar(20) NOT NULL DEFAULT \'' . YALI_AI_WRITER_STATUS_PENDING . '\',
             `error_message` text NOT NULL DEFAULT \'\',
             `subtask_status` longtext NOT NULL COMMENT \'子任务状态JSON存储\',
             `last_processed_at` DATETIME NULL COMMENT \'最后处理时间\',
@@ -151,7 +151,7 @@ class ContentAuto_Database {
         }
         
         // 主题表 - 重构版本
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $topics_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `task_id` varchar(50) NOT NULL DEFAULT \'\',
@@ -163,7 +163,7 @@ class ContentAuto_Database {
             `seo_keywords` text NOT NULL DEFAULT \'\',
             `matched_category` varchar(100) NOT NULL DEFAULT \'\',
             `priority_score` int(11) NOT NULL DEFAULT \'3\',
-            `status` varchar(20) NOT NULL DEFAULT \'' . CONTENT_AUTO_TOPIC_UNUSED . '\',
+            `status` varchar(20) NOT NULL DEFAULT \'' . YALI_AI_WRITER_TOPIC_UNUSED . '\',
             `api_config_id` bigint(20) DEFAULT NULL,
             `api_config_name` varchar(255) DEFAULT NULL,
             `vector_embedding` longtext DEFAULT NULL COMMENT \'主题向量嵌入数据（JSON格式），用于存储1024维向量数据\',
@@ -203,13 +203,13 @@ class ContentAuto_Database {
         }
         
         // 文章父任务表
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $article_tasks_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `article_task_id` varchar(50) NOT NULL DEFAULT \'\',
             `name` varchar(255) NOT NULL DEFAULT \'\',
             `topic_ids` longtext NOT NULL,
-            `status` varchar(20) NOT NULL DEFAULT \'' . CONTENT_AUTO_STATUS_PENDING . '\',
+            `status` varchar(20) NOT NULL DEFAULT \'' . YALI_AI_WRITER_STATUS_PENDING . '\',
             `subtask_status` longtext NOT NULL COMMENT \'子任务状态JSON存储\',
             `error_message` text NOT NULL DEFAULT \'\',
             `total_topics` int(11) NOT NULL DEFAULT \'0\',
@@ -235,7 +235,7 @@ class ContentAuto_Database {
         }
         
         // 文章记录表
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $articles_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `job_id` bigint(20) NOT NULL DEFAULT \'0\',
@@ -243,7 +243,7 @@ class ContentAuto_Database {
             `post_id` bigint(20) NOT NULL DEFAULT \'0\',
             `title` text NOT NULL,
             `content` longtext NOT NULL,
-            `status` varchar(20) NOT NULL DEFAULT \'' . CONTENT_AUTO_STATUS_PENDING . '\',
+            `status` varchar(20) NOT NULL DEFAULT \'' . YALI_AI_WRITER_STATUS_PENDING . '\',
             `error_message` text NOT NULL DEFAULT \'\',
             `processing_time` int(11) NOT NULL DEFAULT \'0\' COMMENT \'处理耗时(秒)\',
             `word_count` int(11) NOT NULL DEFAULT \'0\' COMMENT \'文章字数\',
@@ -273,7 +273,7 @@ class ContentAuto_Database {
         }
         
         // 任务队列表 - 简化版本
-        $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $job_queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $job_queue_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `job_type` varchar(20) NOT NULL,
@@ -282,7 +282,7 @@ class ContentAuto_Database {
             `reference_id` bigint(20) DEFAULT NULL COMMENT \'引用ID，用于存储文章任务中的主题ID\',
             `priority` int(11) NOT NULL DEFAULT \'0\',
             `retry_count` int(11) DEFAULT 0,
-            `status` varchar(20) NOT NULL DEFAULT \'' . CONTENT_AUTO_STATUS_PENDING . '\',
+            `status` varchar(20) NOT NULL DEFAULT \'' . YALI_AI_WRITER_STATUS_PENDING . '\',
             `error_message` text NOT NULL DEFAULT \'\',
             `scheduled_at` datetime NULL DEFAULT NULL COMMENT \'计划执行时间\',
             `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -307,10 +307,10 @@ class ContentAuto_Database {
         }
         
         // 发布规则配置表
-        $publish_rules_table = $wpdb->prefix . 'content_auto_publish_rules';
+        $publish_rules_table = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $publish_rules_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
-            `post_status` varchar(20) NOT NULL DEFAULT \'' . CONTENT_AUTO_PUBLISH_STATUS_DRAFT . '\',
+            `post_status` varchar(20) NOT NULL DEFAULT \'' . YALI_AI_WRITER_PUBLISH_STATUS_DRAFT . '\',
             `author_id` bigint(20) NOT NULL DEFAULT \'0\',
             `category_mode` varchar(20) NOT NULL DEFAULT \'manual\',
             `category_ids` text NOT NULL,
@@ -353,7 +353,7 @@ class ContentAuto_Database {
         }
 
         // 文章结构表
-        $article_structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $article_structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $article_structures_table . '` (
             `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             `content_angle` varchar(255) NOT NULL,
@@ -383,7 +383,7 @@ class ContentAuto_Database {
         }
 
         // 品牌资料表
-        $brand_profiles_table = $wpdb->prefix . 'content_auto_brand_profiles';
+        $brand_profiles_table = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $brand_profiles_table . '` (
             `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             `title` text NOT NULL,
@@ -417,7 +417,7 @@ class ContentAuto_Database {
         
         // 更新主题表结构，添加vector_embedding字段
         $this->update_topics_table_structure();
-        
+
         // 更新API配置表结构，添加向量API相关字段
         $this->update_api_configs_table_structure();
         
@@ -455,7 +455,7 @@ class ContentAuto_Database {
         $this->run_structure_optimization_migration();
 
         // 提示词模板表
-        $prompt_templates_table = $wpdb->prefix . 'content_auto_prompt_templates';
+        $prompt_templates_table = $wpdb->prefix . 'yali_ai_writer_prompt_templates';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $prompt_templates_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `name` varchar(255) NOT NULL,
@@ -494,7 +494,7 @@ class ContentAuto_Database {
         $this->seed_default_templates($prompt_templates_table);
 
         // GSC 已使用关键词表
-        $gsc_used_keywords_table = $wpdb->prefix . 'content_auto_gsc_used_keywords';
+        $gsc_used_keywords_table = $wpdb->prefix . 'yali_ai_writer_gsc_used_keywords';
         $sql = 'CREATE TABLE IF NOT EXISTS `' . $gsc_used_keywords_table . '` (
             `id` bigint(20) NOT NULL AUTO_INCREMENT,
             `keyword` varchar(500) NOT NULL,
@@ -698,7 +698,7 @@ class ContentAuto_Database {
     public function update_job_queue_table_structure() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_job_queue';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -731,7 +731,7 @@ class ContentAuto_Database {
     public function update_article_tasks_table_structure() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_article_tasks';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -792,7 +792,7 @@ class ContentAuto_Database {
     public function update_topics_table_structure() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_topics';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -857,14 +857,14 @@ class ContentAuto_Database {
         
         return $updates_applied;
     }
-    
+
     /**
      * 更新API配置表结构，添加向量API相关字段
      */
     public function update_api_configs_table_structure() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_api_configs';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_api_configs';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -964,7 +964,7 @@ class ContentAuto_Database {
     public function update_job_queue_table_for_scheduling() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_job_queue';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -998,7 +998,7 @@ class ContentAuto_Database {
     public function update_publish_rules_table_structure() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1044,7 +1044,7 @@ class ContentAuto_Database {
     public function update_articles_table_for_auto_images() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_articles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1087,7 +1087,7 @@ class ContentAuto_Database {
     public function update_publish_rules_for_brand_profiles() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1115,7 +1115,7 @@ class ContentAuto_Database {
     public function update_publish_rules_for_image_control() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1161,7 +1161,7 @@ class ContentAuto_Database {
     public function update_brand_profiles_for_custom_html() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_brand_profiles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1214,7 +1214,7 @@ class ContentAuto_Database {
     public function update_rules_table_for_reference_material() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_rules';
 
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1242,7 +1242,7 @@ class ContentAuto_Database {
     public function update_publish_rules_for_reference_material() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
 
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1275,101 +1275,101 @@ class ContentAuto_Database {
 
         // API配置统计
         $stats['api_configs'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_api_configs"),
-            'active' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_api_configs WHERE is_active = 1"),
-            'with_vector' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_api_configs WHERE vector_api_url IS NOT NULL AND vector_api_url != ''")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_api_configs"),
+            'active' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_api_configs WHERE is_active = 1"),
+            'with_vector' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_api_configs WHERE vector_api_url IS NOT NULL AND vector_api_url != ''")
         );
 
         // 规则统计
         $stats['rules'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_rules"),
-            'active' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_rules WHERE status = 1")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_rules"),
+            'active' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_rules WHERE status = 1")
         );
 
         // 主题任务统计
         $stats['topic_tasks'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topic_tasks"),
-            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topic_tasks WHERE status = 'pending'"),
-            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topic_tasks WHERE status = 'processing'"),
-            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topic_tasks WHERE status = 'completed'"),
-            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topic_tasks WHERE status = 'failed'"),
-            'total_expected_topics' => $wpdb->get_var("SELECT SUM(total_expected_topics) FROM {$prefix}content_auto_topic_tasks"),
-            'generated_topics_count' => $wpdb->get_var("SELECT SUM(generated_topics_count) FROM {$prefix}content_auto_topic_tasks")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topic_tasks"),
+            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topic_tasks WHERE status = 'pending'"),
+            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topic_tasks WHERE status = 'processing'"),
+            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topic_tasks WHERE status = 'completed'"),
+            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topic_tasks WHERE status = 'failed'"),
+            'total_expected_topics' => $wpdb->get_var("SELECT SUM(total_expected_topics) FROM {$prefix}yali_ai_writer_topic_tasks"),
+            'generated_topics_count' => $wpdb->get_var("SELECT SUM(generated_topics_count) FROM {$prefix}yali_ai_writer_topic_tasks")
         );
 
         // 主题统计
         $stats['topics'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics"),
-            'unused' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE status = 'unused'"),
-            'queued' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE status = 'queued'"),
-            'used' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE status = 'used'"),
-            'with_vectors' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE vector_embedding IS NOT NULL AND vector_embedding != ''"),
-            'vector_pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE vector_status = 'pending'"),
-            'vector_processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE vector_status = 'processing'"),
-            'vector_completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE vector_status = 'completed'"),
-            'vector_failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE vector_status = 'failed'"),
-            'high_priority' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics WHERE priority_score >= 4"),
-            'clusters' => $wpdb->get_var("SELECT COUNT(DISTINCT vector_cluster_id) FROM {$prefix}content_auto_topics WHERE vector_cluster_id IS NOT NULL")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics"),
+            'unused' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE status = 'unused'"),
+            'queued' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE status = 'queued'"),
+            'used' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE status = 'used'"),
+            'with_vectors' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE vector_embedding IS NOT NULL AND vector_embedding != ''"),
+            'vector_pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE vector_status = 'pending'"),
+            'vector_processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE vector_status = 'processing'"),
+            'vector_completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE vector_status = 'completed'"),
+            'vector_failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE vector_status = 'failed'"),
+            'high_priority' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics WHERE priority_score >= 4"),
+            'clusters' => $wpdb->get_var("SELECT COUNT(DISTINCT vector_cluster_id) FROM {$prefix}yali_ai_writer_topics WHERE vector_cluster_id IS NOT NULL")
         );
 
         // 文章任务统计
         $stats['article_tasks'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_article_tasks"),
-            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_article_tasks WHERE status = 'pending'"),
-            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_article_tasks WHERE status = 'processing'"),
-            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_article_tasks WHERE status = 'completed'"),
-            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_article_tasks WHERE status = 'failed'"),
-            'total_topics' => $wpdb->get_var("SELECT SUM(total_topics) FROM {$prefix}content_auto_article_tasks"),
-            'completed_topics' => $wpdb->get_var("SELECT SUM(completed_topics) FROM {$prefix}content_auto_article_tasks"),
-            'failed_topics' => $wpdb->get_var("SELECT SUM(failed_topics) FROM {$prefix}content_auto_article_tasks")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_article_tasks"),
+            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_article_tasks WHERE status = 'pending'"),
+            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_article_tasks WHERE status = 'processing'"),
+            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_article_tasks WHERE status = 'completed'"),
+            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_article_tasks WHERE status = 'failed'"),
+            'total_topics' => $wpdb->get_var("SELECT SUM(total_topics) FROM {$prefix}yali_ai_writer_article_tasks"),
+            'completed_topics' => $wpdb->get_var("SELECT SUM(completed_topics) FROM {$prefix}yali_ai_writer_article_tasks"),
+            'failed_topics' => $wpdb->get_var("SELECT SUM(failed_topics) FROM {$prefix}yali_ai_writer_article_tasks")
         );
 
         // 文章统计
         $stats['articles'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles"),
-            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles WHERE status = 'pending'"),
-            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles WHERE status = 'processing'"),
-            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles WHERE status = 'completed'"),
-            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles WHERE status = 'failed'"),
-            'published' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles WHERE post_id > 0"),
-            'total_words' => $wpdb->get_var("SELECT SUM(word_count) FROM {$prefix}content_auto_articles"),
-            'avg_processing_time' => $wpdb->get_var("SELECT AVG(processing_time) FROM {$prefix}content_auto_articles WHERE processing_time > 0"),
-            'with_auto_images' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles WHERE auto_images_processed = 1"),
-            'total_auto_images' => $wpdb->get_var("SELECT SUM(auto_images_count) FROM {$prefix}content_auto_articles")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles"),
+            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles WHERE status = 'pending'"),
+            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles WHERE status = 'processing'"),
+            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles WHERE status = 'completed'"),
+            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles WHERE status = 'failed'"),
+            'published' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles WHERE post_id > 0"),
+            'total_words' => $wpdb->get_var("SELECT SUM(word_count) FROM {$prefix}yali_ai_writer_articles"),
+            'avg_processing_time' => $wpdb->get_var("SELECT AVG(processing_time) FROM {$prefix}yali_ai_writer_articles WHERE processing_time > 0"),
+            'with_auto_images' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles WHERE auto_images_processed = 1"),
+            'total_auto_images' => $wpdb->get_var("SELECT SUM(auto_images_count) FROM {$prefix}yali_ai_writer_articles")
         );
 
         // 队列统计
         $stats['queue'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue"),
-            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE status = 'pending'"),
-            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE status = 'processing'"),
-            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE status = 'completed'"),
-            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE status = 'failed'"),
-            'topic_jobs' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE job_type = 'topic'"),
-            'article_jobs' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE job_type = 'article'"),
-            'vector_jobs' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE job_type = 'vector'"),
-            'high_priority' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE priority >= 8")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue"),
+            'pending' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE status = 'pending'"),
+            'processing' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE status = 'processing'"),
+            'completed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE status = 'completed'"),
+            'failed' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE status = 'failed'"),
+            'topic_jobs' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE job_type = 'topic'"),
+            'article_jobs' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE job_type = 'article'"),
+            'vector_jobs' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE job_type = 'vector'"),
+            'high_priority' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE priority >= 8")
         );
 
         // 发布规则统计
         $stats['publish_rules'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_publish_rules"),
-            'auto_publish_enabled' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_publish_rules WHERE post_status = 'publish'"),
-            'auto_images_enabled' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_publish_rules WHERE auto_image_insertion = 1"),
-            'internal_linking_enabled' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_publish_rules WHERE enable_internal_linking = 1")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_publish_rules"),
+            'auto_publish_enabled' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_publish_rules WHERE post_status = 'publish'"),
+            'auto_images_enabled' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_publish_rules WHERE auto_image_insertion = 1"),
+            'internal_linking_enabled' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_publish_rules WHERE enable_internal_linking = 1")
         );
 
         // 文章结构统计
         $stats['article_structures'] = array(
-            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_article_structures"),
-            'with_vectors' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_article_structures WHERE title_vector IS NOT NULL AND title_vector != ''"),
-            'total_usage' => $wpdb->get_var("SELECT SUM(usage_count) FROM {$prefix}content_auto_article_structures")
+            'total' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_article_structures"),
+            'with_vectors' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_article_structures WHERE title_vector IS NOT NULL AND title_vector != ''"),
+            'total_usage' => $wpdb->get_var("SELECT SUM(usage_count) FROM {$prefix}yali_ai_writer_article_structures")
         );
 
         // 系统统计
         $stats['system'] = array(
-            'total_generated_content' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_topics") + $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles"),
-            'last_activity' => $wpdb->get_var("SELECT MAX(updated_at) as latest_ts FROM {$prefix}content_auto_job_queue UNION SELECT MAX(updated_at) FROM {$prefix}content_auto_topics UNION SELECT MAX(updated_at) FROM {$prefix}content_auto_articles ORDER BY latest_ts DESC LIMIT 1"),
+            'total_generated_content' => $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_topics") + $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles"),
+            'last_activity' => $wpdb->get_var("SELECT MAX(updated_at) as latest_ts FROM {$prefix}yali_ai_writer_job_queue UNION SELECT MAX(updated_at) FROM {$prefix}yali_ai_writer_topics UNION SELECT MAX(updated_at) FROM {$prefix}yali_ai_writer_articles ORDER BY latest_ts DESC LIMIT 1"),
             'success_rate' => $this->calculate_success_rate(),
             'avg_daily_output' => $this->calculate_daily_output_average()
         );
@@ -1384,8 +1384,8 @@ class ContentAuto_Database {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
-        $total_completed = $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE status IN ('completed', 'failed')");
-        $total_successful = $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_job_queue WHERE status = 'completed'");
+        $total_completed = $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE status IN ('completed', 'failed')");
+        $total_successful = $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_job_queue WHERE status = 'completed'");
 
         return $total_completed > 0 ? round(($total_successful / $total_completed) * 100, 2) : 0;
     }
@@ -1397,14 +1397,14 @@ class ContentAuto_Database {
         global $wpdb;
         $prefix = $wpdb->prefix;
 
-        $earliest_date = $wpdb->get_var("SELECT MIN(DATE(created_at)) FROM {$prefix}content_auto_articles WHERE created_at IS NOT NULL");
+        $earliest_date = $wpdb->get_var("SELECT MIN(DATE(created_at)) FROM {$prefix}yali_ai_writer_articles WHERE created_at IS NOT NULL");
 
         if (!$earliest_date) {
             return 0;
         }
 
         $days_diff = max(1, (strtotime(date('Y-m-d')) - strtotime($earliest_date)) / 86400);
-        $total_articles = $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}content_auto_articles");
+        $total_articles = $wpdb->get_var("SELECT COUNT(*) FROM {$prefix}yali_ai_writer_articles");
 
         return round($total_articles / $days_diff, 2);
     }
@@ -1416,7 +1416,7 @@ class ContentAuto_Database {
     public function ensure_publish_rules_data_integrity() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
 
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -1504,7 +1504,7 @@ class ContentAuto_Database {
     private function fix_publish_rules_default_values() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
 
         // 检查并修正 knowledge_depth 和 reader_role 字段的默认值
         $field_updates = [
@@ -1544,7 +1544,7 @@ class ContentAuto_Database {
     private function ensure_default_publish_rule_exists() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
 
         // 检查是否已存在发布规则记录
         $rule_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
@@ -1552,7 +1552,7 @@ class ContentAuto_Database {
         if ($rule_count == 0) {
             // 创建默认发布规则记录
             $default_rule = [
-                'post_status' => CONTENT_AUTO_PUBLISH_STATUS_DRAFT,
+                'post_status' => YALI_AI_WRITER_PUBLISH_STATUS_DRAFT,
                 'author_id' => get_current_user_id() ?: 1, // 如果无法获取当前用户，使用管理员ID
                 'category_mode' => 'manual',
                 'category_ids' => '',
@@ -1588,7 +1588,7 @@ class ContentAuto_Database {
         // 加载迁移类
         require_once dirname(__FILE__) . '/class-structure-optimization-migration.php';
         
-        $migration = new ContentAuto_StructureOptimizationMigration();
+        $migration = new Yali_AI_Writer_StructureOptimizationMigration();
         return $migration->run();
     }
 
@@ -1601,7 +1601,7 @@ class ContentAuto_Database {
         // 加载迁移类
         require_once dirname(__FILE__) . '/class-structure-optimization-migration.php';
         
-        $migration = new ContentAuto_StructureOptimizationMigration();
+        $migration = new Yali_AI_Writer_StructureOptimizationMigration();
         return $migration->verify();
     }
 
@@ -1614,7 +1614,7 @@ class ContentAuto_Database {
         // 加载迁移类
         require_once dirname(__FILE__) . '/class-structure-optimization-migration.php';
         
-        $migration = new ContentAuto_StructureOptimizationMigration();
+        $migration = new Yali_AI_Writer_StructureOptimizationMigration();
         return $migration->get_status_summary();
     }
 
@@ -1625,7 +1625,7 @@ class ContentAuto_Database {
         global $wpdb;
         
         // 1. 更新发布规则表，添加 `enable_auto_material_search`
-        $publish_rules_table = $wpdb->prefix . 'content_auto_publish_rules';
+        $publish_rules_table = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         // 检查表是否存在
         if ($wpdb->get_var("SHOW TABLES LIKE '$publish_rules_table'") != $publish_rules_table) {
             return;
@@ -1637,7 +1637,7 @@ class ContentAuto_Database {
         }
         
         // 2. 更新主题表，添加 `material_search_status` 和 `material_search_error`
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         // 检查表是否存在
         if ($wpdb->get_var("SHOW TABLES LIKE '$topics_table'") != $topics_table) {
             return;
@@ -1664,7 +1664,7 @@ class ContentAuto_Database {
     public function update_database_for_material_collection_mode() {
         global $wpdb;
         
-        $publish_rules_table = $wpdb->prefix . 'content_auto_publish_rules';
+        $publish_rules_table = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         
         // 检查表是否存在
         if ($wpdb->get_var("SHOW TABLES LIKE '$publish_rules_table'") != $publish_rules_table) {
@@ -1710,7 +1710,7 @@ class ContentAuto_Database {
     public function update_articles_table_for_template_tracking() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_articles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_articles';
 
         // 检查表是否存在
         if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
@@ -1902,7 +1902,7 @@ class ContentAuto_Database {
             unset($template_info);
         }
 
-        $templates_dir = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/';
+        $templates_dir = YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/';
 
         foreach ($templates_to_seed as $filename => $info) {
             $file_path = $templates_dir . $filename;

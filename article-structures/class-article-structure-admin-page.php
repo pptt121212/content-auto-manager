@@ -8,19 +8,19 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ArticleStructureAdminPage {
+class Yali_AI_Writer_ArticleStructureAdminPage {
 
     public function __construct() {
-        // 菜单注册已移至 ContentAuto_AdminMenu 类统一管理
+        // 菜单注册已移至 Yali_AI_Writer_AdminMenu 类统一管理
         // Script enqueueing is now handled internally by render_page()
         // AJAX actions are still needed.
-        add_action('wp_ajax_get_article_structures', [$this, 'ajax_get_article_structures']);
-        add_action('wp_ajax_generate_article_structures', [$this, 'ajax_generate_article_structures']);
-        add_action('wp_ajax_delete_article_structure', [$this, 'ajax_delete_article_structure']);
-        add_action('wp_ajax_get_content_angles', [$this, 'ajax_get_content_angles']);
-        add_action('wp_ajax_get_associated_articles', [$this, 'ajax_get_associated_articles']);
-        add_action('wp_ajax_get_structure_popularity_stats', [$this, 'ajax_get_structure_popularity_stats']);
-        add_action('wp_ajax_delete_dynamic_angle', [$this, 'ajax_delete_dynamic_angle']);
+        add_action('wp_ajax_yali_ai_writer_get_article_structures', [$this, 'ajax_get_article_structures']);
+        add_action('wp_ajax_yali_ai_writer_generate_article_structures', [$this, 'ajax_generate_article_structures']);
+        add_action('wp_ajax_yali_ai_writer_delete_article_structure', [$this, 'ajax_delete_article_structure']);
+        add_action('wp_ajax_yali_ai_writer_get_content_angles', [$this, 'ajax_get_content_angles']);
+        add_action('wp_ajax_yali_ai_writer_get_associated_articles', [$this, 'ajax_get_associated_articles']);
+        add_action('wp_ajax_yali_ai_writer_get_structure_popularity_stats', [$this, 'ajax_get_structure_popularity_stats']);
+        add_action('wp_ajax_yali_ai_writer_delete_dynamic_angle', [$this, 'ajax_delete_dynamic_angle']);
     }
 
     public function ajax_get_associated_articles() {
@@ -151,7 +151,7 @@ class ContentAuto_ArticleStructureAdminPage {
         // 获取所有文章结构的受欢迎度指数
         $structures = $wpdb->get_results("
             SELECT id, title, content_angle, usage_count
-            FROM {$wpdb->prefix}content_auto_article_structures
+            FROM {$wpdb->prefix}yali_ai_writer_article_structures
             ORDER BY content_angle, title
         ", ARRAY_A);
         
@@ -186,7 +186,7 @@ class ContentAuto_ArticleStructureAdminPage {
     }
 
     public function add_admin_menu() {
-        // 菜单注册已移至 ContentAuto_AdminMenu 类统一管理
+        // 菜单注册已移至 Yali_AI_Writer_AdminMenu 类统一管理
         // 此方法保留以兼容可能的现有调用
     }
 
@@ -352,12 +352,12 @@ class ContentAuto_ArticleStructureAdminPage {
         
         // 定义10个固定的内容角度（与提示词模板中的source_angles保持一致）
         // 使用中文标准键作为数据库标识符
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
         
-        $fixed_angles = content_auto_get_canonical_angles();
+        $fixed_angles = yali_ai_writer_get_canonical_angles();
         
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $db_angles = $wpdb->get_col("SELECT DISTINCT source_angle FROM {$topics_table} WHERE source_angle IS NOT NULL AND source_angle != '' ORDER BY source_angle ASC");
         
         if (is_wp_error($db_angles)) {
@@ -372,14 +372,14 @@ class ContentAuto_ArticleStructureAdminPage {
         $fixed_angles_with_display = array_map(function($angle) {
             return [
                 'key' => $angle,
-                'display_name' => content_auto_get_localized_angle_name($angle)
+                'display_name' => yali_ai_writer_get_localized_angle_name($angle)
             ];
         }, $fixed_angles);
         
         $dynamic_angles_with_display = array_map(function($angle) {
             return [
                 'key' => $angle,
-                'display_name' => content_auto_get_localized_angle_name($angle)
+                'display_name' => yali_ai_writer_get_localized_angle_name($angle)
             ];
         }, array_values($dynamic_angles));
         
@@ -395,63 +395,16 @@ class ContentAuto_ArticleStructureAdminPage {
     public function render_page() {
         $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'structures';
 
-        // 1. Localized data for JS (rendered as inline globals before enqueued scripts)
-        $localized_data = [
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce'   => wp_create_nonce('article_structures_nonce')
-        ];
-
-        $smart_data = [];
-        if ($current_tab === 'smart-optimization') {
-            $smart_data = [
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce'   => wp_create_nonce('smart_optimization_nonce')
-            ];
-        }
-
-        // 2. Inline CSS (brand-tokens + yali-ui-kit + page-specific CSS)
-        // This is the original architecture: CSS is injected inline for robust styling
-        $style_css = file_get_contents(CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-structures/assets/css/article-structure-management.css');
-
-        $smart_css = '';
-        if ($current_tab === 'smart-optimization') {
-            $smart_css_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-structures/assets/css/smart-optimization-settings.css';
-            $smart_css = file_exists($smart_css_path) ? file_get_contents($smart_css_path) : '';
-        }
-
-        $tokens_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/assets/css/brand-tokens.css';
-        $base_kit_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/assets/css/yali-ui-kit.css';
-        $tokens_css = file_exists($tokens_path) ? file_get_contents($tokens_path) : '';
-        $base_kit_css = file_exists($base_kit_path) ? file_get_contents($base_kit_path) : '';
-
         // 3. Render Output
-        // JS is loaded via wp_enqueue_script in ContentAuto_AdminMenu::enqueue_admin_scripts
+        // JS is loaded via wp_enqueue_script in Yali_AI_Writer_AdminMenu::enqueue_admin_scripts
         // to enable wp.i18n support for translations
         ?>
         <div class="wrap yali-plugin-wrapper">
-            <style type="text/css">
-                <?php echo $tokens_css; ?>
-                <?php echo $base_kit_css; ?>
-                <?php echo $style_css; ?>
-            </style>
-            <?php if (!empty($smart_css)) : ?>
-            <style type="text/css">
-                <?php echo $smart_css; ?>
-            </style>
-            <?php endif; ?>
             
             <?php 
             // Use include to allow PHP execution (translation functions) in view
-            include CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-structures/views/article-structure-management.php'; 
+            include YALI_AI_WRITER_PLUGIN_DIR . 'article-structures/views/article-structure-management.php'; 
             ?>
-
-            <script type="text/javascript">
-                // Global config needed by the enqueued JS file
-                window.articleStructures = <?php echo json_encode($localized_data); ?>;
-                <?php if (!empty($smart_data)): ?>
-                window.smartOptimization = <?php echo json_encode($smart_data); ?>;
-                <?php endif; ?>
-            </script>
         </div>
         <?php
     }
@@ -465,7 +418,7 @@ class ContentAuto_ArticleStructureAdminPage {
         }
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_article_structures';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_article_structures';
 
         $structures = $wpdb->get_results("SELECT id, content_angle, title, structure, usage_count FROM {$table_name} ORDER BY content_angle, created_at DESC", ARRAY_A);
 
@@ -510,17 +463,17 @@ class ContentAuto_ArticleStructureAdminPage {
         $angle = sanitize_text_field($_POST['angle']);
         $num_to_generate = 1; // 改为单个生成，避免超时
 
-        $logger = new ContentAuto_PluginLogger();
+        $logger = new Yali_AI_Writer_PluginLogger();
         $logger->info("AJAX call received: Generate {$num_to_generate} structures for angle: {$angle}");
 
         global $wpdb;
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
 
-        $prompt_template_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/article-structure-generation-prompt.xml';
+        $prompt_template_path = YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/article-structure-generation-prompt.xml';
         
         $locale = function_exists('get_user_locale') ? get_user_locale() : get_locale();
         if (strpos($locale, 'zh') !== 0) {
-            $en_template_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/en/article-structure-generation-prompt.xml';
+            $en_template_path = YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/en/article-structure-generation-prompt.xml';
             if (file_exists($en_template_path)) {
                 $prompt_template_path = $en_template_path;
             }
@@ -532,18 +485,18 @@ class ContentAuto_ArticleStructureAdminPage {
         }
         $prompt_template = file_get_contents($prompt_template_path);
 
-        $api_handler = new ContentAuto_UnifiedApiHandler();
+        $api_handler = new Yali_AI_Writer_UnifiedApiHandler();
         $newly_created = []; // To store ids and titles
 
         // 获取发布语言设置
-        $database = new ContentAuto_Database();
-        $publish_rule = $database->get_row('content_auto_publish_rules', array('id' => 1));
+        $database = new Yali_AI_Writer_Database();
+        $publish_rule = $database->get_row('yali_ai_writer_publish_rules', array('id' => 1));
         $publish_language = isset($publish_rule['publish_language']) ? $publish_rule['publish_language'] : 'zh-CN';
         
         // 引入语言映射文件
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
-        $validated_language = content_auto_validate_language_code($publish_language);
-        $language_instruction = content_auto_get_language_instructions($validated_language);
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/language-mappings.php';
+        $validated_language = yali_ai_writer_validate_language_code($publish_language);
+        $language_instruction = yali_ai_writer_get_language_instructions($validated_language);
 
         // Part 1: Generate structures without vectors
         $successful_creations = 0; // 跟踪成功创建的数量
@@ -552,7 +505,7 @@ class ContentAuto_ArticleStructureAdminPage {
             $prompt = str_replace('{{CONTENT_ANGLE}}', $angle, $prompt_template);
             $prompt = str_replace('{{CURRENT_DATE}}', date('Y年m月d日'), $prompt);
             $prompt = str_replace('{{LANGUAGE_INSTRUCTION}}', $language_instruction, $prompt);
-            $prompt = str_replace('{{LANGUAGE_NAME}}', content_auto_get_language_ai_name($validated_language), $prompt);
+            $prompt = str_replace('{{LANGUAGE_NAME}}', yali_ai_writer_get_language_ai_name($validated_language), $prompt);
             
             // 记录文章结构生成提示词到日志文件
             $this->log_structure_prompt_to_file($prompt, $angle, $i + 1);
@@ -649,7 +602,7 @@ class ContentAuto_ArticleStructureAdminPage {
             $texts_to_vectorize[] = $combined_text;
         }
 
-        $vector_handler = new ContentAuto_VectorApiHandler($logger);
+        $vector_handler = new Yali_AI_Writer_VectorApiHandler($logger);
         $vector_result = $vector_handler->generate_embeddings_batch($texts_to_vectorize);
 
         $vectors_generated = 0;
@@ -707,7 +660,7 @@ class ContentAuto_ArticleStructureAdminPage {
         $wpdb->query('START TRANSACTION');
         
         try {
-            $table_name = $wpdb->prefix . 'content_auto_article_structures';
+            $table_name = $wpdb->prefix . 'yali_ai_writer_article_structures';
             
             // 1. 首先删除文章结构记录
             $result = $wpdb->delete($table_name, ['id' => $id], ['%d']);
@@ -729,8 +682,8 @@ class ContentAuto_ArticleStructureAdminPage {
             $wpdb->query('COMMIT');
             
             // 记录清理信息到日志
-            if (class_exists('ContentAuto_PluginLogger')) {
-                $logger = new ContentAuto_PluginLogger();
+            if (class_exists('Yali_AI_Writer_PluginLogger')) {
+                $logger = new Yali_AI_Writer_PluginLogger();
                 $logger->info('文章结构删除完成', [
                     'structure_id' => $id,
                     'cleaned_article_associations' => $cleaned_meta_count,
@@ -758,14 +711,14 @@ class ContentAuto_ArticleStructureAdminPage {
     private function log_structure_prompt_to_file($prompt_content, $content_angle, $sequence_number) {
         try {
             // 仅在调试模式下记录完整提示词
-            $debug_mode = get_option('content_auto_debug_mode', false);
+            $debug_mode = get_option('yali_ai_writer_debug_mode', false);
             if (!$debug_mode) {
                 return; // 调试模式未启用，不记录完整提示词
             }
             
             // 引入日志系统
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
-            $logger = new ContentAuto_LoggingSystem();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+            $logger = new Yali_AI_Writer_LoggingSystem();
             
             // 使用统一的日志系统记录完整提示词
             $context = array(
@@ -814,8 +767,8 @@ class ContentAuto_ArticleStructureAdminPage {
         }
 
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
 
         // 开始事务
         $wpdb->query('START TRANSACTION');
@@ -846,8 +799,8 @@ class ContentAuto_ArticleStructureAdminPage {
                     $updated_topics++;
                     
                     // 记录日志
-                    if (class_exists('ContentAuto_PluginLogger')) {
-                        $logger = new ContentAuto_PluginLogger();
+                    if (class_exists('Yali_AI_Writer_PluginLogger')) {
+                        $logger = new Yali_AI_Writer_PluginLogger();
                         $logger->log('主题角度已重新分配', 'INFO', [
                             'topic_id' => $topic['id'],
                             'topic_title' => $topic['title'],

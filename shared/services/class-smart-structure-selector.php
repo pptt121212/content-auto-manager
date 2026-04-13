@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_SmartStructureSelector {
+class Yali_AI_Writer_SmartStructureSelector {
     
     /**
      * 选择方法常量
@@ -45,16 +45,16 @@ class ContentAuto_SmartStructureSelector {
     /**
      * 构造函数
      * 
-     * @param ContentAuto_PluginLogger|null $logger 日志记录器
+     * @param Yali_AI_Writer_PluginLogger|null $logger 日志记录器
      */
     public function __construct($logger = null) {
         require_once dirname(__FILE__) . '/class-optimization-config.php';
         require_once dirname(__FILE__) . '/class-cold-start-manager.php';
         require_once dirname(__FILE__) . '/class-popularity-calculator.php';
         
-        $this->config = new ContentAuto_OptimizationConfig();
-        $this->cold_start_manager = new ContentAuto_ColdStartManager($logger);
-        $this->popularity_calculator = new ContentAuto_PopularityCalculator($logger);
+        $this->config = new Yali_AI_Writer_OptimizationConfig();
+        $this->cold_start_manager = new Yali_AI_Writer_ColdStartManager($logger);
+        $this->popularity_calculator = new Yali_AI_Writer_PopularityCalculator($logger);
         $this->logger = $logger;
     }
     
@@ -373,8 +373,8 @@ class ContentAuto_SmartStructureSelector {
     private function get_batch_usage_stats($task_id) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 🚀 性能优化：避免在 JOIN 中使用 JSON_CONTAINS，这在大数据量下会导致全表扫描和 CPU 飙升
         // 第一步：获取该任务关联的所有主题 ID
@@ -427,7 +427,7 @@ class ContentAuto_SmartStructureSelector {
     public function record_selection($topic_id, $structure_id, $method, $weight) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $result = $wpdb->update(
             $topics_table,
@@ -535,7 +535,7 @@ class ContentAuto_SmartStructureSelector {
     public function get_selection_statistics($content_angle, $days = 7) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $results = $wpdb->get_results($wpdb->prepare("
             SELECT 

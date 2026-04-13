@@ -19,7 +19,7 @@ if (file_exists($parsedown_extra_path)) {
     require_once $parsedown_extra_path;
 }
 
-class ContentAuto_MarkdownConverter {
+class Yali_AI_Writer_MarkdownConverter {
     
     private $converter;
     private $converter_type;
@@ -58,7 +58,7 @@ class ContentAuto_MarkdownConverter {
         
         // 缓存无效或首次初始化，重新检测
         if (self::$cache_initialized && self::$cached_php_version !== $current_php_version) {
-            error_log("ContentAuto: 检测到PHP版本变化 ({self::$cached_php_version} -> {$current_php_version})，重新选择转换器");
+            error_log('ContentAuto: 检测到PHP版本变化 (' . self::$cached_php_version . ' -> ' . $current_php_version . ')，重新选择转换器');
         }
         
         $this->initialize_converter_impl();
@@ -78,8 +78,8 @@ class ContentAuto_MarkdownConverter {
         if (file_exists($commonmark_file)) {
             require_once $commonmark_file;
             
-            if (class_exists('ContentAuto_CommonMarkConverter')) {
-                $commonmark_converter = new ContentAuto_CommonMarkConverter();
+            if (class_exists('Yali_AI_Writer_CommonMarkConverter')) {
+                $commonmark_converter = new Yali_AI_Writer_CommonMarkConverter();
                 if ($commonmark_converter->is_available()) {
                     $this->converter = $commonmark_converter;
                     $this->converter_type = 'commonmark';
@@ -129,21 +129,93 @@ class ContentAuto_MarkdownConverter {
         $this->ensure_converter_initialized();
 
         if (empty($markdown) || !$this->converter) {
+            // 记录错误日志
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+                error_log('MARKDOWN_CONVERTER_ERROR: Empty content or converter not initialized');
+            }
             return '';
         }
+
+        // 记录转换开始
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            error_log('MARKDOWN_CONVERSION_START: Starting Markdown to HTML conversion');
+            error_log('MARKDOWN_CONVERTER_TYPE: ' . $this->converter_type);
+            error_log('MARKDOWN_INPUT_LENGTH: ' . strlen($markdown));
+            error_log('MARKDOWN_INPUT_PREVIEW: ' . json_encode(substr($markdown, 0, 200) . (strlen($markdown) > 200 ? '...' : '')));
+        }
+        
+        $input_length = strlen($markdown);
         
         // 使用相应的转换方法
         switch ($this->converter_type) {
             case 'commonmark':
-                return $this->converter->markdown_to_html($markdown);
+                if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+                    error_log('MARKDOWN_METHOD_USED: Yali_AI_Writer_CommonMarkConverter::markdown_to_html');
+                    error_log('MARKDOWN_PREPROCESSING: preprocess_html_blocks (inside CommonMarkConverter)');
+                }
+                $html = $this->converter->markdown_to_html($markdown);
+                if ($html === '' || $html === '<p>内容转换失败</p>') {
+                    $fallback_html = $this->fallback_to_parsedown($markdown);
+                    if ($fallback_html !== null) {
+                        $html = $fallback_html;
+                    }
+                }
+                break;
                 
             case 'parsedown_extra':
+                if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+                    error_log('MARKDOWN_METHOD_USED: ParsedownExtra::text');
+                }
+                $html = $this->converter->text($markdown);
+                break;
+                
             case 'parsedown':
-                return $this->converter->text($markdown);
+                if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+                    error_log('MARKDOWN_METHOD_USED: Parsedown::text');
+                }
+                $html = $this->converter->text($markdown);
+                break;
                 
             default:
+                if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+                    error_log('MARKDOWN_CONVERTER_ERROR: Unknown converter type: ' . $this->converter_type);
+                }
                 return '';
         }
+
+        // 记录转换完成
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+            error_log('MARKDOWN_CONVERSION_COMPLETE: Conversion finished');
+            error_log('MARKDOWN_OUTPUT_LENGTH: ' . strlen($html));
+            error_log('MARKDOWN_CONTENT_CHANGE: ' . ($input_length !== strlen($html) ? 'Changed' : 'Unchanged'));
+            error_log('MARKDOWN_OUTPUT_PREVIEW: ' . json_encode(substr($html, 0, 200) . (strlen($html) > 200 ? '...' : '')));
+        }
+
+        return $html;
+    }
+
+    private function fallback_to_parsedown($markdown) {
+        try {
+            if (class_exists('ParsedownExtra')) {
+                $fallback = new ParsedownExtra();
+                $fallback->setSafeMode(false);
+                $fallback->setBreaksEnabled(true);
+                error_log('ContentAuto: CommonMark失败，降级到ParsedownExtra');
+                return $fallback->text($markdown);
+            }
+
+            if (class_exists('Parsedown')) {
+                $fallback = new Parsedown();
+                $fallback->setSafeMode(false);
+                $fallback->setBreaksEnabled(true);
+                error_log('ContentAuto: CommonMark失败，降级到Parsedown');
+                return $fallback->text($markdown);
+            }
+        } catch (\Throwable $e) {
+            error_log('ContentAuto: Parsedown降级失败 - ' . $e->getMessage());
+        }
+
+        return null;
     }
 
     /**

@@ -1,6 +1,6 @@
 {
-    "translation-revision-date": "2026-03-16 08:18:40+0800",
-    "generator": "Reconstructed Build Mo Script",
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
     "domain": "messages",
     "locale_data": {
         "messages": {
@@ -9,44 +9,11 @@
                 "plural-forms": "nplurals=2; plural=(n != 1);",
                 "lang": "en_US"
             },
-            "失败": [
-                "Failed"
-            ],
-            "复制失败": [
-                "Copy failed"
-            ],
-            "是": [
-                "Yes"
-            ],
-            "否": [
-                "No"
-            ],
-            "添加": [
-                "Add"
-            ],
-            "支持": [
-                "Yes"
-            ],
-            "复制": [
-                "Copy"
-            ],
-            "活跃": [
-                "Active"
-            ],
-            "移除": [
-                "Remove"
-            ],
-            "，": [
-                ", "
-            ],
             "已复制!": [
                 "Copied!"
             ],
-            "活跃状态": [
-                "Active Status"
-            ],
-            "状态": [
-                "Status"
+            "复制失败": [
+                "Copy failed"
             ]
         }
     }

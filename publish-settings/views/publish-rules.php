@@ -21,95 +21,40 @@ if ($action === 'manage-categories') {
 } elseif ($action === 'vector-clustering') {
     // 显示向量聚类管理页面
     require_once dirname(dirname(dirname(__FILE__))) . '/admin/class-clustering-admin-page.php';
-    $page = new ContentAuto_ClusteringAdminPage();
+    $page = new Yali_AI_Writer_ClusteringAdminPage();
     $page->render_page();
     return;
 } elseif ($action === 'article-structures') {
     // 显示文章结构管理页面
     require_once dirname(dirname(dirname(__FILE__))) . '/article-structures/class-article-structure-admin-page.php';
-    $page = new ContentAuto_ArticleStructureAdminPage();
+    $page = new Yali_AI_Writer_ArticleStructureAdminPage();
     $page->render_page();
     return;
 } elseif ($action === 'editor-assistant-settings') {
     // 显示编辑器AI助手设置页面
     require_once dirname(dirname(dirname(__FILE__))) . '/editor-assistant/class-editor-assistant-admin-page.php';
-    $page = new ContentAuto_EditorAssistantAdminPage();
+    $page = new Yali_AI_Writer_EditorAssistantAdminPage();
     $page->render_page();
     return;
 }
 
-// 初始化通知数组
-$yali_notices = array();
-
 // 加载授权管理器
 require_once dirname(dirname(dirname(__FILE__))) . '/includes/class-license-manager.php';
 
-// 处理授权码提交
-if (isset($_POST['submit_license']) && isset($_POST['content_auto_manager_license_nonce'])) {
-    // 验证nonce
-    if (!wp_verify_nonce($_POST['content_auto_manager_license_nonce'], 'content_auto_manager_license')) {
-        wp_die(__('安全验证失败。', 'yali-ai-writer'));
-    }
-    
-    $license_key = sanitize_text_field($_POST['content_auto_manager_license_key']);
-    if (!empty($license_key)) {
-        // 先进行基本格式验证
-        if (!preg_match('/^CMT-[A-F0-9]{32}$/', $license_key)) {
-            $yali_notices[] = array(
-                'type' => 'error',
-                'message' => __('授权码格式不正确。正确格式：CMT-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX（32位十六进制字符）', 'yali-ai-writer')
-            );
-        } else {
-            // 格式正确，先验证再保存
-            $old_license = get_option('content_auto_manager_license_key', '');
-            
-            // 临时保存以供验证使用
-            update_option('content_auto_manager_license_key', $license_key);
-            
-            // 进行远程验证
-            ContentAuto_License_Manager::activate_license($license_key);
-            
-            // 检查验证结果
-            $license_data = get_option(ContentAuto_License_Manager::LICENSE_OPTION, array());
-            if (isset($license_data['status']) && $license_data['status'] === 'valid') {
-                // 验证成功，保持新授权码
-                $yali_notices[] = array(
-                    'type' => 'success',
-                    'message' => __('授权码验证成功！', 'yali-ai-writer')
-                );
-            } else {
-                // 验证失败，恢复旧授权码
-                update_option('content_auto_manager_license_key', $old_license);
-                $error_msg = isset($license_data['message']) ? $license_data['message'] : __('授权验证失败', 'yali-ai-writer');
-                $yali_notices[] = array(
-                    'type' => 'error',
-                    'message' => sprintf(__('授权码验证失败：%s', 'yali-ai-writer'), $error_msg)
-                );
-            }
-        }
-    } else {
-        // 未输入授权码
-        $yali_notices[] = array(
-            'type' => 'error',
-            'message' => __('请输入授权码。', 'yali-ai-writer')
-        );
-    }
-}
-
-// 以前的 PHP 表单处理逻辑已移除，现改用 Universal AJAX Handler 处理 (see admin.js)
+// 表单处理已移至 admin/form-handlers.php，在 admin_init 钩子中执行
 
 // 获取现有发布规则
-$database = new ContentAuto_Database();
-$publish_rule = $database->get_row('content_auto_publish_rules', array('id' => 1));
+$database = new Yali_AI_Writer_Database();
+$publish_rule = $database->get_row('yali_ai_writer_publish_rules', array('id' => 1));
 
 // 定义默认值
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/class-image-prompt-manager.php';
-$default_image_prompt = ContentAuto_ImagePromptManager::get_default_template();
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/class-image-prompt-manager.php';
+$default_image_prompt = Yali_AI_Writer_ImagePromptManager::get_default_template();
 
 // 如果没有规则，使用默认值
 if (!$publish_rule) {
     $publish_rule = array(
-        'post_status' => CONTENT_AUTO_PUBLISH_STATUS_DRAFT,
+        'post_status' => YALI_AI_WRITER_PUBLISH_STATUS_DRAFT,
         'author_id' => get_current_user_id(),
         'category_mode' => 'manual',
         'category_ids' => array(),
@@ -144,17 +89,8 @@ require_once dirname(__FILE__) . '/../class-category-filter.php';
 
 // 获取用户和过滤后的分类
 $users = get_users(array('capability' => 'edit_posts'));
-$categories = ContentAuto_Category_Filter::get_filtered_categories();
+$categories = Yali_AI_Writer_Category_Filter::get_filtered_categories();
 ?>
-
-    <!-- 显示通知 -->
-    <?php if (!empty($yali_notices)): ?>
-        <?php foreach ($yali_notices as $notice): ?>
-            <div class="yali-notice yali-notice-<?php echo esc_attr($notice['type']); ?>">
-                <p><?php echo wp_kses_post($notice['message']); ?></p>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
 
     <!-- 授权设置卡片 -->
     <div class="yali-card">
@@ -163,10 +99,10 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
         </div>
         <div class="yali-card-body">
             <form method="post" action="">
-                <?php wp_nonce_field('content_auto_manager_license', 'content_auto_manager_license_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_license', 'yali_ai_writer_manager_license_nonce'); ?>
                 
                 <table class="form-table">
-                    <?php ContentAuto_License_Manager::render_license_field(); ?>
+                    <?php Yali_AI_Writer_License_Manager::render_license_field(); ?>
                 </table>
                 <div style="margin-top: 15px; padding-left: 0;">
                     <?php submit_button(__('验证授权码', 'yali-ai-writer'), 'primary', 'submit_license', false, array('style' => 'padding: 8px 20px; font-size: 14px; height: auto;')); ?>
@@ -183,7 +119,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
         </div>
         <div class="yali-card-body">
             <?php 
-            $filter_stats = ContentAuto_Category_Filter::get_filter_stats();
+            $filter_stats = Yali_AI_Writer_Category_Filter::get_filter_stats();
             if ($filter_stats['is_filtered']): 
             ?>
                 <p><span class="dashicons dashicons-filter"></span> <?php printf(__('当前已限制插件使用 %d/%d 个分类（%s%%）', 'yali-ai-writer'), $filter_stats['allowed_categories'], $filter_stats['total_categories'], $filter_stats['filter_percentage']); ?></p>
@@ -210,35 +146,28 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
             <div class="yali-card-title"><?php _e('配置发布规则', 'yali-ai-writer'); ?></div>
         </div>
         <div class="yali-card-body">
-            <?php if (!ContentAuto_License_Manager::is_license_active()): ?>
-                <div class="yali-notice yali-notice-warning" style="margin-bottom: 20px;">
-                    <p><strong><?php _e('注意：', 'yali-ai-writer'); ?></strong> <?php _e('授权无效，发布规则将使用默认配置且无法修改。请先输入有效的授权码。', 'yali-ai-writer'); ?></p>
-                </div>
-            <?php endif; ?>
-            
             <form method="post" action="" class="yali-ajax-form" data-action="cam_save_publish_rules" data-nonce="<?php echo wp_create_nonce('cam_save_publish_rules'); ?>">
-                <?php wp_nonce_field('content_auto_manager_publish_rules', 'content_auto_manager_nonce'); ?>
+                <?php wp_nonce_field('yali_ai_writer_manager_publish_rules', 'yali_ai_writer_manager_nonce'); ?>
                 
                 <table class="form-table yali-table">
-                    <?php $is_licensed = ContentAuto_License_Manager::is_license_active(); ?>
                     <tr>
                         <th scope="row"><?php _e('文章状态', 'yali-ai-writer'); ?></th>
                         <td>
-                            <select name="post_status" class="regular-text yali-select" id="post_status" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
-                                <option value="publish" <?php selected($publish_rule['post_status'], CONTENT_AUTO_PUBLISH_STATUS_PUBLISH); ?>>
+                            <select name="post_status" class="regular-text yali-select" id="post_status">
+                                <option value="publish" <?php selected($publish_rule['post_status'], YALI_AI_WRITER_PUBLISH_STATUS_PUBLISH); ?>>
                                     <?php _e('已发布', 'yali-ai-writer'); ?>
                                 </option>
-                                <option value="draft" <?php selected($publish_rule['post_status'], CONTENT_AUTO_PUBLISH_STATUS_DRAFT); ?>>
+                                <option value="draft" <?php selected($publish_rule['post_status'], YALI_AI_WRITER_PUBLISH_STATUS_DRAFT); ?>>
                                     <?php _e('草稿', 'yali-ai-writer'); ?>
                                 </option>
                             </select>
                             <p class="description"><?php _e('设置自动生成文章的默认发布状态。', 'yali-ai-writer'); ?></p>
                         </td>
                     </tr>
-                    <tr id="publish_interval_row" style="display: <?php echo ($publish_rule['post_status'] === 'publish') ? '' : 'none'; ?>;">
+                    <tr id="publish_interval_row" style="display: <?php echo esc_attr(($publish_rule['post_status'] === 'publish') ? '' : 'none'); ?>;">
                         <th scope="row"><?php _e('发布时间间隔', 'yali-ai-writer'); ?></th>
                         <td>
-                            <input type="number" name="publish_interval_minutes" class="regular-text yali-input" value="<?php echo esc_attr($publish_rule['publish_interval_minutes'] ?? 0); ?>" min="0" max="1440" step="1" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <input type="number" name="publish_interval_minutes" class="regular-text yali-input" value="<?php echo esc_attr($publish_rule['publish_interval_minutes'] ?? 0); ?>" min="0" max="1440" step="1">
                             <span class="description"><?php _e('分钟', 'yali-ai-writer'); ?></span>
                             <p class="description">
                                 <?php _e('设置文章发布的时间间隔（分钟）。设置为0表示立即发布。', 'yali-ai-writer'); ?><br>
@@ -249,7 +178,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                     <tr>
                         <th scope="row"><?php _e('默认作者', 'yali-ai-writer'); ?></th>
                         <td>
-                            <select name="author_id" class="regular-text yali-select" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <select name="author_id" class="regular-text yali-select">
                                 <?php foreach ($users as $user): ?>
                                     <option value="<?php echo esc_attr($user->ID); ?>" <?php selected($publish_rule['author_id'], $user->ID); ?>>
                                         <?php echo esc_html($user->display_name); ?>
@@ -262,7 +191,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                     <tr>
                         <th scope="row"><?php _e('分类选择模式', 'yali-ai-writer'); ?></th>
                         <td>
-                            <select name="category_mode" class="regular-text yali-select" id="category_mode" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <select name="category_mode" class="regular-text yali-select" id="category_mode">
                                 <option value="manual" <?php selected($publish_rule['category_mode'], 'manual'); ?>>
                                     <?php _e('手动选择分类', 'yali-ai-writer'); ?>
                                 </option>
@@ -278,7 +207,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <td>
                             <select name="category_ids[]" multiple class="regular-text yali-select" style="height: 150px;">
                                 <?php foreach ($categories as $category): ?>
-                                    <option value="<?php echo esc_attr($category->term_id); ?>" <?php echo (is_array($publish_rule['category_ids']) && in_array($category->term_id, $publish_rule['category_ids'])) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo esc_attr($category->term_id); ?>" <?php selected(is_array($publish_rule['category_ids']) && in_array($category->term_id, $publish_rule['category_ids'])); ?>>
                                         <?php echo esc_html($category->name); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -291,7 +220,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <td>
                             <select name="fallback_category_ids[]" multiple class="regular-text yali-select" style="height: 150px;">
                                 <?php foreach ($categories as $category): ?>
-                                    <option value="<?php echo esc_attr($category->term_id); ?>" <?php echo (is_array($publish_rule['fallback_category_ids']) && in_array($category->term_id, $publish_rule['fallback_category_ids'])) ? 'selected' : ''; ?>>
+                                    <option value="<?php echo esc_attr($category->term_id); ?>" <?php selected(is_array($publish_rule['fallback_category_ids']) && in_array($category->term_id, $publish_rule['fallback_category_ids'])); ?>>
                                         <?php echo esc_html($category->name); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -304,19 +233,18 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <td>
                             <label class="yali-checkbox-label">
                                 <input type="checkbox" name="enable_editor_assistant" id="enable_editor_assistant" value="1" 
-                                       <?php checked($publish_rule['enable_editor_assistant'] ?? 0, 1); ?>
-                                       <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                       <?php checked($publish_rule['enable_editor_assistant'] ?? 0, 1); ?>>
                                 <?php _e('启用编辑器AI助手', 'yali-ai-writer'); ?>
                             </label>
                             <p class="description">
                                 <?php _e('启用后，在WordPress文章编辑器中提供AI写作助手功能，支持段落生成、改写、摘要等智能模板。', 'yali-ai-writer'); ?>
                             </p>
-                            <div class="yali-notice yali-notice-info yali-notice-sm" id="editor_assistant_link_container" style="display: <?php echo ($publish_rule['enable_editor_assistant'] ?? 0) ? 'block' : 'none'; ?>; margin-top: 10px; margin-bottom: 0;">
+                            <div class="yali-notice yali-notice-info yali-notice-sm" id="editor_assistant_link_container" style="display: <?php echo esc_attr(($publish_rule['enable_editor_assistant'] ?? 0) ? 'block' : 'none'); ?>; margin-top: 10px; margin-bottom: 0;">
                                 <p style="margin: 0; display: flex; align-items: center;">
                                     <span class="dashicons dashicons-admin-settings" style="color: #2271b1;"></span>
                                     <strong><?php _e('功能配置：', 'yali-ai-writer'); ?></strong>
                                     <?php _e('管理和自定义编辑器助手的快捷提示词及菜单。', 'yali-ai-writer'); ?>
-                                    <a href="?page=yali-ai-writer-publish-rules&action=editor-assistant-settings" class="yali-btn yali-btn-secondary yali-btn-small" style="margin-left: 10px;"><?php _e('前往助手配置', 'yali-ai-writer'); ?></a>
+                                    <a href="<?php echo esc_url(admin_url('admin.php?page=yali-ai-writer-publish-rules&action=editor-assistant-settings')); ?>" class="yali-btn yali-btn-secondary yali-btn-small" style="margin-left: 10px;"><?php _e('前往助手配置', 'yali-ai-writer'); ?></a>
                                 </p>
                             </div>
                         </td>
@@ -324,7 +252,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                     <tr>
                         <th scope="row"><?php _e('目标字数', 'yali-ai-writer'); ?></th>
                         <td>
-                            <select name="target_length" class="regular-text yali-select" id="target_length" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <select name="target_length" class="regular-text yali-select" id="target_length">
                                 <option value="不少于500字" <?php selected($publish_rule['target_length'], '不少于500字'); ?>>
                                     <?php _e('短文章（不少于500字）', 'yali-ai-writer'); ?>
                                 </option>
@@ -350,7 +278,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                     <tr>
                         <th scope="row"><?php _e('内容深度', 'yali-ai-writer'); ?></th>
                         <td>
-                            <select name="knowledge_depth" class="regular-text yali-select" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <select name="knowledge_depth" class="regular-text yali-select">
                                 <option value="<?php echo esc_attr(__('未设置', 'yali-ai-writer')); ?>" <?php selected($publish_rule['knowledge_depth'], __('未设置', 'yali-ai-writer')); ?>>
                                     <?php _e('未设置 - 不指定内容深度，由AI自由发挥', 'yali-ai-writer'); ?>
                                 </option>
@@ -373,7 +301,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                     <tr>
                         <th scope="row"><?php _e('目标受众', 'yali-ai-writer'); ?></th>
                         <td>
-                            <select name="reader_role" class="regular-text yali-select" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                            <select name="reader_role" class="regular-text yali-select">
                                 <option value="<?php echo esc_attr(__('未设置', 'yali-ai-writer')); ?>" <?php selected($publish_rule['reader_role'], __('未设置', 'yali-ai-writer')); ?>>
                                     <?php _e('未设置 - 不指定目标受众，由AI自由发挥', 'yali-ai-writer'); ?>
                                 </option>
@@ -400,14 +328,14 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <th scope="row"><?php _e('文章结构指导', 'yali-ai-writer'); ?></th>
                         <td>
                             <label class="yali-checkbox-label">
-                                <input type="checkbox" id="normalize_output" name="normalize_output" value="1" <?php checked($publish_rule['normalize_output'], 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                <input type="checkbox" id="normalize_output" name="normalize_output" value="1" <?php checked($publish_rule['normalize_output'], 1); ?>>
                                 <?php _e('启用详细结构指导', 'yali-ai-writer'); ?>
                             </label>
                             <p class="description">
                                 <?php _e('启用后，系统将在文章生成时引入结构化大纲，引导AI按照预设的章节框架组织内容。', 'yali-ai-writer'); ?>
                             </p>
                             
-                            <div id="structure_mode_options" style="display: <?php echo $publish_rule['normalize_output'] ? 'block' : 'none'; ?>; margin-top: 12px;">
+                            <div id="structure_mode_options" style="display: <?php echo esc_attr($publish_rule['normalize_output'] ? 'block' : 'none'); ?>; margin-top: 12px;">
                                 <?php
                                 $structure_mode = isset($publish_rule['structure_mode']) ? $publish_rule['structure_mode'] : 'generic';
                                 ?>
@@ -415,7 +343,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                                     <p style="margin: 0 0 10px 0;"><strong><?php _e('选择结构生成方式：', 'yali-ai-writer'); ?></strong></p>
                                     
                                     <label class="yali-checkbox-label" style="display: block; margin-bottom: 10px;">
-                                        <input type="radio" name="structure_mode" value="personalized" <?php checked($structure_mode, 'personalized'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="radio" name="structure_mode" value="personalized" <?php checked($structure_mode, 'personalized'); ?>>
                                         <strong><?php _e('个性文章结构', 'yali-ai-writer'); ?></strong>
                                     </label>
                                     <p class="description" style="margin: -5px 0 15px 24px;">
@@ -428,14 +356,14 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                                     </p>
                                     
                                     <label class="yali-checkbox-label" style="display: block; margin-bottom: 10px;">
-                                        <input type="radio" name="structure_mode" value="generic" <?php checked($structure_mode, 'generic'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="radio" name="structure_mode" value="generic" <?php checked($structure_mode, 'generic'); ?>>
                                         <strong><?php _e('通用文章结构', 'yali-ai-writer'); ?></strong>
                                     </label>
                                     <p class="description" style="margin: -5px 0 10px 24px;">
                                         <?php _e('系统从「文章结构管理」页面中已有的结构库中，通过向量相似度智能匹配最适合当前主题的章节模板，直接引入到文章生成提示词中。', 'yali-ai-writer'); ?>
                                     </p>
 
-                                    <div id="article_structure_link_container" style="display: <?php echo ($structure_mode === 'generic') ? 'block' : 'none'; ?>; margin-top: 5px;">
+                                    <div id="article_structure_link_container" style="display: <?php echo esc_attr(($structure_mode === 'generic') ? 'block' : 'none'); ?>; margin-top: 5px;">
                                         <p style="margin: 0; display: flex; align-items: center;">
                                             <span class="dashicons dashicons-admin-links" style="color: #2271b1;"></span>
                                             <strong><?php _e('前置要求：', 'yali-ai-writer'); ?></strong>
@@ -455,16 +383,16 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <th scope="row"><?php _e('文章自动配图', 'yali-ai-writer'); ?></th>
                         <td>
                             <label class="yali-checkbox-label">
-                                <input type="checkbox" name="auto_image_insertion" value="1" <?php checked($publish_rule['auto_image_insertion'], 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?> id="auto_image_insertion">
+                                <input type="checkbox" name="auto_image_insertion" value="1" <?php checked($publish_rule['auto_image_insertion'], 1); ?> id="auto_image_insertion">
                                 <?php _e('启用文章自动配图', 'yali-ai-writer'); ?>
                             </label>
                             <p class="description"><?php _e('启用后，AI将在文章中自动生成配图占位符，用于插入相关图片。', 'yali-ai-writer'); ?></p>
                             
-                            <div id="auto_image_options" style="margin-top: 15px; <?php echo !$publish_rule['auto_image_insertion'] ? 'display: none;' : ''; ?>">
+                            <div id="auto_image_options" style="margin-top: 15px; <?php echo esc_attr(!$publish_rule['auto_image_insertion'] ? 'display: none;' : ''); ?>">
                                 <label for="max_auto_images" style="margin-right: 10px;">
                                     <strong><?php _e('最大生成图片数量:', 'yali-ai-writer'); ?></strong>
                                 </label>
-                                <select name="max_auto_images" id="max_auto_images" class="yali-select" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                <select name="max_auto_images" id="max_auto_images" class="yali-select">
                                     <option value="1" <?php selected($publish_rule['max_auto_images'] ?? '1', '1'); ?>>
                                         <?php _e('1张图片', 'yali-ai-writer'); ?>
                                     </option>
@@ -487,7 +415,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                                 
                                 <div style="margin-top: 15px;">
                                     <label class="yali-checkbox-label">
-                                        <input type="checkbox" name="skip_first_image_placeholder" value="1" <?php checked($publish_rule['skip_first_image_placeholder'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="checkbox" name="skip_first_image_placeholder" value="1" <?php checked($publish_rule['skip_first_image_placeholder'] ?? 0, 1); ?>>
                                         <strong><?php _e('忽略首段落图片', 'yali-ai-writer'); ?></strong>
                                     </label>
                                     <p class="description" style="margin-top: 8px;">
@@ -501,17 +429,17 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <th scope="row"><?php _e('文章内链功能', 'yali-ai-writer'); ?></th>
                         <td>
                             <label class="yali-checkbox-label">
-                                <input type="checkbox" name="enable_internal_linking" id="enable_internal_linking" value="1" <?php checked($publish_rule['enable_internal_linking'], 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                <input type="checkbox" name="enable_internal_linking" id="enable_internal_linking" value="1" <?php checked($publish_rule['enable_internal_linking'], 1); ?>>
                                 <?php _e('启用文章内链功能', 'yali-ai-writer'); ?>
                             </label>
                             <p class="description"><?php _e('启用后，AI将在生成的文章中自然地融入已发布的相关文章标题和链接，提升网站内链建设。', 'yali-ai-writer'); ?></p>
                             
-                            <div id="vector_clustering_link_container" class="yali-notice yali-notice-info" style="display: <?php echo !$publish_rule['enable_internal_linking'] ? 'none' : 'block'; ?>;">
+                            <div id="vector_clustering_link_container" class="yali-notice yali-notice-info" style="display: <?php echo esc_attr(!$publish_rule['enable_internal_linking'] ? 'none' : 'block'); ?>;">
                                 <p style="margin: 0; display: flex; align-items: center; gap: 8px;">
                                     <span class="dashicons dashicons-admin-links" style="color: #2271b1;"></span>
                                     <strong><?php _e('前置要求：', 'yali-ai-writer'); ?></strong>
                                     <?php _e('高质量的内链推荐依赖于文章向量聚类分析。为了获得最佳内链效果，请定期进行向量聚类。', 'yali-ai-writer'); ?>
-                                    <a href="?page=yali-ai-writer-publish-rules&action=vector-clustering" class="yali-btn yali-btn-secondary yali-btn-small" style="margin-left: 10px;"><?php _e('前往向量聚类管理', 'yali-ai-writer'); ?></a>
+                                    <a href="<?php echo esc_url(admin_url('admin.php?page=yali-ai-writer-publish-rules&action=vector-clustering')); ?>" class="yali-btn yali-btn-secondary yali-btn-small" style="margin-left: 10px;"><?php _e('前往向量聚类管理', 'yali-ai-writer'); ?></a>
                                 </p>
                             </div>
                         </td>
@@ -520,22 +448,22 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <th scope="row"><?php _e('品牌资料植入', 'yali-ai-writer'); ?></th>
                         <td>
                             <label class="yali-checkbox-label">
-                                <input type="checkbox" name="enable_brand_profile_insertion" value="1" <?php checked($publish_rule['enable_brand_profile_insertion'], 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?> id="enable_brand_profile_insertion">
+                                <input type="checkbox" name="enable_brand_profile_insertion" value="1" <?php checked($publish_rule['enable_brand_profile_insertion'], 1); ?> id="enable_brand_profile_insertion">
                                 <?php _e('启用品牌资料自动植入', 'yali-ai-writer'); ?>
                             </label>
                             <p class="description yali-desc"><?php _e('启用后，系统将根据文章标题，从您的品牌资料库中匹配最相关的一份，并将其自动插入到文章段落中。', 'yali-ai-writer'); ?></p>
                             
-                            <div id="brand_profile_options" class="yali-notice yali-notice-info" style="display: <?php echo !$publish_rule['enable_brand_profile_insertion'] ? 'none' : 'block'; ?>;">
+                            <div id="brand_profile_options" class="yali-notice yali-notice-info" style="display: <?php echo esc_attr(!$publish_rule['enable_brand_profile_insertion'] ? 'none' : 'block'); ?>;">
                                 <label for="brand_profile_position" style="margin-right: 10px;">
                                     <strong><?php _e('品牌资料插入位置:', 'yali-ai-writer'); ?></strong>
                                 </label>
                                 <div style="margin-top: 8px;">
                                     <label class="yali-checkbox-label" style="display: block; margin-bottom: 8px;">
-                                        <input type="radio" name="brand_profile_position" value="before_second_paragraph" <?php checked($publish_rule['brand_profile_position'] ?? 'before_second_paragraph', 'before_second_paragraph'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="radio" name="brand_profile_position" value="before_second_paragraph" <?php checked($publish_rule['brand_profile_position'] ?? 'before_second_paragraph', 'before_second_paragraph'); ?>>
                                         <?php _e('第二段落前', 'yali-ai-writer'); ?>
                                     </label>
                                     <label class="yali-checkbox-label" style="display: block;">
-                                        <input type="radio" name="brand_profile_position" value="article_end" <?php checked($publish_rule['brand_profile_position'] ?? 'before_second_paragraph', 'article_end'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="radio" name="brand_profile_position" value="article_end" <?php checked($publish_rule['brand_profile_position'] ?? 'before_second_paragraph', 'article_end'); ?>>
                                         <?php _e('文章结尾', 'yali-ai-writer'); ?>
                                     </label>
                                 </div>
@@ -549,7 +477,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <th scope="row"><?php _e('启用参考物料', 'yali-ai-writer'); ?></th>
                         <td>
                             <label class="yali-checkbox-label">
-                                <input type="checkbox" name="enable_reference_material" id="enable_reference_material" value="1" <?php checked($publish_rule['enable_reference_material'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                <input type="checkbox" name="enable_reference_material" id="enable_reference_material" value="1" <?php checked($publish_rule['enable_reference_material'] ?? 0, 1); ?>>
                                 <?php _e('启用参考资料功能', 'yali-ai-writer'); ?>
                             </label>
                             <p class="description yali-desc">
@@ -557,9 +485,9 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                             </p>
                             
                             <!-- 大模型精选召回选项 -->
-                            <div id="ai_reference_select_options" class="yali-notice yali-notice-info" style="display: <?php echo ($publish_rule['enable_reference_material'] ?? 0) ? 'block' : 'none'; ?>;">
+                             <div id="ai_reference_select_options" class="yali-notice yali-notice-info" style="display: <?php echo esc_attr(($publish_rule['enable_reference_material'] ?? 0) ? 'block' : 'none'); ?>;">
                                 <label class="yali-checkbox-label">
-                                    <input type="checkbox" name="enable_ai_reference_select" id="enable_ai_reference_select" value="1" <?php checked($publish_rule['enable_ai_reference_select'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                    <input type="checkbox" name="enable_ai_reference_select" id="enable_ai_reference_select" value="1" <?php checked($publish_rule['enable_ai_reference_select'] ?? 0, 1); ?>>
                                     <strong><?php _e('启用大模型精选召回', 'yali-ai-writer'); ?></strong>
                                 </label>
                                 <p class="description yali-desc">
@@ -583,15 +511,15 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                                     }
                                     ?>
                                     <label class="yali-checkbox-label" style="display: block; margin-bottom: 5px;">
-                                        <input type="radio" name="material_collection_mode" value="none" <?php checked($collection_mode, 'none'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="radio" name="material_collection_mode" value="none" <?php checked($collection_mode, 'none'); ?>>
                                         <?php _e('关闭自动收集', 'yali-ai-writer'); ?>
                                     </label>
                                     <label class="yali-checkbox-label" style="display: block; margin-bottom: 5px;">
-                                        <input type="radio" name="material_collection_mode" value="search_engine" <?php checked($collection_mode, 'search_engine'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="radio" name="material_collection_mode" value="search_engine" <?php checked($collection_mode, 'search_engine'); ?>>
                                         <?php _e('启用网络搜索', 'yali-ai-writer'); ?>
                                     </label>
                                     <label class="yali-checkbox-label" style="display: block; margin-bottom: 5px;">
-                                        <input type="radio" name="material_collection_mode" value="extension_rag" <?php checked($collection_mode, 'extension_rag'); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                        <input type="radio" name="material_collection_mode" value="extension_rag" <?php checked($collection_mode, 'extension_rag'); ?>>
                                         <?php _e('启用知识库搜索 (Browser Extension)', 'yali-ai-writer'); ?>
                                     </label>
                                     
@@ -610,7 +538,7 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                         <th scope="row"><?php _e('搜索意图推断', 'yali-ai-writer'); ?></th>
                         <td>
                             <label class="yali-checkbox-label">
-                                <input type="checkbox" name="enable_intent_inference" id="enable_intent_inference" value="1" <?php checked($publish_rule['enable_intent_inference'] ?? 0, 1); ?> <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                                <input type="checkbox" name="enable_intent_inference" id="enable_intent_inference" value="1" <?php checked($publish_rule['enable_intent_inference'] ?? 0, 1); ?>>
                                 <?php _e('启用搜索意图推断', 'yali-ai-writer'); ?>
                             </label>
                             <p class="description yali-desc">
@@ -621,11 +549,10 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                             </p>
                         </td>
                     </tr>
-                    <tr>
-                        <th scope="row"><?php _e('发布语言', 'yali-ai-writer'); ?></th>
-                        <td>
-                            <select name="publish_language" class="regular-text yali-select" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
-                                <option value="zh-CN" <?php selected($publish_rule['publish_language'], 'zh-CN'); ?>>
+                                    <tr>
+                                        <th scope="row"><?php _e('发布语言', 'yali-ai-writer'); ?></th>
+                                        <td>
+                                            <select name="publish_language" class="regular-text yali-select">                                <option value="zh-CN" <?php selected($publish_rule['publish_language'], 'zh-CN'); ?>>
                                     <?php _e('中文（简体）', 'yali-ai-writer'); ?>
                                 </option>
                                 <option value="zh-TW" <?php selected($publish_rule['publish_language'], 'zh-TW'); ?>>
@@ -680,26 +607,26 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                 <tr>
                     <th scope="row"><?php _e('AI角色描述', 'yali-ai-writer'); ?></th>
                     <td>
-                        <textarea name="role_description" rows="4" class="large-text yali-input" <?php echo !$is_licensed ? 'disabled' : ''; ?> placeholder="<?php echo esc_attr(__('例如：专业内容创作专家，精通SEO文案、用户体验设计、知识传播策略。您的任务是基于提供的文章标题创作正文内容，输出时直接从第一个章节标题开始，无需重复已提供的主标题。', 'yali-ai-writer')); ?>"><?php echo esc_textarea($publish_rule['role_description'] ?? ''); ?></textarea>
+                        <textarea name="role_description" rows="4" class="large-text yali-input" placeholder="<?php echo esc_attr(__('例如：专业内容创作专家，精通SEO文案、用户体验设计、知识传播策略。您的任务是基于提供的文章标题创作正文内容，输出时直接从第一个章节标题开始，无需重复已提供的主标题。', 'yali-ai-writer')); ?>"><?php echo esc_textarea($publish_rule['role_description'] ?? ''); ?></textarea>
                         <p class="description"><?php _e('定义AI在生成文章时的角色和专业能力。这个描述将作为提示词模板中的&lt;role&gt;标签内容，影响AI的写作风格和专业度。留空将使用默认角色描述。', 'yali-ai-writer'); ?></p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row"><?php _e('配图风格模式', 'yali-ai-writer'); ?></th>
                     <td>
-                        <select name="image_prompt_mode" id="image_prompt_mode" class="yali-select" <?php echo !$is_licensed ? 'disabled' : ''; ?>>
+                        <select name="image_prompt_mode" id="image_prompt_mode" class="yali-select">
                             <option value="default" <?php selected($publish_rule['image_prompt_mode'] ?? 'default', 'default'); ?>><?php _e('默认高级商务风 (支持自定义)', 'yali-ai-writer'); ?></option>
                             <option value="flowchart" <?php selected($publish_rule['image_prompt_mode'] ?? 'default', 'flowchart'); ?>><?php _e('结构与流程图为主', 'yali-ai-writer'); ?></option>
                             <option value="content_match" <?php selected($publish_rule['image_prompt_mode'] ?? 'default', 'content_match'); ?>><?php _e('内容高度匹配情境图', 'yali-ai-writer'); ?></option>
                             <option value="text_overlay" <?php selected($publish_rule['image_prompt_mode'] ?? 'default', 'text_overlay'); ?>><?php _e('带自适应文字的配图', 'yali-ai-writer'); ?></option>
                         </select>
-                        <p class="description"><?php _e('选择文章自动配图的默认提示词模式。选择非“默认”模式时，将使用系统内置的优质配图提示词，自定义输入框将被隐藏。', 'yali-ai-writer'); ?></p>
+                        <p class="description"><?php _e('选择文章自动配图的默认提示词模式。选择非"默认"模式时，将使用系统内置的优质配图提示词，自定义输入框将被隐藏。', 'yali-ai-writer'); ?></p>
                     </td>
                 </tr>
-                <tr id="custom_image_prompt_row" style="<?php echo (isset($publish_rule['image_prompt_mode']) && $publish_rule['image_prompt_mode'] !== 'default') ? 'display: none;' : ''; ?>">
+                 <tr id="custom_image_prompt_row" style="<?php echo esc_attr((isset($publish_rule['image_prompt_mode']) && $publish_rule['image_prompt_mode'] !== 'default') ? 'display: none;' : ''); ?>">
                     <th scope="row"><?php _e('自动配图提示词', 'yali-ai-writer'); ?></th>
                     <td>
-                        <textarea name="image_prompt_template" rows="10" class="large-text yali-input" <?php echo !$is_licensed ? 'disabled' : ''; ?>><?php echo esc_textarea($publish_rule['image_prompt_template'] ?? ''); ?></textarea>
+                        <textarea name="image_prompt_template" rows="10" class="large-text yali-input"><?php echo esc_textarea($publish_rule['image_prompt_template'] ?? ''); ?></textarea>
                         <p class="description">
                             <?php _e('定义在启用自动配图时，注入到提示词中的配图指令。如果清空此内容，将自动恢复为默认提示词。', 'yali-ai-writer'); ?><br>
                             <b><?php _e('重要提示：', 'yali-ai-writer'); ?></b> <?php _e('此提示词的顶层必须由 <code>&lt;image_generation_instructions&gt;</code> 标签包裹。', 'yali-ai-writer'); ?><br>
@@ -714,157 +641,8 @@ $categories = ContentAuto_Category_Filter::get_filtered_categories();
                             <span class="dashicons dashicons-info" style="font-size: 16px; margin-right: 5px;"></span>
                             <?php _e('请确认以上所有规则配置无误后再点击保存。', 'yali-ai-writer'); ?>
                         </div>
-                        <?php submit_button(__('保存所有发布规则', 'yali-ai-writer'), 'primary yali-btn yali-btn-primary', 'submit', false, !$is_licensed ? array('disabled' => 'disabled') : array('style' => 'height: 42px; padding: 0 30px; font-size: 15px;')); ?>
+                        <?php submit_button(__('保存所有发布规则', 'yali-ai-writer'), 'primary yali-btn yali-btn-primary', 'submit', false, array('style' => 'height: 42px; padding: 0 30px; font-size: 15px;')); ?>
                     </div>
                 </form>
             </div>
         </div>
-
-<script type="text/javascript">
-document.addEventListener('DOMContentLoaded', function() {
-    // 授权码实时验证逻辑已经在 License Manager 或 Renderer 中处理，这里只需处理简单的表单交互
-    
-    // 分类模式切换
-    const categoryMode = document.getElementById('category_mode');
-    const manualRow = document.getElementById('manual_category_row');
-    const autoRow = document.getElementById('auto_category_row');
-
-    if (categoryMode) {
-        const toggleCategoryRows = () => {
-            if (categoryMode.value === 'manual') {
-                manualRow.style.display = 'table-row';
-                autoRow.style.display = 'none';
-            } else {
-                manualRow.style.display = 'none';
-                autoRow.style.display = 'table-row';
-            }
-        };
-        categoryMode.addEventListener('change', toggleCategoryRows);
-        toggleCategoryRows(); // 初始化
-    }
-
-    // 图片提示词模式切换
-    const imagePromptMode = document.getElementById('image_prompt_mode');
-    const customImagePromptRow = document.getElementById('custom_image_prompt_row');
-    
-    if (imagePromptMode && customImagePromptRow) {
-        const toggleCustomImagePromptRow = () => {
-            if (imagePromptMode.value === 'default') {
-                customImagePromptRow.style.display = 'table-row';
-            } else {
-                customImagePromptRow.style.display = 'none';
-            }
-        };
-        imagePromptMode.addEventListener('change', toggleCustomImagePromptRow);
-        toggleCustomImagePromptRow(); // 初始化
-    }
-
-    // 发布状态切换 (显示/隐藏间隔)
-    const postStatus = document.getElementById('post_status');
-    const intervalRow = document.getElementById('publish_interval_row');
-
-    if (postStatus) {
-        const toggleIntervalRow = () => {
-            if (postStatus.value === 'publish') {
-                intervalRow.style.display = 'table-row';
-            } else {
-                intervalRow.style.display = 'none';
-            }
-        };
-        postStatus.addEventListener('change', toggleIntervalRow);
-        toggleIntervalRow(); // 初始化
-    }
-
-    // 自动配图选项切换 (Slide fixed using CSS transitions if needed, here just basic toggle)
-    const autoImageInsertion = document.getElementById('auto_image_insertion');
-    const autoImageOptions = document.getElementById('auto_image_options');
-
-    if (autoImageInsertion) {
-        const toggleAutoImageOptions = () => {
-            autoImageOptions.style.display = autoImageInsertion.checked ? 'block' : 'none';
-        };
-        autoImageInsertion.addEventListener('change', toggleAutoImageOptions);
-        toggleAutoImageOptions();
-    }
-
-    // 品牌资料选项切换
-    const enableBrandProfile = document.getElementById('enable_brand_profile_insertion');
-    const brandProfileOptions = document.getElementById('brand_profile_options');
-
-    if (enableBrandProfile) {
-        const toggleBrandProfileOptions = () => {
-            brandProfileOptions.style.display = enableBrandProfile.checked ? 'block' : 'none';
-        };
-        enableBrandProfile.addEventListener('change', toggleBrandProfileOptions);
-        toggleBrandProfileOptions();
-    }
-
-    // 内链选项与向量聚类入口切换
-    const enableInternalLinking = document.getElementById('enable_internal_linking');
-    const vectorClusteringLink = document.getElementById('vector_clustering_link_container');
-
-    if (enableInternalLinking && vectorClusteringLink) {
-        const toggleVectorClustering = () => {
-            vectorClusteringLink.style.display = enableInternalLinking.checked ? 'block' : 'none';
-        };
-        enableInternalLinking.addEventListener('change', toggleVectorClustering);
-        toggleVectorClustering();
-    }
-
-    // 编辑器AI助手链接切换
-    const enableEditorAssistant = document.getElementById('enable_editor_assistant');
-    const editorAssistantLink = document.getElementById('editor_assistant_link_container');
-
-    if (enableEditorAssistant && editorAssistantLink) {
-        const toggleEditorAssistant = () => {
-            editorAssistantLink.style.display = enableEditorAssistant.checked ? 'block' : 'none';
-        };
-        enableEditorAssistant.addEventListener('change', toggleEditorAssistant);
-        toggleEditorAssistant();
-    }
-
-    // 参考资料选项切换
-    const enableReferenceMaterial = document.getElementById('enable_reference_material');
-    const aiReferenceSelectOptions = document.getElementById('ai_reference_select_options');
-
-    if (enableReferenceMaterial) {
-        const toggleAiReferenceSelectOptions = () => {
-            if (enableReferenceMaterial.checked) {
-                aiReferenceSelectOptions.style.display = 'block';
-            } else {
-                aiReferenceSelectOptions.style.display = 'none';
-                const aiReferenceSelect = document.getElementById('enable_ai_reference_select');
-                if (aiReferenceSelect) aiReferenceSelect.checked = false;
-            }
-        };
-        enableReferenceMaterial.addEventListener('change', toggleAiReferenceSelectOptions);
-        toggleAiReferenceSelectOptions();
-    }
-
-    // 文章结构入口切换
-    const normalizeOutput = document.getElementById('normalize_output');
-    const structureModeOptions = document.getElementById('structure_mode_options');
-    const articleStructureLink = document.getElementById('article_structure_link_container');
-
-    if (normalizeOutput && structureModeOptions) {
-        const toggleStructureOptions = () => {
-            structureModeOptions.style.display = normalizeOutput.checked ? 'block' : 'none';
-        };
-        normalizeOutput.addEventListener('change', toggleStructureOptions);
-        toggleStructureOptions();
-    }
-
-    // 结构模式单选按钮切换 - 控制文章结构管理链接的显示
-    const structureModeRadios = document.querySelectorAll('input[name="structure_mode"]');
-    if (structureModeRadios.length > 0 && articleStructureLink) {
-        const toggleStructureModeLink = () => {
-            const selectedMode = document.querySelector('input[name="structure_mode"]:checked');
-            articleStructureLink.style.display = (selectedMode && selectedMode.value === 'generic') ? 'block' : 'none';
-        };
-        structureModeRadios.forEach(radio => {
-            radio.addEventListener('change', toggleStructureModeLink);
-        });
-        toggleStructureModeLink();
-    }
-});
-</script>

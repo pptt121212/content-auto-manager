@@ -9,10 +9,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_License_Manager {
+class Yali_AI_Writer_License_Manager {
     
     const LICENSE_SERVER_URL = 'https://key.kdjingpai.com/api.php';
-    const LICENSE_OPTION = 'content_auto_manager_license_data';
+    const LICENSE_OPTION = 'yali_ai_writer_manager_license_data';
     const PUBLIC_KEY_FILE = 'public_key.pem';
     
     /**
@@ -120,7 +120,7 @@ class ContentAuto_License_Manager {
         
         if (!$is_valid_host) {
             $error_msg = base64_decode('5omL5bel6aSo5omL6KGM5bqm5Y+w5q2j5paH5pys');
-            add_settings_error('content_auto_manager_license', 'license_error', $error_msg);
+            add_settings_error('yali_ai_writer_manager_license', 'license_error', $error_msg);
             update_option(self::LICENSE_OPTION, array(
                 'status' => base64_decode('aW52YWxpZF9zZXJ2ZXI='),
                 'message' => base64_decode('6aSo5omL6KGM5aSE55CG'),
@@ -135,12 +135,12 @@ class ContentAuto_License_Manager {
             'body' => array(
                 'license_key' => $license_key,
                 'domain'      => $domain,
-                'version'     => defined('CONTENT_AUTO_MANAGER_VERSION') ? CONTENT_AUTO_MANAGER_VERSION : '1.0.0',
+                'version'     => defined('YALI_AI_WRITER_VERSION') ? YALI_AI_WRITER_VERSION : '1.0.0',
             ),
         ));
         
         if (is_wp_error($response)) {
-            add_settings_error('content_auto_manager_license', 'license_error', __('无法连接到授权服务器: ', 'yali-ai-writer') . $response->get_error_message());
+            add_settings_error('yali_ai_writer_manager_license', 'license_error', __('无法连接到授权服务器: ', 'yali-ai-writer') . $response->get_error_message());
             return;
         }
         
@@ -148,14 +148,14 @@ class ContentAuto_License_Manager {
         $data = json_decode($body);
         
         if (!$data || !isset($data->payload) || !isset($data->signature)) {
-            add_settings_error('content_auto_manager_license', 'license_error', __('授权服务器返回了无效的响应。', 'yali-ai-writer'));
+            add_settings_error('yali_ai_writer_manager_license', 'license_error', __('授权服务器返回了无效的响应。', 'yali-ai-writer'));
             return;
         }
         
         // 验证签名
         $public_key_path = dirname(__FILE__) . '/' . self::PUBLIC_KEY_FILE;
         if (!file_exists($public_key_path)) {
-            add_settings_error('content_auto_manager_license', 'license_error', __('插件文件不完整：缺少 public_key.pem。', 'yali-ai-writer'));
+            add_settings_error('yali_ai_writer_manager_license', 'license_error', __('插件文件不完整：缺少 public_key.pem。', 'yali-ai-writer'));
             update_option(self::LICENSE_OPTION, array('status' => 'error', 'message' => __('缺少公钥', 'yali-ai-writer')));
             return;
         }
@@ -167,7 +167,7 @@ class ContentAuto_License_Manager {
         $is_valid_signature = openssl_verify($payload_json, $signature, $public_key, OPENSSL_ALGO_SHA256) === 1;
         
         if (!$is_valid_signature) {
-            add_settings_error('content_auto_manager_license', 'license_error', __('授权签名验证失败！响应可能被篡改。', 'yali-ai-writer'));
+            add_settings_error('yali_ai_writer_manager_license', 'license_error', __('授权签名验证失败！响应可能被篡改。', 'yali-ai-writer'));
             update_option(self::LICENSE_OPTION, array('status' => 'tampered', 'message' => __('签名验证失败', 'yali-ai-writer')));
             return;
         }
@@ -184,9 +184,9 @@ class ContentAuto_License_Manager {
         update_option(self::LICENSE_OPTION, $payload);
         
         if ($payload['status'] === 'valid') {
-            add_settings_error('content_auto_manager_license', 'license_success', __('授权成功！', 'yali-ai-writer') . $payload['message'], 'success');
+            add_settings_error('yali_ai_writer_manager_license', 'license_success', __('授权成功！', 'yali-ai-writer') . $payload['message'], 'success');
         } else {
-            add_settings_error('content_auto_manager_license', 'license_fail', __('授权失败：', 'yali-ai-writer') . $payload['message'], 'error');
+            add_settings_error('yali_ai_writer_manager_license', 'license_fail', __('授权失败：', 'yali-ai-writer') . $payload['message'], 'error');
         }
     }
     
@@ -210,7 +210,7 @@ class ContentAuto_License_Manager {
      * 渲染授权码输入框
      */
     public static function render_license_field() {
-        $license_key = get_option('content_auto_manager_license_key', '');
+        $license_key = get_option('yali_ai_writer_manager_license_key', '');
         $license_data = get_option(self::LICENSE_OPTION);
         $is_active = self::is_license_active();
         ?>
@@ -218,7 +218,7 @@ class ContentAuto_License_Manager {
             <th scope="row"><?php _e('插件授权码', 'yali-ai-writer'); ?></th>
             <td>
                 <div style="display: flex; flex-direction: column; gap: 12px; max-width: 600px;">
-                    <input type="text" name="content_auto_manager_license_key" 
+                    <input type="text" name="yali_ai_writer_manager_license_key" 
                            class="regular-text yali-input" 
                            value="<?php echo esc_attr($license_key); ?>" 
                            placeholder="CMT-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" 
@@ -347,4 +347,4 @@ class ContentAuto_License_Manager {
 }
 
 // 初始化授权管理器
-ContentAuto_License_Manager::init();
+Yali_AI_Writer_License_Manager::init();

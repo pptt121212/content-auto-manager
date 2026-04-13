@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_PopularityCalculator {
+class Yali_AI_Writer_PopularityCalculator {
     
     /**
      * 配置管理器
@@ -42,11 +42,11 @@ class ContentAuto_PopularityCalculator {
     /**
      * 构造函数
      * 
-     * @param ContentAuto_PluginLogger|null $logger 日志记录器
+     * @param Yali_AI_Writer_PluginLogger|null $logger 日志记录器
      */
     public function __construct($logger = null) {
         require_once dirname(__FILE__) . '/class-optimization-config.php';
-        $this->config = new ContentAuto_OptimizationConfig();
+        $this->config = new Yali_AI_Writer_OptimizationConfig();
         $this->logger = $logger;
     }
     
@@ -75,7 +75,7 @@ class ContentAuto_PopularityCalculator {
         }
         
         // 获取结构信息
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         $structure = $wpdb->get_row($wpdb->prepare(
             "SELECT id, content_angle FROM {$structures_table} WHERE id = %d",
             $structure_id
@@ -138,8 +138,8 @@ class ContentAuto_PopularityCalculator {
     private function get_articles_by_structure($structure_id) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 查询使用该结构的主题关联的已发布文章
         $query = $wpdb->prepare("
@@ -267,8 +267,8 @@ class ContentAuto_PopularityCalculator {
         
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 查询该 content_angle 下所有已发布文章
         $query = $wpdb->prepare("
@@ -322,7 +322,7 @@ class ContentAuto_PopularityCalculator {
             return $cached_value;
         }
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         // 获取该 content_angle 下的所有结构
         $structures = $wpdb->get_results($wpdb->prepare(
@@ -351,8 +351,8 @@ class ContentAuto_PopularityCalculator {
     public function update_all_indices() {
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
-        $analytics_table = $wpdb->prefix . 'content_auto_structure_analytics';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
+        $analytics_table = $wpdb->prefix . 'yali_ai_writer_structure_analytics';
         
         // 获取所有结构
         $structures = $wpdb->get_results(
@@ -449,7 +449,7 @@ class ContentAuto_PopularityCalculator {
     private function get_structure_usage_count($structure_id, $date) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$topics_table} 
@@ -489,7 +489,7 @@ class ContentAuto_PopularityCalculator {
     private function clear_angle_caches() {
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         // 获取所有不同的 content_angle
         $angles = $wpdb->get_col(
@@ -512,7 +512,7 @@ class ContentAuto_PopularityCalculator {
         global $wpdb;
         
         // 清除所有结构的缓存
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         $structure_ids = $wpdb->get_col(
             "SELECT id FROM {$structures_table}"
         );
@@ -536,7 +536,7 @@ class ContentAuto_PopularityCalculator {
     public function get_popularity_trend($structure_id, $days = 30) {
         global $wpdb;
         
-        $analytics_table = $wpdb->prefix . 'content_auto_structure_analytics';
+        $analytics_table = $wpdb->prefix . 'yali_ai_writer_structure_analytics';
         
         $results = $wpdb->get_results($wpdb->prepare(
             "SELECT date, popularity_index 
@@ -561,7 +561,7 @@ class ContentAuto_PopularityCalculator {
     public function store_historical_index($structure_id, $popularity_index) {
         global $wpdb;
         
-        $analytics_table = $wpdb->prefix . 'content_auto_structure_analytics';
+        $analytics_table = $wpdb->prefix . 'yali_ai_writer_structure_analytics';
         $today = current_time('Y-m-d');
         
         // 检查今天的记录是否存在

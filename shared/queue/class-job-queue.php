@@ -7,10 +7,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-safety-sentinel.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-safety-sentinel.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/queue/class-job-queue-state.php';
 
 
-class ContentAuto_JobQueue {
+class Yali_AI_Writer_JobQueue {
     
     private $database;
     private $article_generator;
@@ -23,8 +24,8 @@ class ContentAuto_JobQueue {
      * 获取全局任务锁
      */
     private function acquire_global_task_lock() {
-        $lock_key = 'content_auto_global_task_lock';
-        $lock_timeout = CONTENT_AUTO_QUEUE_LOCK_TIMEOUT; // 队列锁定超时
+        $lock_key = 'yali_ai_writer_global_task_lock';
+        $lock_timeout = YALI_AI_WRITER_QUEUE_LOCK_TIMEOUT; // 队列锁定超时
         
         if (get_transient($lock_key)) {
             return false; // 已有任务在执行
@@ -38,7 +39,7 @@ class ContentAuto_JobQueue {
      * 释放全局任务锁
      */
     private function release_global_task_lock() {
-        $lock_key = 'content_auto_global_task_lock';
+        $lock_key = 'yali_ai_writer_global_task_lock';
         delete_transient($lock_key);
     }
     
@@ -47,8 +48,8 @@ class ContentAuto_JobQueue {
      * 确保任何时候只有一个子任务在处理
      */
     private function acquire_global_subtask_lock() {
-        $lock_key = 'content_auto_global_subtask_lock';
-        $lock_timeout = CONTENT_AUTO_QUEUE_LOCK_TIMEOUT; // 使用相同的超时时间
+        $lock_key = 'yali_ai_writer_global_subtask_lock';
+        $lock_timeout = YALI_AI_WRITER_QUEUE_LOCK_TIMEOUT; // 使用相同的超时时间
         
         if (get_transient($lock_key)) {
             return false; // 已有子任务在执行
@@ -62,7 +63,7 @@ class ContentAuto_JobQueue {
      * 释放全局子任务锁
      */
     private function release_global_subtask_lock() {
-        $lock_key = 'content_auto_global_subtask_lock';
+        $lock_key = 'yali_ai_writer_global_subtask_lock';
         delete_transient($lock_key);
     }
     
@@ -83,18 +84,18 @@ class ContentAuto_JobQueue {
     // API延迟逻辑已移除，避免与子任务间间隔重复
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
-        $this->article_generator = new ContentAuto_ArticleGenerator();
-        $this->article_task_manager = new ContentAuto_ArticleTaskManager();
-        $this->topic_task_manager = new ContentAuto_TopicTaskManager();
+        $this->database = new Yali_AI_Writer_Database();
+        $this->article_generator = new Yali_AI_Writer_ArticleGenerator();
+        $this->article_task_manager = new Yali_AI_Writer_ArticleTaskManager();
+        $this->topic_task_manager = new Yali_AI_Writer_TopicTaskManager();
         
         // 引入文章队列处理器
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-tasks/class-article-queue-processor.php';
-        $this->article_queue_processor = new ContentAuto_ArticleQueueProcessor();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'article-tasks/class-article-queue-processor.php';
+        $this->article_queue_processor = new Yali_AI_Writer_ArticleQueueProcessor();
         
         // 引入向量生成器
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-generator.php';
-        $this->vector_generator = new ContentAuto_VectorGenerator();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-generator.php';
+        $this->vector_generator = new Yali_AI_Writer_VectorGenerator();
         
         // 监听插件任务完成事件
         add_action('cam_extension_task_completed', array($this, 'handle_extension_task_completion'), 10, 2);
@@ -105,7 +106,7 @@ class ContentAuto_JobQueue {
      */
     public function handle_extension_task_completion($task_id, $result) {
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
 
         // 检查任务是否为测试任务
         $queue = get_option('cam_extension_task_queue', array());
@@ -188,8 +189,8 @@ class ContentAuto_JobQueue {
             $this->close_job_if_needed($task_id, 'failed', '插件返回结果为空');
             
             // 清理 Option 队列中的已完成任务
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/queue/class-task-queue-cleaner.php';
-            $cleaner = new ContentAuto_TaskQueueCleaner();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/queue/class-task-queue-cleaner.php';
+            $cleaner = new Yali_AI_Writer_TaskQueueCleaner();
             $cleaner->remove_from_option_queue($task_id);
             return;
         }
@@ -204,8 +205,8 @@ class ContentAuto_JobQueue {
         $this->close_job_if_needed($task_id, 'completed');
         
         // 清理 Option 队列中的已完成任务
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/queue/class-task-queue-cleaner.php';
-        $cleaner = new ContentAuto_TaskQueueCleaner();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/queue/class-task-queue-cleaner.php';
+        $cleaner = new Yali_AI_Writer_TaskQueueCleaner();
         $cleaner->remove_from_option_queue($task_id);
     }
 
@@ -217,7 +218,7 @@ class ContentAuto_JobQueue {
         $queue = get_option('cam_extension_task_queue', array());
         if (!empty($queue[$task_id]['payload']['job_id'])) {
             $job_id = intval($queue[$task_id]['payload']['job_id']);
-            $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+            $job_queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
             $wpdb->update($job_queue_table, [
                 'status' => $status,
                 'updated_at' => current_time('mysql'),
@@ -239,7 +240,7 @@ class ContentAuto_JobQueue {
             global $wpdb;
             
             // 并发控制：检查是否有相同规则的正在处理任务
-            $tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
+            $tasks_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
             $processing_tasks = $wpdb->get_results(
                 "SELECT rule_id FROM {$tasks_table} 
                 WHERE status = 'processing' 
@@ -264,7 +265,7 @@ class ContentAuto_JobQueue {
                 WHERE {$where_clause}
                 ORDER BY last_processed_at ASC, created_at ASC 
                 LIMIT 1",
-                array_merge(array(CONTENT_AUTO_STATUS_PENDING, CONTENT_AUTO_STATUS_PROCESSING), $processing_rule_ids)
+                array_merge(array(YALI_AI_WRITER_STATUS_PENDING, YALI_AI_WRITER_STATUS_PROCESSING), $processing_rule_ids)
             );
             
             $task = $wpdb->get_row($query, ARRAY_A);
@@ -315,7 +316,7 @@ class ContentAuto_JobQueue {
         }
 
         try {
-            $table_name = $wpdb->prefix . 'content_auto_job_queue';
+            $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
 
             // === [核心加固] 定点超时检查与全局串行锁定 ===
             
@@ -333,7 +334,7 @@ class ContentAuto_JobQueue {
                     $last_update = strtotime($wj['updated_at']);
                     if (($current_time - $last_update) > $browser_timeout) {
                         $wpdb->update($table_name, [
-                            'status' => CONTENT_AUTO_STATUS_FAILED,
+                            'status' => YALI_AI_WRITER_STATUS_FAILED,
                             'error_message' => sprintf('浏览器采集超时 (超过%d秒)，请检查插件是否连接', $browser_timeout),
                             'updated_at' => current_time('mysql')
                         ], ['id' => $wj['id']]);
@@ -344,7 +345,7 @@ class ContentAuto_JobQueue {
             // 1. 查找当前处理中的任务
             $processing_jobs = $wpdb->get_results($wpdb->prepare(
                 "SELECT id, job_type, job_id, reference_id, updated_at FROM $table_name WHERE status = %s",
-                CONTENT_AUTO_STATUS_PROCESSING
+                YALI_AI_WRITER_STATUS_PROCESSING
             ), ARRAY_A);
 
             if (!empty($processing_jobs)) {
@@ -362,7 +363,7 @@ class ContentAuto_JobQueue {
                         $topic_id = !empty($pij['reference_id']) ? $pij['reference_id'] : $pij['job_id'];
                         
                         $m_status = $wpdb->get_var($wpdb->prepare(
-                            "SELECT material_search_status FROM {$wpdb->prefix}content_auto_topics WHERE id = %d",
+                            "SELECT material_search_status FROM {$wpdb->prefix}yali_ai_writer_topics WHERE id = %d",
                             $topic_id
                         ));
 
@@ -372,13 +373,13 @@ class ContentAuto_JobQueue {
 
                         if (($current_time - $last_update) > $timeout_limit) { 
                             $wpdb->update($table_name, [
-                                'status' => CONTENT_AUTO_STATUS_FAILED,
+                                'status' => YALI_AI_WRITER_STATUS_FAILED,
                                 'error_message' => sprintf('任务响应超时 (超过%d秒)，手动标记为失败以释放队列', $timeout_limit),
                                 'updated_at' => current_time('mysql')
                             ], ['id' => $pij['id']]);
                             
                             // 更新主题表状态
-                            $wpdb->update($wpdb->prefix . 'content_auto_topics', [
+                            $wpdb->update($wpdb->prefix . 'yali_ai_writer_topics', [
                                 'material_search_status' => 'failed',
                                 'material_search_error' => '任务响应超时'
                             ], ['id' => $topic_id]);
@@ -390,7 +391,7 @@ class ContentAuto_JobQueue {
                 // [优化] 排除 'waiting_browser' 状态的项目，因为它们由插件异步处理，不应占用 Worker 的串行锁
                 $active_count = $wpdb->get_var($wpdb->prepare(
                     "SELECT COUNT(*) FROM $table_name WHERE status = %s AND status != 'waiting_browser'",
-                    CONTENT_AUTO_STATUS_PROCESSING
+                    YALI_AI_WRITER_STATUS_PROCESSING
                 ));
                 
                 if ($active_count > 0) {
@@ -405,11 +406,11 @@ class ContentAuto_JobQueue {
 
             while ($processed_count < $max_jobs_per_run) {
                 // 获取下一个待处理的任务
-                $table_name = $wpdb->prefix . 'content_auto_job_queue';
+                $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
                 $job = $wpdb->get_row(
                     $wpdb->prepare(
                         "SELECT * FROM $table_name WHERE status = %s ORDER BY priority DESC, created_at ASC LIMIT 1",
-                        CONTENT_AUTO_STATUS_PENDING
+                        YALI_AI_WRITER_STATUS_PENDING
                     ),
                     ARRAY_A
                 );
@@ -433,13 +434,13 @@ class ContentAuto_JobQueue {
                         'job_type' => $job['job_type'],
                         'task_id' => $job['job_id']
                     );
-                    update_option('content_auto_current_processing_job', $current_processing_job, false);
+                    update_option('yali_ai_writer_current_processing_job', $current_processing_job, false);
                     
                     // 更新任务状态为处理中，同时记录开始处理时间
                     $wpdb->update(
                         $table_name,
                         array(
-                            'status' => CONTENT_AUTO_STATUS_PROCESSING,
+                            'status' => YALI_AI_WRITER_STATUS_PROCESSING,
                             'updated_at' => current_time('mysql')  // 记录开始处理时间
                         ),
                         array('id' => $job['id'])
@@ -468,20 +469,29 @@ class ContentAuto_JobQueue {
                     }
 
                     // 清除当前处理任务标记
-                    delete_option('content_auto_current_processing_job');
+                    delete_option('yali_ai_writer_current_processing_job');
 
                     // 更新任务状态
                     $is_success = is_array($result) ? $result['success'] : $result;
 
-                    if (is_array($result) && isset($result['status']) && ($result['status'] === 'waiting' || $result['status'] === 'waiting_for_browser')) {
-                        // 任务处于异步等待状态（如浏览器插件搜索），保持 processing 状态
-                        // 不更新数据库状态，等待回调函数处理
-                        // 防止任务被标记为完成而导致下游任务抢跑
+                    $async_waiting_status = Yali_AI_Writer_JobQueueState::get_async_waiting_queue_status($job['job_type'], $result);
+
+                    if ($async_waiting_status) {
+                        $wpdb->update(
+                            $table_name,
+                            array(
+                                'status' => $async_waiting_status,
+                                'updated_at' => current_time('mysql')
+                            ),
+                            array('id' => $job['id'])
+                        );
+                    } elseif (is_array($result) && isset($result['status']) && ($result['status'] === 'waiting' || $result['status'] === 'waiting_for_browser')) {
+                        // 兼容旧的异步等待状态；默认维持 processing，等待专用回调处理
                     } elseif ($is_success) {
                         $wpdb->update(
                             $table_name,
                             array(
-                                'status' => CONTENT_AUTO_STATUS_COMPLETED,
+                                'status' => YALI_AI_WRITER_STATUS_COMPLETED,
                                 'updated_at' => current_time('mysql')
                             ),
                             array('id' => $job['id'])
@@ -491,7 +501,7 @@ class ContentAuto_JobQueue {
                         $wpdb->update(
                             $table_name,
                             array(
-                                'status' => CONTENT_AUTO_STATUS_FAILED,
+                                'status' => YALI_AI_WRITER_STATUS_FAILED,
                                 'error_message' => $error_message,
                                 'updated_at' => current_time('mysql')
                             ),
@@ -507,13 +517,13 @@ class ContentAuto_JobQueue {
                     // 释放全局子任务锁
                     $this->release_global_subtask_lock();
                     // 确保清除当前处理任务标记
-                    delete_option('content_auto_current_processing_job');
+                    delete_option('yali_ai_writer_current_processing_job');
                 }
 
                 $processed_count++;
 
                 // 检查是否还有更多任务，以决定是否需要休眠
-                $next_job_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE status = %s LIMIT 1", CONTENT_AUTO_STATUS_PENDING));
+                $next_job_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE status = %s LIMIT 1", YALI_AI_WRITER_STATUS_PENDING));
                 if (!$next_job_exists) {
                     // 如果没有更多任务，则无需等待，直接退出
                     break;
@@ -521,7 +531,7 @@ class ContentAuto_JobQueue {
                 
                 // 如果处理了任务且仍在限制内，则进行休眠
                 if ($processed_count < $max_jobs_per_run) {
-                    $interval = defined('CONTENT_AUTO_SUBTASK_INTERVAL') ? CONTENT_AUTO_SUBTASK_INTERVAL : 0;
+                    $interval = defined('YALI_AI_WRITER_SUBTASK_INTERVAL') ? YALI_AI_WRITER_SUBTASK_INTERVAL : 0;
                     if ($interval > 0) {
                         sleep($interval);
                     }
@@ -537,14 +547,14 @@ class ContentAuto_JobQueue {
                 $wpdb->update(
                     $table_name,
                     array(
-                        'status' => CONTENT_AUTO_STATUS_FAILED,
+                        'status' => YALI_AI_WRITER_STATUS_FAILED,
                         'error_message' => $enhanced_error_message,
                         'updated_at' => current_time('mysql')
                     ),
                     array('id' => $job['id'])
                 );
                 if ($job['job_type'] === 'topic_task' && isset($this->topic_task_manager)) {
-                    $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                    $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                     $wpdb->update(
                         $task_table,
                         array(
@@ -555,7 +565,7 @@ class ContentAuto_JobQueue {
                         array('id' => $job['job_id'])
                     );
                 } elseif ($job['job_type'] === 'article' && isset($this->article_task_manager)) {
-                    $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                    $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                     $wpdb->update(
                         $task_table,
                         array(
@@ -580,7 +590,7 @@ class ContentAuto_JobQueue {
     public function get_queue_status() {
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'content_auto_job_queue';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
         // 按任务类型和状态分组统计
         $results = $wpdb->get_results(
             "SELECT job_type, status, COUNT(*) as count FROM $table_name GROUP BY job_type, status",
@@ -588,10 +598,10 @@ class ContentAuto_JobQueue {
         );
 
         $base_status = array(
-            CONTENT_AUTO_STATUS_PENDING => 0,
-            CONTENT_AUTO_STATUS_PROCESSING => 0,
-            CONTENT_AUTO_STATUS_COMPLETED => 0,
-            CONTENT_AUTO_STATUS_FAILED => 0,
+            YALI_AI_WRITER_STATUS_PENDING => 0,
+            YALI_AI_WRITER_STATUS_PROCESSING => 0,
+            YALI_AI_WRITER_STATUS_COMPLETED => 0,
+            YALI_AI_WRITER_STATUS_FAILED => 0,
             'pending' => 0,
             'processing' => 0,
             'completed' => 0,
@@ -630,10 +640,10 @@ class ContentAuto_JobQueue {
         }
 
         // 更新全局字符串键
-        $status['pending'] = isset($status[CONTENT_AUTO_STATUS_PENDING]) ? $status[CONTENT_AUTO_STATUS_PENDING] : 0;
-        $status['processing'] = isset($status[CONTENT_AUTO_STATUS_PROCESSING]) ? $status[CONTENT_AUTO_STATUS_PROCESSING] : 0;
-        $status['completed'] = isset($status[CONTENT_AUTO_STATUS_COMPLETED]) ? $status[CONTENT_AUTO_STATUS_COMPLETED] : 0;
-        $status['failed'] = isset($status[CONTENT_AUTO_STATUS_FAILED]) ? $status[CONTENT_AUTO_STATUS_FAILED] : 0;
+        $status['pending'] = isset($status[YALI_AI_WRITER_STATUS_PENDING]) ? $status[YALI_AI_WRITER_STATUS_PENDING] : 0;
+        $status['processing'] = isset($status[YALI_AI_WRITER_STATUS_PROCESSING]) ? $status[YALI_AI_WRITER_STATUS_PROCESSING] : 0;
+        $status['completed'] = isset($status[YALI_AI_WRITER_STATUS_COMPLETED]) ? $status[YALI_AI_WRITER_STATUS_COMPLETED] : 0;
+        $status['failed'] = isset($status[YALI_AI_WRITER_STATUS_FAILED]) ? $status[YALI_AI_WRITER_STATUS_FAILED] : 0;
         $status['total'] = $status['pending'] + $status['processing'] + $status['completed'] + $status['failed'];
 
         return $status;
@@ -643,7 +653,7 @@ class ContentAuto_JobQueue {
      * 获取队列中的所有任务
      */
     public function get_queue_jobs() {
-        return $this->database->get_results('content_auto_job_queue');
+        return $this->database->get_results('yali_ai_writer_job_queue');
     }
     
     /**
@@ -652,8 +662,8 @@ class ContentAuto_JobQueue {
     private function update_article_parent_task_status($task_id) {
         global $wpdb;
         
-        $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $job_queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 获取该任务的所有子任务状态统计
         $subtask_stats = $wpdb->get_row($wpdb->prepare("
@@ -732,11 +742,11 @@ class ContentAuto_JobQueue {
     public function requeue_failed_jobs() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_job_queue';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
         return $wpdb->update(
             $table_name,
-            array('status' => CONTENT_AUTO_STATUS_PENDING),
-            array('status' => CONTENT_AUTO_STATUS_FAILED)
+            array('status' => YALI_AI_WRITER_STATUS_PENDING),
+            array('status' => YALI_AI_WRITER_STATUS_FAILED)
         );
     }
     
@@ -744,7 +754,7 @@ class ContentAuto_JobQueue {
      * 清理已完成的任务
      */
     public function cleanup_completed_jobs() {
-        return $this->database->delete('content_auto_job_queue', array('status' => CONTENT_AUTO_STATUS_COMPLETED));
+        return $this->database->delete('yali_ai_writer_job_queue', array('status' => YALI_AI_WRITER_STATUS_COMPLETED));
     }
     
     /**
@@ -753,7 +763,7 @@ class ContentAuto_JobQueue {
      */
     public function verify_queue_data_integrity() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_job_queue';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $results = array();
         
         // 1. 检查article类型的队列项是否有正确的reference_id
@@ -766,7 +776,7 @@ class ContentAuto_JobQueue {
         // 2. 检查article类型队列项的reference_id是否对应有效的主题
         $invalid_topic_references = $wpdb->get_results(
             "SELECT q.id, q.reference_id FROM $table_name q 
-             LEFT JOIN {$wpdb->prefix}content_auto_topics t ON q.reference_id = t.id 
+             LEFT JOIN {$wpdb->prefix}yali_ai_writer_topics t ON q.reference_id = t.id 
              WHERE q.job_type = 'article' AND q.reference_id IS NOT NULL AND t.id IS NULL",
             ARRAY_A
         );
@@ -776,7 +786,7 @@ class ContentAuto_JobQueue {
         // 3. 检查article类型队列项是否有对应的任务记录
         $orphaned_queue_items = $wpdb->get_results(
             "SELECT q.id, q.job_id FROM $table_name q 
-             LEFT JOIN {$wpdb->prefix}content_auto_article_tasks t ON q.job_id = t.id 
+             LEFT JOIN {$wpdb->prefix}yali_ai_writer_article_tasks t ON q.job_id = t.id 
              WHERE q.job_type = 'article' AND t.id IS NULL",
             ARRAY_A
         );
@@ -824,7 +834,7 @@ class ContentAuto_JobQueue {
      */
     public function fix_queue_data_integrity() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_job_queue';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $fixed_issues = array();
         
         // 1. 删除没有reference_id的article队列项
@@ -838,7 +848,7 @@ class ContentAuto_JobQueue {
         // 2. 删除reference_id对应无效主题的队列项
         $deleted_invalid_refs = $wpdb->query(
             "DELETE q FROM $table_name q 
-             LEFT JOIN {$wpdb->prefix}content_auto_topics t ON q.reference_id = t.id 
+             LEFT JOIN {$wpdb->prefix}yali_ai_writer_topics t ON q.reference_id = t.id 
              WHERE q.job_type = 'article' AND q.reference_id IS NOT NULL AND t.id IS NULL"
         );
         if ($deleted_invalid_refs > 0) {
@@ -848,7 +858,7 @@ class ContentAuto_JobQueue {
         // 3. 删除孤立的队列项（没有对应任务记录）
         $deleted_orphaned = $wpdb->query(
             "DELETE q FROM $table_name q 
-             LEFT JOIN {$wpdb->prefix}content_auto_article_tasks t ON q.job_id = t.id 
+             LEFT JOIN {$wpdb->prefix}yali_ai_writer_article_tasks t ON q.job_id = t.id 
              WHERE q.job_type = 'article' AND t.id IS NULL"
         );
         if ($deleted_orphaned > 0) {
@@ -889,10 +899,10 @@ class ContentAuto_JobQueue {
      */
     private function process_material_search($job) {
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 【安全哨兵】检测任务是否还存在
-        if (!ContentAuto_SafetySentinel::is_execution_valid(array('job_queue_id' => $job['id']))) {
+        if (!Yali_AI_Writer_SafetySentinel::is_execution_valid(array('job_queue_id' => $job['id']))) {
              return ['success' => false, 'message' => 'Job aborted: deleted or inactive'];
         }
         
@@ -900,8 +910,8 @@ class ContentAuto_JobQueue {
         $topic_id = !empty($job['reference_id']) ? $job['reference_id'] : $job['job_id'];
         
         // 1. 再次验证开关状态
-        $db = new ContentAuto_Database();
-        $publish_rules = $db->get_row('content_auto_publish_rules', array('id' => 1));
+        $db = new Yali_AI_Writer_Database();
+        $publish_rules = $db->get_row('yali_ai_writer_publish_rules', array('id' => 1));
         
         if (empty($publish_rules['enable_reference_material'])) {
             return ['success' => false, 'message' => '素材搜索功能已关闭'];
@@ -920,15 +930,15 @@ class ContentAuto_JobQueue {
         // 2.5 检查主题来源的规则类型
         // 如果是 collect_url_rewrite 规则生成的主题，跳过素材搜索（网页采集已提供参考资料）
         if (!empty($topic['rule_id'])) {
-            $rules_table = $wpdb->prefix . 'content_auto_rules';
+            $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
             $rule = $wpdb->get_row($wpdb->prepare(
                 "SELECT rule_type FROM {$rules_table} WHERE id = %d",
                 $topic['rule_id']
             ));
             
             if ($rule && $rule->rule_type === 'collect_url_rewrite') {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
-                $logger = new ContentAuto_LoggingSystem();
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+                $logger = new Yali_AI_Writer_LoggingSystem();
                 $logger->log_info('MATERIAL_SEARCH_SKIP', '跳过素材搜索：主题来源于采集网址仿写规则', [
                     'topic_id' => $topic_id,
                     'rule_id' => $topic['rule_id'],
@@ -961,8 +971,8 @@ class ContentAuto_JobQueue {
         }
         
         // 添加日志：记录实际使用的搜索模式
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
-        $logger = new ContentAuto_LoggingSystem();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+        $logger = new Yali_AI_Writer_LoggingSystem();
         $logger->log_success('MATERIAL_SEARCH_EXECUTE', '素材搜索任务执行', array(
             'topic_id' => $topic_id,
             'job_id' => $job['id'],
@@ -1040,15 +1050,15 @@ class ContentAuto_JobQueue {
              ], ['id' => $topic_id]);
              
              // 返回 waiting 状态，让队列保持 processing，直到回调触发
-             return ['success' => true, 'status' => 'waiting', 'message' => '已分发至插件队列，等待异步回调'];
+              return ['success' => true, 'status' => 'waiting_for_browser', 'message' => '已分发至插件队列，等待异步回调'];
              
         } else {
             // --- 搜索引擎模式 (原逻辑) ---
-            if (!class_exists('ContentAuto_SearchMaterialsService')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
+            if (!class_exists('Yali_AI_Writer_SearchMaterialsService')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'search-materials/class-search-materials-service.php';
             }
             
-            $service = new ContentAuto_SearchMaterialsService();
+            $service = new Yali_AI_Writer_SearchMaterialsService();
             $result = $service->execute_full_auto_search($topic_id);
             
             // 5. 更新结果状态

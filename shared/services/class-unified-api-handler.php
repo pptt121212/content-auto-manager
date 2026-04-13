@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 
 require_once __DIR__ . '/class-safety-sentinel.php';
 
-class ContentAuto_UnifiedApiHandler {
+class Yali_AI_Writer_UnifiedApiHandler {
     
     private $api_config;
     private $current_api_config;
@@ -20,7 +20,7 @@ class ContentAuto_UnifiedApiHandler {
     private $logger;
     
     public function __construct($logger = null) {
-        $this->api_config = new ContentAuto_ApiConfig();
+        $this->api_config = new Yali_AI_Writer_ApiConfig();
         $this->current_api_config = null;
         $this->last_api_error = null;
         $this->logger = $logger;
@@ -60,7 +60,7 @@ class ContentAuto_UnifiedApiHandler {
                 if (isset($additional_params['topic_id'])) {
                     global $wpdb;
                     $wpdb->update(
-                        $wpdb->prefix . 'content_auto_topics',
+                        $wpdb->prefix . 'yali_ai_writer_topics',
                         array(
                             'api_config_id' => $api_config['id'],
                             'api_config_name' => $api_config['name']
@@ -115,13 +115,9 @@ class ContentAuto_UnifiedApiHandler {
         $this->log_success('API_REQUEST_START', '开始自定义API请求', $context);
         
         // 记录API请求前的提示词
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            $prompt_preview = $prompt;
-            if (strlen($prompt_preview) > 5000) {
-                $prompt_preview = substr($prompt_preview, 0, 5000) . "... [Content truncated for log stability. Full length: " . strlen($prompt) . "]";
-            }
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $this->log_debug('API_PROMPT', '发送给大模型的完整提示词', array_merge($context, array(
-                'prompt' => $prompt_preview
+                'prompt' => $prompt
             )));
         } else {
             $this->log_debug('API_PROMPT', '开始向大模型发送请求 (完整提示词请开启调试模式查看)', $context);
@@ -226,15 +222,11 @@ class ContentAuto_UnifiedApiHandler {
         }
         
         // 记录完整的API请求参数
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            $body_preview = $body_data;
-            if (isset($body_preview['messages'][0]['content']) && strlen($body_preview['messages'][0]['content']) > 5000) {
-                $body_preview['messages'][0]['content'] = substr($body_preview['messages'][0]['content'], 0, 5000) . "... [Content truncated for log stability]";
-            }
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $this->log_debug('API_RAW_REQUEST', '完整的 API 请求参数', array_merge($context, array(
                 'api_url' => $api_config['api_url'],
                 'headers' => $args['headers'],
-                'body' => $body_preview
+                'body' => $body_data
             )));
         } else {
             $this->log_debug('API_RAW_REQUEST', '发送API请求 (完整参数请开启调试模式查看)', array_merge($context, array(
@@ -308,17 +300,7 @@ class ContentAuto_UnifiedApiHandler {
         
         $this->log_success('API_REQUEST_START', '开始预置API请求', $context);
         
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            $response_preview = $response['data'];
-            if (strlen($response_preview) > 5000) {
-                $response_preview = substr($response_preview, 0, 5000) . "... [Content truncated for log stability. Full length: " . strlen($response['data']) . "]";
-            }
-            $this->log_debug('API_RAW_RESPONSE', '预置API返回的完整原始响应', array_merge($context, array(
-                'raw_response' => $response_preview
-            )));
-        }
-        
-        $predefined_api = new ContentAuto_PredefinedApi();
+        $predefined_api = new Yali_AI_Writer_PredefinedApi();
         
         // 检查预置API配置是否存在，如果不存在则自动创建
         $config = $predefined_api->get_config($api_config['predefined_channel']);
@@ -332,6 +314,13 @@ class ContentAuto_UnifiedApiHandler {
         }
         
         $response = $predefined_api->send_request($api_config['predefined_channel'], $prompt);
+        
+        // 记录API原始响应（仅在调试模式下）
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE && isset($response['data'])) {
+            $this->log_debug('API_RAW_RESPONSE', '预置API返回的完整原始响应', array_merge($context, array(
+                'raw_response' => $response['data']
+            )));
+        }
         
         if ($response['success']) {
             // 解析预置API响应
@@ -380,14 +369,10 @@ class ContentAuto_UnifiedApiHandler {
         $response_data = json_decode($response_body, true);
         $response_code = wp_remote_retrieve_response_code($response);
         
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-            $body_preview = $response_body;
-            if (strlen($body_preview) > 5000) {
-                $body_preview = substr($body_preview, 0, 5000) . "... [Content truncated for log stability. Full length: " . strlen($response_body) . "]";
-            }
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $this->log_debug('API_RAW_RESPONSE', 'API返回的完整原始响应', array_merge($context, array(
                 'response_code' => $response_code,
-                'raw_response' => $body_preview
+                'raw_response' => $response_body
             )));
         } else {
             $this->log_debug('API_RAW_RESPONSE', '接收到API响应 (完整响应请开启调试模式查看)', array_merge($context, array(
@@ -417,14 +402,10 @@ class ContentAuto_UnifiedApiHandler {
                 $extracted_content = $this->strip_think_tags($extracted_content);
                 
                 // 记录提取的结构化内容（仅在调试模式下）
-                if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                    $content_preview = $extracted_content;
-                    if (strlen($content_preview) > 5000) {
-                        $content_preview = substr($content_preview, 0, 5000) . "... [Content truncated for log stability. Full length: " . strlen($extracted_content) . "]";
-                    }
+                if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                     $this->log_debug('STRUCTURE_CONTENT_EXTRACTED', '结构化内容提取成功', array_merge($context, array(
                         'content_length' => strlen($extracted_content),
-                        'extracted_content' => $content_preview
+                        'extracted_content' => $extracted_content
                     )));
                 }
 
@@ -496,14 +477,10 @@ class ContentAuto_UnifiedApiHandler {
             $final_content = $this->strip_think_tags($final_content);
             
             // 记录最终提取的内容（仅在调试模式下）
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                $content_preview = $final_content;
-                if (strlen($content_preview) > 5000) {
-                    $content_preview = substr($content_preview, 0, 5000) . "... [Content truncated for log stability. Full length: " . strlen($final_content) . "]";
-                }
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $this->log_debug('API_FINAL_CONTENT', 'API最终提取内容', array_merge($context, array(
                     'content_length' => strlen($final_content),
-                    'final_content' => $content_preview
+                    'final_content' => $final_content
                 )));
             }
             
@@ -546,7 +523,7 @@ class ContentAuto_UnifiedApiHandler {
         }
         
         // 更新最后请求时间（恢复频率限制）
-        update_option('content_auto_last_api_request', time());
+        update_option('yali_ai_writer_last_api_request', time());
 
         
         $this->log_error('API_NO_CONTENT', 'API响应中未找到有效内容', $context);
@@ -575,7 +552,7 @@ class ContentAuto_UnifiedApiHandler {
         }
 
         // 使用API轮询机制进行重试
-        $max_retries = get_option('content_auto_max_retries', 2);
+        $max_retries = get_option('yali_ai_writer_max_retries', 2);
         $last_error_data = array('error' => '所有重试都失败了'); // 默认错误
         
         for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
@@ -608,7 +585,7 @@ class ContentAuto_UnifiedApiHandler {
                     $this->api_config->mark_api_success($api_config['id']);
                     
                     // 更新最后请求时间（恢复频率限制）
-                    update_option('content_auto_last_api_request', time());
+                    update_option('yali_ai_writer_last_api_request', time());
                     
                     return $result;
                 } else {
@@ -712,7 +689,7 @@ class ContentAuto_UnifiedApiHandler {
      */
     private function log_debug($code, $message, $context = array()) {
         // 仅在调试模式下记录调试日志
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             if ($this->logger) {
                 $this->logger->debug("[{$code}] {$message}", $context);
             }
@@ -733,141 +710,65 @@ class ContentAuto_UnifiedApiHandler {
 
     /**
      * 发送流式请求 (客户端)
-     * 替代 wp_remote_post，使用底层 cURL 实现实时接收
+     * 使用 wp_remote_post 实现完全合规的流式数据解析
      */
     private function send_streaming_request($url, $args, $additional_params = array()) {
-        $ch = curl_init();
-        
         $headers = [];
         if (isset($args['headers'])) {
-            // [FIX] Ensure we don't duplicate headers if they are key-value array vs indexed array
             foreach ($args['headers'] as $k => $v) {
                 if (is_int($k)) {
-                    $headers[] = $v;
+                    $parts = explode(':', $v, 2);
+                    if (count($parts) === 2) {
+                        $headers[trim($parts[0])] = trim($parts[1]);
+                    }
                 } else {
-                    $headers[] = "$k: $v";
+                    $headers[$k] = $v;
                 }
             }
         }
         
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $args['body']);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false); // 关键：禁用自动返回，改用 WriteFunction
-        curl_setopt($ch, CURLOPT_TIMEOUT, $args['timeout']);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $args['sslverify']);
-        if (isset($args['httpversion']) && $args['httpversion'] === '1.1') {
-             curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        $wp_args = array(
+            'method'      => 'POST',
+            'timeout'     => isset($args['timeout']) ? $args['timeout'] : 300,
+            'redirection' => 5,
+            'httpversion' => isset($args['httpversion']) && $args['httpversion'] === '1.1' ? '1.1' : '1.0',
+            'sslverify'   => isset($args['sslverify']) ? $args['sslverify'] : true,
+            'headers'     => $headers,
+            'body'        => isset($args['body']) ? $args['body'] : '',
+            'decompress'  => true
+        );
+        
+        $response = wp_remote_post($url, $wp_args);
+        
+        if (is_wp_error($response)) {
+             return new WP_Error('wp_http_error', "WP HTTP Error: " . $response->get_error_message());
         }
         
-        // [关键修复] 自动处理 gzip/deflate/br 响应压缩
-        curl_setopt($ch, CURLOPT_ENCODING, '');
+        $http_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        
+        if ($http_code < 200 || $http_code >= 300) {
+            $error_info = json_decode($response_body, true);
+            $error_msg = isset($error_info['error']['message']) ? $error_info['error']['message'] : (empty($response_body) ? 'HTTP Request Failed' : $response_body);
+            return new WP_Error('api_http_error', "HTTP Error $http_code: " . $error_msg, ['http_code' => $http_code, 'body' => $response_body]);
+        }
+        
+        if (!Yali_AI_Writer_SafetySentinel::is_execution_valid($additional_params)) {
+             return new WP_Error('api_error', "Execution Aborted: Ghost task detected after stream.");
+        }
         
         $accumulated_content = '';
-        $buffer = '';
-        
-        // 用于在闭包中捕获流式错误
-        $stream_error = null;
         $stream_usage = null;
         $stream_finish_reason = null;
         
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error, &$stream_usage, &$stream_finish_reason, $additional_params) {
-            // 如果已经发生了错误，直接返回0中断传输
-            if ($stream_error) return 0;
-            
-            // 【安全哨兵】检测任务是否存活。如果任务已删除，立即中断传输。
-            if (!ContentAuto_SafetySentinel::is_execution_valid($additional_params)) {
-                $stream_error = "Execution Aborted: Ghost task detected during stream.";
-                return 0; // 中断 cURL
-            }
-            
-            $buffer .= $chunk;
-            
-            // 规范化换行符
-            $buffer = str_replace("\r\n", "\n", $buffer);
-            
-            // 按照标准的 MDN Server-Sent Events (SSE) 规范，事件通过连续两个换行符(\n\n)分隔
-            while (($pos = strpos($buffer, "\n\n")) !== false) {
-                // 截取一个事件块
-                $block = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 2);
-                
-                $lines = explode("\n", $block);
-                $data_lines = [];
-                $event_type = 'message';
-                
-                // 解析每一行的字段 (event, data, id, retry)
-                foreach ($lines as $line) {
-                    if (strpos($line, 'event: ') === 0) {
-                        $event_type = substr($line, 7);
-                    } elseif (strpos($line, 'event:') === 0) {
-                        $event_type = substr($line, 6);
-                    } elseif (strpos($line, 'data: ') === 0) {
-                        $data_lines[] = substr($line, 6);
-                    } elseif (strpos($line, 'data:') === 0) {
-                        $data_lines[] = substr($line, 5);
-                    }
-                }
-                
-                // SSE 规范允许空的 data，但如果我们没提取到 data 字段，就跳过这个事件块
-                if (empty($data_lines)) {
-                    continue;
-                }
-                
-                // 将多行 data 合并为完整的负荷
-                $json_str = implode("\n", $data_lines);
-                
-                if ($json_str === '[DONE]') {
-                    break;
-                }
-
-                // 容错：修复某些不规范模型在 JSON 值中返回了未转义物理换行符的问题
-                $safe_json_str = preg_replace_callback('/"([^"\\\\]|\\\\.)*"/s', function($matches) {
-                    return str_replace(array("\r", "\n"), array('\r', '\n'), $matches[0]);
-                }, $json_str);
-
-                $json = @json_decode($safe_json_str, true);
-                
-                if ($json !== null) {
-                    // 已成功解析出完整的 JSON 对象
-                    if (isset($json['choices'][0]['delta']['content'])) {
-                        $accumulated_content .= $json['choices'][0]['delta']['content'];
-                    }
-                    // 或者 OpenAI 兼容格式的其他可能位置
-                    elseif (isset($json['choices'][0]['text'])) {
-                        $accumulated_content .= $json['choices'][0]['text'];
-                    }
-                    // 流内嵌错误 (OpenAI/Proxy 格式)
-                    elseif (isset($json['error'])) {
-                        $error_msg = is_array($json['error']) ? ($json['error']['message'] ?? json_encode($json['error'])) : $json['error'];
-                        $stream_error = "Stream API Error: " . $error_msg;
-                        return 0; // 中断 cURL
-                    }
-                    // 兼容 DeepSeek/Other 的用法字段 (可选处理)
-                    elseif (isset($json['usage'])) {
-                        $stream_usage = $json['usage'];
-                    }
-                    
-                    if (isset($json['choices'][0]['finish_reason']) && $json['choices'][0]['finish_reason'] !== null) {
-                        $stream_finish_reason = $json['choices'][0]['finish_reason'];
-                    }
-                }
-            }
-            return strlen($chunk);
-        });
+        $blocks = explode("\n\n", str_replace("\r\n", "\n", $response_body));
         
-        ob_start();
-        $success = curl_exec($ch);
-        $output = ob_get_clean(); // 捕获可能泄漏的输出
-        
-        $error = curl_error($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        
-        // 处理最后可能残留在 buffer 中的不带 \n\n 的未完全块
-        if (!empty($buffer) && !$stream_error && strpos($buffer, 'data:') !== false) {
-            $lines = explode("\n", $buffer);
+        foreach ($blocks as $block) {
+            if (empty(trim($block))) continue;
+            
+            $lines = explode("\n", $block);
             $data_lines = [];
+            
             foreach ($lines as $line) {
                 if (strpos($line, 'data: ') === 0) {
                     $data_lines[] = substr($line, 6);
@@ -875,49 +776,40 @@ class ContentAuto_UnifiedApiHandler {
                     $data_lines[] = substr($line, 5);
                 }
             }
-            if (!empty($data_lines)) {
-                $json_str = implode("\n", $data_lines);
-                if ($json_str !== '[DONE]') {
-                    $safe_json_str = preg_replace_callback('/"([^"\\\\]|\\\\.)*"/s', function($matches) {
-                        return str_replace(array("\r", "\n"), array('\r', '\n'), $matches[0]);
-                    }, $json_str);
-                    $json = @json_decode($safe_json_str, true);
-                    if ($json !== null) {
-                        if (isset($json['choices'][0]['delta']['content'])) {
-                            $accumulated_content .= $json['choices'][0]['delta']['content'];
-                        } elseif (isset($json['choices'][0]['text'])) {
-                            $accumulated_content .= $json['choices'][0]['text'];
-                        }
-                        if (isset($json['choices'][0]['finish_reason']) && $json['choices'][0]['finish_reason'] !== null) {
-                            $stream_finish_reason = $json['choices'][0]['finish_reason'];
-                        }
-                    }
+            
+            if (empty($data_lines)) continue;
+            
+            $json_str = implode("\n", $data_lines);
+            if ($json_str === '[DONE]') break;
+            
+            $safe_json_str = preg_replace_callback('/"([^"\\\\]|\\\\.)*"/s', function($matches) {
+                return str_replace(array("\r", "\n"), array('\r', '\n'), $matches[0]);
+            }, $json_str);
+            
+            $json = @json_decode($safe_json_str, true);
+            
+            if ($json !== null) {
+                if (isset($json['choices'][0]['delta']['content'])) {
+                    $accumulated_content .= $json['choices'][0]['delta']['content'];
+                } elseif (isset($json['choices'][0]['text'])) {
+                    $accumulated_content .= $json['choices'][0]['text'];
+                } elseif (isset($json['error'])) {
+                    $error_msg = is_array($json['error']) ? ($json['error']['message'] ?? json_encode($json['error'])) : $json['error'];
+                    return new WP_Error('api_error', "Stream API Error: " . $error_msg, ['http_code' => $http_code]);
+                } elseif (isset($json['usage'])) {
+                    $stream_usage = $json['usage'];
+                }
+                
+                if (isset($json['choices'][0]['finish_reason']) && $json['choices'][0]['finish_reason'] !== null) {
+                    $stream_finish_reason = $json['choices'][0]['finish_reason'];
                 }
             }
         }
-        curl_close($ch);
-
-        // 优先处理流内部捕获的业务错误
-        if ($stream_error) {
-            return new WP_Error('api_error', $stream_error, ['http_code' => $http_code]);
-        }
-
-        if ($error) {
-            return new WP_Error('curl_error', "cURL Error: $error", ['http_code' => $http_code]);
-        }
-
-        if ($http_code < 200 || $http_code >= 300) {
-            // 在流式请求中，如果 HTTP 状态码错误，往往内容并不是真正的流，而是错误信息 JSON
-            $error_info = json_decode($accumulated_content, true);
-            $error_msg = isset($error_info['error']['message']) ? $error_info['error']['message'] : (empty($accumulated_content) ? 'HTTP Request Failed' : $accumulated_content);
-            return new WP_Error('api_http_error', "HTTP Error $http_code: " . $error_msg, ['http_code' => $http_code, 'body' => $accumulated_content]);
-        }
         
         if (empty(trim($accumulated_content))) {
-             return new WP_Error('empty_response', "Streaming API returned empty content but HTTP status was 200 OK. Output Buffer: $output.", ['http_code' => $http_code]);
+             return new WP_Error('empty_response', "Streaming API returned empty content but HTTP status was 200 OK.", ['http_code' => $http_code]);
         }
-
-        // 把累积拼接的内容打包成标准数组返回，与非流式保持结构一致
+        
         $response_data = [
             'choices' => [
                 [
@@ -1009,129 +901,82 @@ class ContentAuto_UnifiedApiHandler {
      * 处理 Gemini 流式请求
      */
     private function handle_gemini_streaming_request($api_url, $args, $context, $additional_params) {
-        $ch = curl_init();
+        $wp_args = array(
+            'headers'     => array('Content-Type' => 'application/json'),
+            'body'        => $args['body'],
+            'timeout'     => $args['timeout'],
+            'sslverify'   => $args['sslverify'],
+            'decompress'  => true
+        );
         
-        $headers = array('Content-Type: application/json');
+        $response = wp_remote_post($api_url, $wp_args);
         
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $api_url,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $args['body'],
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_RETURNTRANSFER => false,
-            CURLOPT_TIMEOUT => $args['timeout'],
-            CURLOPT_SSL_VERIFYPEER => $args['sslverify'],
-            CURLOPT_ENCODING => '',
-        ));
-        
-        $accumulated_content = '';
-        $buffer = '';
-        $stream_error = null;
-        $stream_usage = null;
-        $stream_finish_reason = null;
-        
-        // Gemini SSE 流式响应格式 (alt=sse)
-        // 每行以 "data: " 前缀开头，包含完整的 JSON 对象
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error, &$stream_usage, &$stream_finish_reason, $additional_params) {
-                if ($stream_error) return 0;
-                
-                // 【安全哨兵】检测任务是否存活
-                if (!ContentAuto_SafetySentinel::is_execution_valid($additional_params)) {
-                    $stream_error = "Execution Aborted: Ghost task detected during Gemini stream.";
-                    return 0; // 中断 cURL
-                }
-                
-                $buffer .= $chunk;
-                
-                // 规范化换行符
-                $buffer = str_replace("\r\n", "\n", $buffer);
-                
-                // 按照标准的 MDN Server-Sent Events (SSE) 规范进行处理
-                while (($pos = strpos($buffer, "\n\n")) !== false) {
-                    $block = substr($buffer, 0, $pos);
-                    $buffer = substr($buffer, $pos + 2);
-                    
-                    $lines = explode("\n", $block);
-                    $data_lines = [];
-                    
-                    foreach ($lines as $line) {
-                        if (strpos($line, 'data: ') === 0) {
-                            $data_lines[] = substr($line, 6);
-                        } elseif (strpos($line, 'data:') === 0) {
-                            $data_lines[] = substr($line, 5);
-                        }
-                    }
-                    
-                    if (empty($data_lines)) {
-                        continue;
-                    }
-                    
-                    $json_str = implode("\n", $data_lines);
-                    
-                    if ($json_str === '[DONE]') {
-                        break;
-                    }
-                    
-                    // 修复 for Gemini: 如果负载内有未转义的物理换行
-                    $safe_json_str = preg_replace_callback('/"([^"\\\\]|\\\\.)*"/s', function($matches) {
-                        return str_replace(array("\r", "\n"), array('\r', '\n'), $matches[0]);
-                    }, $json_str);
-
-                    $json = @json_decode($safe_json_str, true);
-                    if ($json !== null) {
-                        if (isset($json['candidates'][0]['content']['parts'][0]['text'])) {
-                            $accumulated_content .= $json['candidates'][0]['content']['parts'][0]['text'];
-                        }
-                        
-                        // 提取 usageMetadata
-                        if (isset($json['usageMetadata'])) {
-                            $stream_usage = $json['usageMetadata'];
-                        }
-                        
-                        // 提取 finishReason
-                        if (isset($json['candidates'][0]['finishReason']) && $json['candidates'][0]['finishReason'] !== null) {
-                            $stream_finish_reason = $json['candidates'][0]['finishReason'];
-                        }
-                        
-                        // 错误处理
-                        if (isset($json['error'])) {
-                            $error_msg = isset($json['error']['message']) ? $json['error']['message'] : json_encode($json['error']);
-                            $stream_error = "Gemini Stream Error: " . $error_msg;
-                            return 0;
-                        }
-                    }
-                }
-                
-                return strlen($chunk);
-            });
-        
-        ob_start();
-        $success = curl_exec($ch);
-        ob_end_clean();
-        
-        $error = curl_error($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($stream_error) {
-            return array('error' => $stream_error);
+        if (is_wp_error($response)) {
+            return array('error' => 'Gemini Stream WP HTTP Error: ' . $response->get_error_message());
         }
         
-        if ($error) {
-            return array('error' => 'Gemini Stream Error: ' . $error);
-        }
+        $http_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
         
         if ($http_code >= 400) {
             $err_msg = 'Gemini HTTP Error: ' . $http_code;
-            if (!empty($buffer)) {
-                $err_msg .= ' - Response: ' . trim(mb_substr($buffer, 0, 1000));
+            if (!empty($response_body)) {
+                $err_msg .= ' - Response: ' . trim(mb_substr($response_body, 0, 1000));
             }
             return array('error' => $err_msg);
         }
         
+        if (!Yali_AI_Writer_SafetySentinel::is_execution_valid($additional_params)) {
+             return array('error' => "Execution Aborted: Ghost task detected after Gemini stream.");
+        }
+        
+        $accumulated_content = '';
+        $stream_usage = null;
+        $stream_finish_reason = null;
+        
+        $blocks = explode("\n\n", str_replace("\r\n", "\n", $response_body));
+        foreach ($blocks as $block) {
+            if (empty(trim($block))) continue;
+            
+            $lines = explode("\n", $block);
+            $data_lines = [];
+            foreach ($lines as $line) {
+                if (strpos($line, 'data: ') === 0) {
+                    $data_lines[] = substr($line, 6);
+                } elseif (strpos($line, 'data:') === 0) {
+                    $data_lines[] = substr($line, 5);
+                }
+            }
+            
+            if (empty($data_lines)) continue;
+            
+            $json_str = implode("\n", $data_lines);
+            if ($json_str === '[DONE]') break;
+            
+            $safe_json_str = preg_replace_callback('/"([^"\\\\]|\\\\.)*"/s', function($matches) {
+                return str_replace(array("\r", "\n"), array('\r', '\n'), $matches[0]);
+            }, $json_str);
+
+            $json = @json_decode($safe_json_str, true);
+            if ($json !== null) {
+                if (isset($json['candidates'][0]['content']['parts'][0]['text'])) {
+                    $accumulated_content .= $json['candidates'][0]['content']['parts'][0]['text'];
+                }
+                if (isset($json['usageMetadata'])) {
+                    $stream_usage = $json['usageMetadata'];
+                }
+                if (isset($json['candidates'][0]['finishReason']) && $json['candidates'][0]['finishReason'] !== null) {
+                    $stream_finish_reason = $json['candidates'][0]['finishReason'];
+                }
+                if (isset($json['error'])) {
+                    $error_msg = isset($json['error']['message']) ? $json['error']['message'] : json_encode($json['error']);
+                    return array('error' => "Gemini Stream Error: " . $error_msg);
+                }
+            }
+        }
+        
         $final_content = $this->strip_think_tags($accumulated_content);
         
-        // 追加: Gemini 经常会返回带 ```json 和 ``` 包裹的内容（非预期），这里进行剥离
         if (preg_match('/^```(?:json)?\s*([\s\S]*?)\s*```$/i', trim($final_content), $matches)) {
             $final_content = $matches[1];
         }
@@ -1140,13 +985,11 @@ class ContentAuto_UnifiedApiHandler {
             return array('error' => 'Gemini response was empty');
         }
         
-        // Gemini 格式转换：MAX_TOKENS -> length
         if ($stream_finish_reason === 'MAX_TOKENS') {
             $stream_finish_reason = 'length';
         }
         
         if (!empty($additional_params['return_usage'])) {
-            // ✅ length 视为 API 失败，返回 error 让上层 fallback 机制自动切换
             if ($stream_finish_reason === 'length') {
                 return array('error' => 'Gemini流式API生成失败：单次输出长度已达上限 (finish_reason: length)', 'finish_reason' => 'length');
             }
@@ -1305,74 +1148,66 @@ class ContentAuto_UnifiedApiHandler {
      * 处理 Claude 流式请求
      */
     private function handle_claude_streaming_request($api_url, $args, $context, $additional_params) {
-        $ch = curl_init();
-        
         $headers = array();
         foreach ($args['headers'] as $k => $v) {
-            $headers[] = "$k: $v";
+            $headers[$k] = $v;
         }
-        $headers[] = 'Accept: text/event-stream';
+        $headers['Accept'] = 'text/event-stream';
         
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $api_url,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $args['body'],
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_RETURNTRANSFER => false,
-            CURLOPT_TIMEOUT => $args['timeout'],
-            CURLOPT_SSL_VERIFYPEER => $args['sslverify'],
-            CURLOPT_ENCODING => '',
-        ));
+        $wp_args = array(
+            'headers'     => $headers,
+            'body'        => $args['body'],
+            'timeout'     => $args['timeout'],
+            'sslverify'   => $args['sslverify'],
+            'decompress'  => true
+        );
+        
+        $response = wp_remote_post($api_url, $wp_args);
+        
+        if (is_wp_error($response)) {
+            return array('error' => 'Claude Stream WP HTTP Error: ' . $response->get_error_message());
+        }
+        
+        $http_code = wp_remote_retrieve_response_code($response);
+        $response_body = wp_remote_retrieve_body($response);
+        
+        if ($http_code >= 400) {
+            $err_msg = 'Claude HTTP Error: ' . $http_code;
+            if (!empty($response_body)) {
+                $err_msg .= ' - Response: ' . trim(mb_substr($response_body, 0, 1000));
+            }
+            return array('error' => $err_msg);
+        }
+        
+        if (!Yali_AI_Writer_SafetySentinel::is_execution_valid($additional_params)) {
+             return array('error' => "Execution Aborted: Ghost task detected after Claude stream.");
+        }
         
         $accumulated_content = '';
-        $buffer = '';
-        $stream_error = null;
         $stream_finish_reason = null;
         
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error, &$stream_finish_reason, $additional_params) {
-            if ($stream_error) return 0;
+        $blocks = explode("\n\n", str_replace("\r\n", "\n", $response_body));
+        foreach ($blocks as $block) {
+            if (empty(trim($block))) continue;
             
-            // 【安全哨兵】检测任务是否存活
-            if (!ContentAuto_SafetySentinel::is_execution_valid($additional_params)) {
-                $stream_error = "Execution Aborted: Ghost task detected during Claude stream.";
-                return 0; // 中断 cURL
-            }
-            
-            $buffer .= $chunk;
-            
-            while (($pos = strpos($buffer, "\n")) !== false) {
-                $line = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 1);
-                $line = trim($line);
-                
-                if (empty($line)) continue;
-                
-                // Claude 流式响应格式
+            $lines = explode("\n", $block);
+            foreach ($lines as $line) {
                 if (strpos($line, 'data: ') === 0) {
                     $json_str = substr($line, 6);
                     if ($json_str === '[DONE]') continue;
                     
                     $json = json_decode($json_str, true);
                     
-                    // Claude content_block_delta 事件
                     if (isset($json['type']) && $json['type'] === 'content_block_delta') {
                         if (isset($json['delta']['text'])) {
                             $accumulated_content .= $json['delta']['text'];
                         }
-                    }
-                    // Claude content 直接格式
-                    elseif (isset($json['delta']['text'])) {
+                    } elseif (isset($json['delta']['text'])) {
                         $accumulated_content .= $json['delta']['text'];
-                    }
-                    // 错误处理
-                    elseif (isset($json['type']) && $json['type'] === 'error') {
-                        $stream_error = isset($json['error']['message']) 
-                            ? $json['error']['message'] 
-                            : json_encode($json['error']);
-                        return 0;
-                    }
-                    // Claude 消息结束事件 / Delta (获取 stop_reason)
-                    elseif (isset($json['type']) && ($json['type'] === 'message_delta' || $json['type'] === 'message_stop')) {
+                    } elseif (isset($json['type']) && $json['type'] === 'error') {
+                        $error_msg = isset($json['error']['message']) ? $json['error']['message'] : json_encode($json['error']);
+                        return array('error' => 'Claude Stream Error: ' . $error_msg);
+                    } elseif (isset($json['type']) && ($json['type'] === 'message_delta' || $json['type'] === 'message_stop')) {
                         if (isset($json['delta']['stop_reason'])) {
                             $stream_finish_reason = $json['delta']['stop_reason'];
                         } elseif (isset($json['message']['stop_reason'])) {
@@ -1381,32 +1216,6 @@ class ContentAuto_UnifiedApiHandler {
                     }
                 }
             }
-            
-            return strlen($chunk);
-        });
-        
-        ob_start();
-        $success = curl_exec($ch);
-        ob_end_clean();
-        
-        $error = curl_error($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($stream_error) {
-            return array('error' => 'Claude Stream Error: ' . $stream_error);
-        }
-        
-        if ($error) {
-            return array('error' => 'Claude cURL Error: ' . $error);
-        }
-        
-        if ($http_code >= 400) {
-            $err_msg = 'Claude HTTP Error: ' . $http_code;
-            if (!empty($buffer)) {
-                $err_msg .= ' - Response: ' . trim(mb_substr($buffer, 0, 1000));
-            }
-            return array('error' => $err_msg);
         }
         
         $final_content = $this->strip_think_tags($accumulated_content);
@@ -1415,21 +1224,18 @@ class ContentAuto_UnifiedApiHandler {
             return array('error' => 'Claude response was empty');
         }
         
-        // 尝试解析可能遗留在 buffer 中的非标准或截断的 finish_reason
-        if (empty($stream_finish_reason) && !empty($buffer) && strpos($buffer, 'stop_reason') !== false) {
-             preg_match('/"stop_reason"\s*:\s*"([^"]+)"/', $buffer, $reason_match);
+        if (empty($stream_finish_reason) && !empty($response_body) && strpos($response_body, 'stop_reason') !== false) {
+             preg_match('/"stop_reason"\s*:\s*"([^"]+)"/', $response_body, $reason_match);
              if (!empty($reason_match[1])) {
                  $stream_finish_reason = $reason_match[1];
              }
         }
 
-        // Claude 格式转换：max_tokens -> length
         if ($stream_finish_reason === 'max_tokens') {
             $stream_finish_reason = 'length';
         }
         
         if (!empty($additional_params['return_usage'])) {
-            // ✅ length 视为 API 失败，返回 error 让上层 fallback 机制自动切换
             if ($stream_finish_reason === 'length') {
                 return array('error' => 'Claude流式API生成失败：单次输出长度已达上限 (finish_reason: length)', 'finish_reason' => 'length');
             }
@@ -1527,6 +1333,6 @@ class ContentAuto_UnifiedApiHandler {
      * 整合了 Job Queue ID 和业务 Task ID 的双重检测
      */
     private function is_execution_valid($additional_params) {
-        return ContentAuto_SafetySentinel::is_execution_valid($additional_params);
+        return Yali_AI_Writer_SafetySentinel::is_execution_valid($additional_params);
     }
 }

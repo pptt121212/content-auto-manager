@@ -8,12 +8,12 @@ if (!defined('ABSPATH')) {
 }
 
 
-class ContentAuto_ApiConfig {
+class Yali_AI_Writer_ApiConfig {
     
     private $database;
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
+        $this->database = new Yali_AI_Writer_Database();
     }
     
     /**
@@ -21,7 +21,7 @@ class ContentAuto_ApiConfig {
      */
     public function create_config($data, $is_predefined = false) {
         // 如果传入的是参数对象，转换为数组
-        if ($data instanceof ContentAuto_ApiConfigParams) {
+        if ($data instanceof Yali_AI_Writer_ApiConfigParams) {
             $data = $data->toArray();
         }
         
@@ -32,7 +32,7 @@ class ContentAuto_ApiConfig {
         }
         
         // 插入数据
-        return $this->database->insert('content_auto_api_configs', $validated_data);
+        return $this->database->insert('yali_ai_writer_api_configs', $validated_data);
     }
     
     /**
@@ -40,7 +40,7 @@ class ContentAuto_ApiConfig {
      */
     public function update_config($id, $data, $is_predefined = false) {
         // 如果传入的是参数对象，转换为数组
-        if ($data instanceof ContentAuto_ApiConfigParams) {
+        if ($data instanceof Yali_AI_Writer_ApiConfigParams) {
             $data = $data->toArray();
         }
         
@@ -51,35 +51,35 @@ class ContentAuto_ApiConfig {
         }
         
         // 更新数据
-        return $this->database->update('content_auto_api_configs', $validated_data, array('id' => $id));
+        return $this->database->update('yali_ai_writer_api_configs', $validated_data, array('id' => $id));
     }
     
     /**
      * 删除API配置
      */
     public function delete_config($id) {
-        return $this->database->delete('content_auto_api_configs', array('id' => $id));
+        return $this->database->delete('yali_ai_writer_api_configs', array('id' => $id));
     }
     
     /**
      * 获取单个API配置
      */
     public function get_config($id) {
-        return $this->database->get_row('content_auto_api_configs', array('id' => $id));
+        return $this->database->get_row('yali_ai_writer_api_configs', array('id' => $id));
     }
     
     /**
      * 获取所有API配置
      */
     public function get_configs() {
-        return $this->database->get_results('content_auto_api_configs');
+        return $this->database->get_results('yali_ai_writer_api_configs');
     }
     
     /**
      * 获取所有激活的API配置
      */
     public function get_active_configs() {
-        return $this->database->get_results('content_auto_api_configs', array('is_active' => 1));
+        return $this->database->get_results('yali_ai_writer_api_configs', array('is_active' => 1));
     }
     
     /**
@@ -87,7 +87,7 @@ class ContentAuto_ApiConfig {
      */
     public function get_active_vector_configs() {
         // 获取所有激活的配置
-        $active_configs = $this->database->get_results('content_auto_api_configs', array('is_active' => 1));
+        $active_configs = $this->database->get_results('yali_ai_writer_api_configs', array('is_active' => 1));
         
         // 过滤出向量API配置
         $vector_configs = array();
@@ -105,7 +105,7 @@ class ContentAuto_ApiConfig {
      */
     public function get_vector_config() {
         // 获取所有配置
-        $all_configs = $this->database->get_results('content_auto_api_configs');
+        $all_configs = $this->database->get_results('yali_ai_writer_api_configs');
         
         // 过滤出向量API配置
         foreach ($all_configs as $config) {
@@ -124,8 +124,8 @@ class ContentAuto_ApiConfig {
         // 移除API请求间隔时间检查，因为子任务间已有30秒间隔
         // 仅在非重试的首次请求时检查API请求间隔时间
         // if (!$is_retry) {
-        //     $min_interval = CONTENT_AUTO_MIN_API_INTERVAL;
-        //     $last_request_time = get_option('content_auto_last_api_request', 0);
+        //     $min_interval = YALI_AI_WRITER_MIN_API_INTERVAL;
+        //     $last_request_time = get_option('yali_ai_writer_last_api_request', 0);
         //     $current_time = time();
         //     
         //     if ($current_time - $last_request_time < $min_interval) {
@@ -147,12 +147,12 @@ class ContentAuto_ApiConfig {
         // 如果只有一个配置，直接返回
         if (count($configs) == 1) {
             // 更新最后请求时间
-            update_option('content_auto_last_api_request', $current_time);
+            update_option('yali_ai_writer_last_api_request', $current_time);
             return $configs[0];
         }
         
         // 使用选项存储当前使用的API配置索引，实现简单轮询
-        $current_index_option = 'content_auto_current_api_index';
+        $current_index_option = 'yali_ai_writer_current_api_index';
         $current_index = get_option($current_index_option, 0);
         
         // 确保索引在有效范围内
@@ -165,7 +165,7 @@ class ContentAuto_ApiConfig {
         update_option($current_index_option, $next_index);
         
         // 更新最后请求时间
-        update_option('content_auto_last_api_request', $current_time);
+        update_option('yali_ai_writer_last_api_request', $current_time);
         
         return $selected_config;
     }
@@ -181,13 +181,13 @@ class ContentAuto_ApiConfig {
         }
         
         // 获取当前失败记录
-        $failed_apis = get_option('content_auto_failed_apis', array());
+        $failed_apis = get_option('yali_ai_writer_failed_apis', array());
         
         // 添加或更新失败记录
         $failed_apis[$api_id] = time();
         
         // 更新失败记录
-        update_option('content_auto_failed_apis', $failed_apis);
+        update_option('yali_ai_writer_failed_apis', $failed_apis);
         
         return true;
     }
@@ -203,12 +203,12 @@ class ContentAuto_ApiConfig {
         }
         
         // 获取当前失败记录
-        $failed_apis = get_option('content_auto_failed_apis', array());
+        $failed_apis = get_option('yali_ai_writer_failed_apis', array());
         
         // 如果存在失败记录，清除它
         if (isset($failed_apis[$api_id])) {
             unset($failed_apis[$api_id]);
-            update_option('content_auto_failed_apis', $failed_apis);
+            update_option('yali_ai_writer_failed_apis', $failed_apis);
         }
         
         return true;
@@ -219,7 +219,7 @@ class ContentAuto_ApiConfig {
      * @return bool 是否成功重置
      */
     public function reset_all_failed_apis() {
-        update_option('content_auto_failed_apis', array());
+        update_option('yali_ai_writer_failed_apis', array());
         return true;
     }
     
@@ -228,7 +228,7 @@ class ContentAuto_ApiConfig {
      * @return array 失败的API列表
      */
     public function get_failed_apis() {
-        $failed_apis = get_option('content_auto_failed_apis', array());
+        $failed_apis = get_option('yali_ai_writer_failed_apis', array());
         
         // 清理过期的失败记录
         $failure_timeout = 30 * 60;
@@ -239,8 +239,8 @@ class ContentAuto_ApiConfig {
             }
         }
         
-        if (count($failed_apis) != count(get_option('content_auto_failed_apis', array()))) {
-            update_option('content_auto_failed_apis', $failed_apis);
+        if (count($failed_apis) != count(get_option('yali_ai_writer_failed_apis', array()))) {
+            update_option('yali_ai_writer_failed_apis', $failed_apis);
         }
         
         return $failed_apis;
@@ -259,7 +259,7 @@ class ContentAuto_ApiConfig {
      */
     public function set_active_config($id) {
         // 直接将指定配置设为激活，不再禁用其他配置
-        return $this->database->update('content_auto_api_configs', array('is_active' => 1), array('id' => $id));
+        return $this->database->update('yali_ai_writer_api_configs', array('is_active' => 1), array('id' => $id));
     }
 
     /**
@@ -267,7 +267,7 @@ class ContentAuto_ApiConfig {
      */
     public function update_active_status($id, $is_active) {
         $is_active = intval($is_active);
-        return $this->database->update('content_auto_api_configs', array('is_active' => $is_active), array('id' => $id));
+        return $this->database->update('yali_ai_writer_api_configs', array('is_active' => $is_active), array('id' => $id));
     }
     
     /**
@@ -684,193 +684,123 @@ class ContentAuto_ApiConfig {
         // 流式测试 (支持 OpenAI / Gemini / Claude 三种格式)
         // ---------------------------------------------------------
         if ($use_stream) {
-            $ch = curl_init();
-            $curl_headers = array();
-            foreach ($headers as $k => $v) {
-                $curl_headers[] = "$k: $v";
-            }
+            $wp_args = array(
+                'headers' => $headers,
+                'body' => json_encode($body_data),
+                'timeout' => 60,
+                'sslverify' => false,
+                'decompress' => true
+            );
             
             // Gemini 不使用 SSE Accept Header，OpenAI 和 Claude 需要
             if ($api_type !== 'gemini') {
-                $curl_headers[] = 'Accept: text/event-stream';
+                $wp_args['headers']['Accept'] = 'text/event-stream';
+            }
+            
+            $response = wp_remote_post($api_url, $wp_args);
+            $response_time = round(microtime(true) - $start_time, 2);
+            
+            if (is_wp_error($response)) {
+                return array('success' => false, 'message' => __('Stream Request Failed (WP HTTP): ', 'yali-ai-writer') . $response->get_error_message());
+            }
+            
+            $http_code = wp_remote_retrieve_response_code($response);
+            $response_body = wp_remote_retrieve_body($response);
+            
+            if ($http_code >= 400) {
+                return array('success' => false, 'message' => __('Stream HTTP Error: ', 'yali-ai-writer') . $http_code . ' (' . mb_substr($response_body, 0, 100) . ')');
             }
             
             $accumulated_content = '';
-            $buffer = '';
             $stream_error = null;
             $stream_usage = null;
-            // 将 $api_type 传入闭包以选择正确的解析逻辑
             $current_api_type = $api_type;
             
-            curl_setopt_array($ch, [
-                CURLOPT_URL => $api_url,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($body_data),
-                CURLOPT_HTTPHEADER => $curl_headers,
-                CURLOPT_RETURNTRANSFER => false,
-                CURLOPT_TIMEOUT => 60,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_ENCODING => '',
-            ]);
-            
-            curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$accumulated_content, &$buffer, &$stream_error, &$stream_usage, $current_api_type) {
-                if ($stream_error) return 0;
-                
-                $buffer .= $chunk;
-                
-                while (($pos = strpos($buffer, "\n")) !== false) {
-                    $line = substr($buffer, 0, $pos);
-                    $buffer = substr($buffer, $pos + 1);
-                    $line = trim($line);
-                    
-                    if (empty($line)) continue;
-                    
-                    // ========================================
-                    // Gemini 流式格式: SSE (alt=sse)
-                    // data: 行包含 candidates[0].content.parts[0].text
-                    // ========================================
-                    if ($current_api_type === 'gemini') {
-                        // Gemini might include unescaped newlines in its JSON text blocks.
-                        // Splitting strict by \n breaks parsing. Split by 'data: ' and decode.
-                        while (($pos = strpos($buffer, 'data: ')) !== false) {
-                            $next_pos = strpos($buffer, 'data: ', $pos + 6);
-                            if ($next_pos !== false) {
-                                $json_str = substr($buffer, $pos + 6, $next_pos - ($pos + 6));
-                            } else {
-                                $json_str = substr($buffer, $pos + 6);
-                            }
-                            
-                            $json_str = trim($json_str);
-                            if ($json_str === '[DONE]') {
-                                $buffer = '';
-                                break;
-                            }
+            // Fallback: Check if response is just a direct JSON object (API ignored stream=true)
+            $direct_json = @json_decode($response_body, true);
+            $parsed_direct = false;
+            if ($direct_json) {
+                if ($current_api_type === 'gemini' && isset($direct_json['candidates'][0]['content']['parts'][0]['text'])) {
+                    $accumulated_content = $direct_json['candidates'][0]['content']['parts'][0]['text'];
+                    $parsed_direct = true;
+                } elseif ($current_api_type === 'claude' && isset($direct_json['content'][0]['text'])) {
+                    $accumulated_content = $direct_json['content'][0]['text'];
+                    $parsed_direct = true;
+                } elseif (isset($direct_json['choices'][0]['message']['content'])) {
+                    $accumulated_content = $direct_json['choices'][0]['message']['content'];
+                    $parsed_direct = true;
+                } elseif (isset($direct_json['error'])) {
+                    $stream_error = "API Error: " . (is_array($direct_json['error']) ? json_encode($direct_json['error']) : $direct_json['error']);
+                    $parsed_direct = true;
+                }
+            }
 
-                            // Fix for Gemini: if the payload contains unescaped physical newlines inside JSON strings,
-                            // PHP's json_decode will return NULL due to control character errors.
-                            // We must escape these newlines inside quotes.
+            if (!$parsed_direct) {
+                $blocks = explode("\n\n", str_replace("\r\n", "\n", $response_body));
+                foreach ($blocks as $block) {
+                    if (empty(trim($block))) continue;
+                    
+                    $lines = explode("\n", $block);
+                    foreach ($lines as $line) {
+                        if (strpos($line, 'data: ') === 0) {
+                            $json_str = substr($line, 6);
+                        } elseif (strpos($line, 'data:') === 0) {
+                            $json_str = substr($line, 5);
+                        } else {
+                            continue;
+                        }
+                        
+                        if (trim($json_str) === '[DONE]') break;
+                        
+                        if ($current_api_type === 'gemini') {
                             $safe_json_str = preg_replace_callback('/"([^"\\\\]|\\\\.)*"/s', function($matches) {
                                 return str_replace(array("\r", "\n"), array('\r', '\n'), $matches[0]);
                             }, $json_str);
-
                             $json = @json_decode($safe_json_str, true);
                             if ($json !== null) {
-                                // Successfully parsed a complete JSON object
-                                if ($next_pos !== false) {
-                                    $buffer = substr($buffer, $next_pos);
-                                } else {
-                                    $buffer = '';
-                                }
-
                                 if (isset($json['candidates'][0]['content']['parts'][0]['text'])) {
                                     $accumulated_content .= $json['candidates'][0]['content']['parts'][0]['text'];
-                                }
-                                // Gemini 错误处理
-                                elseif (isset($json['error'])) {
+                                } elseif (isset($json['error'])) {
                                     $error_msg = isset($json['error']['message']) ? $json['error']['message'] : json_encode($json['error']);
-                                    $stream_error = "Gemini Stream Error: " . $error_msg;
-                                    return 0;
+                                    $stream_error = __('Gemini Stream Error: ', 'yali-ai-writer') . $error_msg;
                                 }
-                            } else {
-                                // Not complete, wait for more chunks
-                                break;
                             }
-                        }
-                    }
-                    // ========================================
-                    // Claude 流式格式: SSE data: 行
-                    // 事件类型 content_block_delta 含 delta.text
-                    // ========================================
-                    elseif ($current_api_type === 'claude') {
-                        if (strpos($line, 'data: ') === 0) {
-                            $json_str = substr($line, 6);
-                            if ($json_str === '[DONE]') continue;
-                            
-                            $json = json_decode($json_str, true);
-                            
-                            // Claude content_block_delta 事件
-                            if (isset($json['type']) && $json['type'] === 'content_block_delta') {
-                                if (isset($json['delta']['text'])) {
+                        } elseif ($current_api_type === 'claude') {
+                            $json = @json_decode($json_str, true);
+                            if ($json) {
+                                if (isset($json['type']) && $json['type'] === 'content_block_delta') {
+                                    if (isset($json['delta']['text'])) $accumulated_content .= $json['delta']['text'];
+                                } elseif (isset($json['delta']['text'])) {
                                     $accumulated_content .= $json['delta']['text'];
+                                } elseif (isset($json['type']) && $json['type'] === 'error') {
+                                    $stream_error = isset($json['error']['message']) ? $json['error']['message'] : json_encode($json['error']);
+                                } elseif (isset($json['usage'])) {
+                                    $stream_usage = $json['usage'];
                                 }
                             }
-                            // Claude content 直接格式
-                            elseif (isset($json['delta']['text'])) {
-                                $accumulated_content .= $json['delta']['text'];
-                            }
-                            // Claude 错误事件
-                            elseif (isset($json['type']) && $json['type'] === 'error') {
-                                $stream_error = isset($json['error']['message']) 
-                                    ? $json['error']['message'] 
-                                    : json_encode($json['error']);
-                                return 0;
-                            }
-                            // Usage 信息
-                            elseif (isset($json['usage'])) {
-                                $stream_usage = $json['usage'];
-                            }
-                        }
-                    }
-                    // ========================================
-                    // OpenAI 流式格式: SSE data: 行
-                    // choices[0].delta.content
-                    // ========================================
-                    else {
-                        $content_str = null;
-                        if (strpos($line, 'data: ') === 0) {
-                            $content_str = substr($line, 6);
-                        } elseif (strpos($line, 'data:') === 0) {
-                            $content_str = substr($line, 5);
-                        }
-                        
-                        if ($content_str !== null) {
-                            if (trim($content_str) === '[DONE]') continue;
-                            
-                            $json = json_decode($content_str, true);
-                            
-                            // OpenAI delta content
-                            if (isset($json['choices'][0]['delta']['content'])) {
-                                $accumulated_content .= $json['choices'][0]['delta']['content'];
-                            }
-                            // 错误处理
-                            elseif (isset($json['error'])) {
-                                $error_msg = is_array($json['error']) ? ($json['error']['message'] ?? json_encode($json['error'])) : $json['error'];
-                                $stream_error = "Stream API Error: " . $error_msg;
-                                return 0;
-                            }
-                            // Usage 信息
-                            elseif (isset($json['usage'])) {
-                                $stream_usage = $json['usage'];
+                        } else {
+                            $json = @json_decode($json_str, true);
+                            if ($json) {
+                                if (isset($json['choices'][0]['delta']['content'])) {
+                                    $accumulated_content .= $json['choices'][0]['delta']['content'];
+                                } elseif (isset($json['choices'][0]['message']['content'])) {
+                                    $accumulated_content .= $json['choices'][0]['message']['content'];
+                                } elseif (isset($json['error'])) {
+                                    $error_msg = is_array($json['error']) ? ($json['error']['message'] ?? json_encode($json['error'])) : $json['error'];
+                                    $stream_error = __('Stream API Error: ', 'yali-ai-writer') . $error_msg;
+                                } elseif (isset($json['usage'])) {
+                                    $stream_usage = $json['usage'];
+                                }
                             }
                         }
                     }
                 }
-                return strlen($chunk);
-            });
-            
-            ob_start();
-            $curl_success = curl_exec($ch);
-            ob_end_clean();
-            
-            $curl_error = curl_error($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            $response_time = round(microtime(true) - $start_time, 2);
+            }
             
             if ($stream_error) {
                 return array('success' => false, 'message' => $stream_error);
             }
             
-            if (!$curl_success && $curl_error) {
-                return array('success' => false, 'message' => "Stream Request Failed: $curl_error");
-            }
-            
-            if ($http_code >= 400) {
-                return array('success' => false, 'message' => "Stream HTTP Error: $http_code");
-            }
-            
-            // 构建成功响应
             $message = sprintf(
                 /* translators: 1: API Type, 2: Model Name, 3: Content Preview, 4: Response Time */
                 __('Stream: OK！模型：%1$s，生成内容："%2$s"，响应时间：%3$s秒', 'yali-ai-writer'),

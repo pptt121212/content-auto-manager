@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_JsonParser {
+class Yali_AI_Writer_JsonParser {
     
     private $logger;
     

@@ -76,7 +76,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'get_optimization_configs',
+                action: 'yali_ai_writer_get_optimization_configs',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -118,7 +118,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'save_optimization_config',
+                action: 'yali_ai_writer_save_optimization_config',
                 nonce: smartOptimization.nonce,
                 key: key,
                 value: value
@@ -150,7 +150,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'save_optimization_configs',
+                action: 'yali_ai_writer_save_optimization_configs',
                 nonce: smartOptimization.nonce,
                 configs: configs
             },
@@ -177,7 +177,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'reset_optimization_configs',
+                action: 'yali_ai_writer_reset_optimization_configs',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -206,7 +206,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'get_cold_start_phases',
+                action: 'yali_ai_writer_get_cold_start_phases',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -291,7 +291,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'get_data_driven_structures',
+                action: 'yali_ai_writer_get_data_driven_structures',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -371,7 +371,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'get_diversity_overview',
+                action: 'yali_ai_writer_get_diversity_overview',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -521,7 +521,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'get_performance_comparison',
+                action: 'yali_ai_writer_get_performance_comparison',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -649,7 +649,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'get_pending_analysis_count',
+                action: 'yali_ai_writer_get_pending_analysis_count',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -709,7 +709,7 @@ jQuery(document).ready(function ($) {
                     type: 'POST',
                     timeout: 180000,
                     data: {
-                        action: 'process_single_article',
+                        action: 'yali_ai_writer_process_single_article',
                         nonce: smartOptimization.nonce,
                         post_id: postId
                     },
@@ -809,7 +809,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'update_popularity_indices',
+                action: 'yali_ai_writer_update_popularity_indices',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {
@@ -845,7 +845,7 @@ jQuery(document).ready(function ($) {
             url: smartOptimization.ajaxurl,
             type: 'POST',
             data: {
-                action: 'clear_optimization_caches',
+                action: 'yali_ai_writer_clear_optimization_caches',
                 nonce: smartOptimization.nonce
             },
             success: function (response) {

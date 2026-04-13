@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ColdStartManager {
+class Yali_AI_Writer_ColdStartManager {
     
     /**
      * 冷启动阶段常量
@@ -65,11 +65,11 @@ class ContentAuto_ColdStartManager {
     /**
      * 构造函数
      * 
-     * @param ContentAuto_PluginLogger|null $logger 日志记录器
+     * @param Yali_AI_Writer_PluginLogger|null $logger 日志记录器
      */
     public function __construct($logger = null) {
         require_once dirname(__FILE__) . '/class-optimization-config.php';
-        $this->config = new ContentAuto_OptimizationConfig();
+        $this->config = new Yali_AI_Writer_OptimizationConfig();
         $this->logger = $logger;
     }
     
@@ -171,7 +171,7 @@ class ContentAuto_ColdStartManager {
     public function get_all_phases() {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 获取所有不同的 content_angle
         $angles = $wpdb->get_col(
@@ -248,8 +248,8 @@ class ContentAuto_ColdStartManager {
     private function get_article_count_with_structure($content_angle) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 统计该 content_angle 下已关联结构且已发布的文章数量
         $count = $wpdb->get_var($wpdb->prepare(
@@ -322,7 +322,7 @@ class ContentAuto_ColdStartManager {
     public function clear_all_caches() {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 获取所有不同的 content_angle
         $angles = $wpdb->get_col(

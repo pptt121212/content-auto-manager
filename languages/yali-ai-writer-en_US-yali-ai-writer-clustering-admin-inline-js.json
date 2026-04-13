@@ -1,0 +1,32 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "聚类正在后台进行中...": [
+                "Clustering is in progress in the background..."
+            ],
+            "聚类已完成！": [
+                "Clustering completed!"
+            ],
+            "执行出错，已停止。": [
+                "Execution error, stopped."
+            ],
+            "这是一个高消耗操作，将在后台运行。确定要开始吗？": [
+                "This is a high-resource operation and will run in the background. Are you sure you want to start?"
+            ],
+            "正在启动后台进程...": [
+                "Starting background process..."
+            ],
+            "网络错误，启动命令发送失败。": [
+                "Network error, failed to send start command."
+            ]
+        }
+    }
+}

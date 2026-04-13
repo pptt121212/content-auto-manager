@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_PinyinConverter {
+class Yali_AI_Writer_PinyinConverter {
     
     private static $optimized_dictionary = null;
     private $max_length;
@@ -28,7 +28,7 @@ class ContentAuto_PinyinConverter {
             return;
         }
 
-        $dictionary_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'pinyin-converter/dictionary.php';
+        $dictionary_file = YALI_AI_WRITER_PLUGIN_DIR . 'pinyin-converter/dictionary.php';
         if (file_exists($dictionary_file)) {
             $dictionary = require $dictionary_file;
         } else {
@@ -58,7 +58,7 @@ class ContentAuto_PinyinConverter {
         $this->max_length = 20;
         
         // 如果有数据库设置，可以在这里加载
-        // $options = get_option('content_auto_pinyin_options');
+        // $options = get_option('yali_ai_writer_pinyin_options');
         // if (isset($options['slug_length'])) {
         //     $this->max_length = intval($options['slug_length']);
         // }

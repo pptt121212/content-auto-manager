@@ -202,3 +202,163 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* ============================================
+   规则管理 - 固定选择文章样式
+   ============================================ */
+
+/* 搜索结果区域 */
+.search-results {
+    margin-top: 15px;
+    background: var(--yali-card, #ffffff);
+    border: 1px solid var(--yali-border, #cbd5e1);
+    border-radius: var(--yali-radius-sm, 8px);
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: var(--yali-shadow, 0 4px 6px -1px rgb(0 0 0 / 0.1));
+}
+
+.search-results:empty {
+    display: none;
+}
+
+/* 搜索结果项 */
+.search-result-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--yali-border, #e2e8f0);
+    transition: var(--yali-transition, all 0.3s ease);
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: var(--yali-bg, #f8fafc);
+}
+
+.search-result-item span {
+    font-size: 14px;
+    color: var(--yali-text, #1e293b);
+    flex: 1;
+    margin-right: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 搜索结果中的添加按钮 */
+.search-result-item .button {
+    flex-shrink: 0;
+    background: var(--yali-primary, #6366f1) !important;
+    border-color: var(--yali-primary, #6366f1) !important;
+    color: #fff !important;
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    border-radius: var(--yali-radius-sm, 6px) !important;
+    transition: var(--yali-transition, all 0.2s ease) !important;
+}
+
+.search-result-item .button:hover {
+    background: var(--yali-primary-dark, #4f46e5) !important;
+    border-color: var(--yali-primary-dark, #4f46e5) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+/* 搜索结果空状态 */
+.search-results > p {
+    padding: 20px;
+    text-align: center;
+    color: var(--yali-text-muted, #64748b);
+    margin: 0;
+}
+
+/* 已选文章容器 */
+.selected-articles-container {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--yali-bg, #f8fafc);
+    border: 1px solid var(--yali-border, #cbd5e1);
+    border-radius: var(--yali-radius, 12px);
+}
+
+.selected-articles-container > p {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: var(--yali-text, #1e293b);
+    font-weight: 600;
+}
+
+/* 已选文章列表 */
+#selected-articles-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#selected-articles-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    background: var(--yali-card, #ffffff);
+    border: 1px solid var(--yali-border, #e2e8f0);
+    border-radius: var(--yali-radius-sm, 8px);
+    transition: var(--yali-transition, all 0.2s ease);
+}
+
+#selected-articles-list li:last-child {
+    margin-bottom: 0;
+}
+
+#selected-articles-list li:hover {
+    border-color: var(--yali-primary, #6366f1);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
+}
+
+#selected-articles-list .article-title {
+    font-size: 14px;
+    color: var(--yali-text, #1e293b);
+    flex: 1;
+    margin-right: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 已选文章中的移除按钮 */
+#selected-articles-list .button {
+    flex-shrink: 0;
+    background: transparent !important;
+    border: 1px solid var(--yali-error, #ef4444) !important;
+    color: var(--yali-error, #ef4444) !important;
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    border-radius: var(--yali-radius-sm, 6px) !important;
+    transition: var(--yali-transition, all 0.2s ease) !important;
+}
+
+#selected-articles-list .button:hover {
+    background: var(--yali-error, #ef4444) !important;
+    color: #fff !important;
+}
+
+/* 搜索框包装器 */
+.search-box-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-box-wrapper .yali-input {
+    flex: 1;
+}
+
+.search-box-wrapper .yali-btn {
+    flex-shrink: 0;
+}

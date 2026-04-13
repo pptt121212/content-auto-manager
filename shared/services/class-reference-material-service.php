@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ReferenceMaterialService {
+class Yali_AI_Writer_ReferenceMaterialService {
     
     /**
      * 向量相似度阈值 - 普通模式
@@ -31,10 +31,10 @@ class ContentAuto_ReferenceMaterialService {
     private $logger;
     
     public function __construct() {
-        if (!class_exists('ContentAuto_PluginLogger')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
-        $this->logger = new ContentAuto_PluginLogger();
+        $this->logger = new Yali_AI_Writer_PluginLogger();
     }
     
     /**
@@ -62,7 +62,7 @@ class ContentAuto_ReferenceMaterialService {
             return $result;
         }
         
-        $topic_vector = content_auto_decompress_vector_from_base64($topic_data['vector_embedding']);
+        $topic_vector = yali_ai_writer_decompress_vector_from_base64($topic_data['vector_embedding']);
         if (!$topic_vector) {
             $result['error'] = '主题向量解码失败';
             return $result;
@@ -82,7 +82,7 @@ class ContentAuto_ReferenceMaterialService {
         // 计算所有参考资料的相似度（用于调试）
         $all_similarities = array();
         foreach ($reference_profiles as $profile) {
-            $profile_vector = content_auto_decompress_vector_from_base64($profile['vector']);
+            $profile_vector = yali_ai_writer_decompress_vector_from_base64($profile['vector']);
             if (!$profile_vector) {
                 $all_similarities[] = array(
                     'id' => $profile['id'],
@@ -93,7 +93,7 @@ class ContentAuto_ReferenceMaterialService {
                 continue;
             }
             
-            $similarity = content_auto_calculate_cosine_similarity($topic_vector, $profile_vector);
+            $similarity = yali_ai_writer_calculate_cosine_similarity($topic_vector, $profile_vector);
             $all_similarities[] = array(
                 'id' => $profile['id'],
                 'title' => $profile['title'],
@@ -243,7 +243,7 @@ class ContentAuto_ReferenceMaterialService {
      */
     private function get_rule_reference_material($rule_id) {
         global $wpdb;
-        $rules_table = $wpdb->prefix . 'content_auto_rules';
+        $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
 
         $rule_material = $wpdb->get_var($wpdb->prepare(
             "SELECT reference_material FROM {$rules_table} WHERE id = %d",
@@ -269,7 +269,7 @@ class ContentAuto_ReferenceMaterialService {
             return '';
         }
 
-        $topic_vector = content_auto_decompress_vector_from_base64($topic_data['vector_embedding']);
+        $topic_vector = yali_ai_writer_decompress_vector_from_base64($topic_data['vector_embedding']);
         if (!$topic_vector) {
             $this->logger->error('REFERENCE_MATERIAL_VECTOR_DECODE_FAILED', '主题向量解码失败', array(
                 'topic_id' => $topic_data['id'] ?? null
@@ -303,7 +303,7 @@ class ContentAuto_ReferenceMaterialService {
      */
     private function get_reference_type_profiles() {
         global $wpdb;
-        $brand_profiles_table = $wpdb->prefix . 'content_auto_brand_profiles';
+        $brand_profiles_table = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
 
         return $wpdb->get_results($wpdb->prepare(
             "SELECT id, title, description, vector FROM {$brand_profiles_table} WHERE type = %s AND vector IS NOT NULL AND vector != ''",
@@ -324,12 +324,12 @@ class ContentAuto_ReferenceMaterialService {
         $highest_similarity = 0.0;
 
         foreach ($reference_profiles as $profile) {
-            $profile_vector = content_auto_decompress_vector_from_base64($profile['vector']);
+            $profile_vector = yali_ai_writer_decompress_vector_from_base64($profile['vector']);
             if (!$profile_vector) {
                 continue;
             }
             
-            $similarity = content_auto_calculate_cosine_similarity($topic_vector, $profile_vector);
+            $similarity = yali_ai_writer_calculate_cosine_similarity($topic_vector, $profile_vector);
 
             if ($similarity >= self::SIMILARITY_THRESHOLD_NORMAL && $similarity > $highest_similarity) {
                 $highest_similarity = $similarity;
@@ -438,12 +438,12 @@ class ContentAuto_ReferenceMaterialService {
         $scored_profiles = array();
         
         foreach ($reference_profiles as $profile) {
-            $profile_vector = content_auto_decompress_vector_from_base64($profile['vector']);
+            $profile_vector = yali_ai_writer_decompress_vector_from_base64($profile['vector']);
             if (!$profile_vector) {
                 continue;
             }
             
-            $similarity = content_auto_calculate_cosine_similarity($topic_vector, $profile_vector);
+            $similarity = yali_ai_writer_calculate_cosine_similarity($topic_vector, $profile_vector);
             
             // 只保留超过阈值的
             if ($similarity >= self::SIMILARITY_THRESHOLD_AI_SELECT) {
@@ -479,8 +479,8 @@ class ContentAuto_ReferenceMaterialService {
         
         // 使用插件标准的统一API处理器调用大模型
         // 该处理器支持：API轮询机制、失败自动重试、预置API备选方案
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
-        $api_handler = new ContentAuto_UnifiedApiHandler();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+        $api_handler = new Yali_AI_Writer_UnifiedApiHandler();
         
         $response_data = $api_handler->generate_content($prompt, 'reference_select', array(
             'topic_id' => $topic_data['id'] ?? null,
@@ -528,11 +528,11 @@ class ContentAuto_ReferenceMaterialService {
         }
         
         // 从XML模板文件加载提示词
-        $template_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/reference-select-prompt.xml';
+        $template_path = YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/reference-select-prompt.xml';
         
         $locale = function_exists('get_user_locale') ? get_user_locale() : get_locale();
         if (strpos($locale, 'zh') !== 0) {
-            $en_template_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/en/reference-select-prompt.xml';
+            $en_template_path = YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/en/reference-select-prompt.xml';
             if (file_exists($en_template_path)) {
                 $template_path = $en_template_path;
             }
@@ -573,25 +573,18 @@ class ContentAuto_ReferenceMaterialService {
      * @return string 提示词
      */
     private function build_fallback_prompt($topic_title, $candidates_text) {
-        return <<<PROMPT
-你是一个专业的内容匹配专家。你的任务是从候选参考资料中选择一个与文章主题最相关、最具参考价值的资料。
-
-## 文章主题
-{$topic_title}
-
-## 候选参考资料列表
-{$candidates_text}
-
-## 选择标准
-1. 主题相关性：参考资料的标题与文章主题在内容领域上的匹配程度
-2. 参考价值：参考资料能为文章创作提供的实际帮助和信息补充
-3. 内容互补性：参考资料能否为文章带来有价值的补充视角或信息
-
-## 输出要求
-**重要：你必须且只能输出一个数字，即你选择的参考资料的ID。不要输出任何其他内容、解释或标点符号。**
-
-请输出你选择的参考资料ID：
-PROMPT;
+        return "你是一个专业的内容匹配专家。你的任务是从候选参考资料中选择一个与文章主题最相关、最具参考价值的资料。\n\n" .
+               "## 文章主题\n" .
+               $topic_title . "\n\n" .
+               "## 候选参考资料列表\n" .
+               $candidates_text . "\n\n" .
+               "## 选择标准\n" .
+               "1. 主题相关性：参考资料的标题与文章主题在内容领域上的匹配程度\n" .
+               "2. 参考价值：参考资料能为文章创作提供的实际帮助和信息补充\n" .
+               "3. 内容互补性：参考资料能否为文章带来有价值的补充视角或信息\n\n" .
+               "## 输出要求\n" .
+               "**重要：你必须且只能输出一个数字，即你选择的参考资料的ID。不要输出任何其他内容、解释或标点符号。**\n\n" .
+               "请输出你选择的参考资料ID：";
     }
     
     /**

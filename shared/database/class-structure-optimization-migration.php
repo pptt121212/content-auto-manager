@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_StructureOptimizationMigration {
+class Yali_AI_Writer_StructureOptimizationMigration {
     
     /**
      * 数据库前缀
@@ -69,7 +69,7 @@ class ContentAuto_StructureOptimizationMigration {
     private function extend_article_structures_table() {
         global $wpdb;
         
-        $table_name = $this->prefix . 'content_auto_article_structures';
+        $table_name = $this->prefix . 'yali_ai_writer_article_structures';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -141,7 +141,7 @@ class ContentAuto_StructureOptimizationMigration {
     private function extend_topics_table() {
         global $wpdb;
         
-        $table_name = $this->prefix . 'content_auto_topics';
+        $table_name = $this->prefix . 'yali_ai_writer_topics';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -204,7 +204,7 @@ class ContentAuto_StructureOptimizationMigration {
     private function create_structure_analytics_table() {
         global $wpdb;
         
-        $table_name = $this->prefix . 'content_auto_structure_analytics';
+        $table_name = $this->prefix . 'yali_ai_writer_structure_analytics';
         $charset_collate = $wpdb->get_charset_collate();
         
         // 检查表是否已存在
@@ -247,7 +247,7 @@ class ContentAuto_StructureOptimizationMigration {
     private function create_optimization_config_table() {
         global $wpdb;
         
-        $table_name = $this->prefix . 'content_auto_optimization_config';
+        $table_name = $this->prefix . 'yali_ai_writer_optimization_config';
         $charset_collate = $wpdb->get_charset_collate();
         
         // 检查表是否已存在
@@ -284,7 +284,7 @@ class ContentAuto_StructureOptimizationMigration {
     private function insert_default_configs() {
         global $wpdb;
         
-        $table_name = $this->prefix . 'content_auto_optimization_config';
+        $table_name = $this->prefix . 'yali_ai_writer_optimization_config';
         
         // 检查表是否存在
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
@@ -352,7 +352,7 @@ class ContentAuto_StructureOptimizationMigration {
         );
         
         // 验证 article_structures 表扩展
-        $table_name = $this->prefix . 'content_auto_article_structures';
+        $table_name = $this->prefix . 'yali_ai_writer_article_structures';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
         $verification['article_structures']['table_exists'] = $table_exists;
         
@@ -365,7 +365,7 @@ class ContentAuto_StructureOptimizationMigration {
         }
         
         // 验证 topics 表扩展
-        $table_name = $this->prefix . 'content_auto_topics';
+        $table_name = $this->prefix . 'yali_ai_writer_topics';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
         $verification['topics']['table_exists'] = $table_exists;
         
@@ -377,7 +377,7 @@ class ContentAuto_StructureOptimizationMigration {
         }
         
         // 验证 structure_analytics 表
-        $table_name = $this->prefix . 'content_auto_structure_analytics';
+        $table_name = $this->prefix . 'yali_ai_writer_structure_analytics';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
         $verification['structure_analytics']['table_exists'] = $table_exists;
         
@@ -388,7 +388,7 @@ class ContentAuto_StructureOptimizationMigration {
         }
         
         // 验证 optimization_config 表
-        $table_name = $this->prefix . 'content_auto_optimization_config';
+        $table_name = $this->prefix . 'yali_ai_writer_optimization_config';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
         $verification['optimization_config']['table_exists'] = $table_exists;
         
@@ -423,15 +423,15 @@ class ContentAuto_StructureOptimizationMigration {
         global $wpdb;
         
         // 删除 structure_analytics 表
-        $table_name = $this->prefix . 'content_auto_structure_analytics';
+        $table_name = $this->prefix . 'yali_ai_writer_structure_analytics';
         $wpdb->query("DROP TABLE IF EXISTS $table_name");
         
         // 删除 optimization_config 表
-        $table_name = $this->prefix . 'content_auto_optimization_config';
+        $table_name = $this->prefix . 'yali_ai_writer_optimization_config';
         $wpdb->query("DROP TABLE IF EXISTS $table_name");
         
         // 移除 article_structures 表的扩展字段
-        $table_name = $this->prefix . 'content_auto_article_structures';
+        $table_name = $this->prefix . 'yali_ai_writer_article_structures';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
         if ($table_exists) {
             // 移除索引
@@ -444,7 +444,7 @@ class ContentAuto_StructureOptimizationMigration {
         }
         
         // 移除 topics 表的扩展字段
-        $table_name = $this->prefix . 'content_auto_topics';
+        $table_name = $this->prefix . 'yali_ai_writer_topics';
         $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
         if ($table_exists) {
             // 移除索引

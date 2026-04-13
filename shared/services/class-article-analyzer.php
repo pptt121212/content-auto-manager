@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ArticleAnalyzer {
+class Yali_AI_Writer_ArticleAnalyzer {
     
     /**
      * 配置管理器
@@ -32,11 +32,11 @@ class ContentAuto_ArticleAnalyzer {
     /**
      * 构造函数
      * 
-     * @param ContentAuto_PluginLogger|null $logger 日志记录器
+     * @param Yali_AI_Writer_PluginLogger|null $logger 日志记录器
      */
     public function __construct($logger = null) {
         require_once dirname(__FILE__) . '/class-optimization-config.php';
-        $this->config = new ContentAuto_OptimizationConfig();
+        $this->config = new Yali_AI_Writer_OptimizationConfig();
         $this->logger = $logger;
     }
     
@@ -195,8 +195,8 @@ class ContentAuto_ArticleAnalyzer {
     private function get_articles_by_angle($content_angle, $min_days_published = null) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 构建日期过滤条件
         $date_condition = '';
@@ -267,9 +267,9 @@ class ContentAuto_ArticleAnalyzer {
     private function get_articles_by_angle_with_window($content_angle, $min_days_published, $max_days_published, $exclude_processed = false) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         // 构建排除已处理文章的条件
         $exclude_condition = '';
@@ -373,7 +373,7 @@ class ContentAuto_ArticleAnalyzer {
     public function get_all_angles_overview() {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 获取所有不同的 content_angle
         $angles = $wpdb->get_col("
@@ -400,7 +400,7 @@ class ContentAuto_ArticleAnalyzer {
     public function is_article_processed($post_id) {
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         $exists = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$structures_table} WHERE source_article_id = %d",

@@ -11,11 +11,11 @@ if (!defined('ABSPATH')) {
 // 引入依赖的抽象功能模块
 require_once __DIR__ . '/../topic-management/class-task-status-manager.php';
 require_once __DIR__ . '/../topic-management/class-task-recovery-handler.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
 require_once __DIR__ . '/class-article-performance-monitor.php';
 
-class ContentAuto_ArticleTaskManager {
+class Yali_AI_Writer_ArticleTaskManager {
     
     private $database;
     private $rule_manager;
@@ -25,12 +25,12 @@ class ContentAuto_ArticleTaskManager {
     private $recovery_handler;
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
-        $this->rule_manager = new ContentAuto_RuleManager();
-        $this->logger = new ContentAuto_LoggingSystem();
-        $this->performance_monitor = new ContentAuto_ArticlePerformanceMonitor();
-        $this->status_manager = new ContentAuto_TaskStatusManager($this->database, $this->logger);
-        $this->recovery_handler = new ContentAuto_TaskRecoveryHandler($this->database, $this->status_manager, $this->logger);
+        $this->database = new Yali_AI_Writer_Database();
+        $this->rule_manager = new Yali_AI_Writer_RuleManager();
+        $this->logger = new Yali_AI_Writer_LoggingSystem();
+        $this->performance_monitor = new Yali_AI_Writer_ArticlePerformanceMonitor();
+        $this->status_manager = new Yali_AI_Writer_TaskStatusManager($this->database, $this->logger);
+        $this->recovery_handler = new Yali_AI_Writer_TaskRecoveryHandler($this->database, $this->status_manager, $this->logger);
     }
 
     /**
@@ -54,7 +54,7 @@ class ContentAuto_ArticleTaskManager {
         // 验证主题是否存在
         $this->logger->log_info('TOPIC_VALIDATION', sprintf(__('Starting validation of %d topic(s)', 'yali-ai-writer'), count($topic_ids)), $context);
         foreach ($topic_ids as $topic_id) {
-            $topic = $this->database->get_row('content_auto_topics', array('id' => $topic_id));
+            $topic = $this->database->get_row('yali_ai_writer_topics', array('id' => $topic_id));
             if (!$topic) {
                 $error_context = array_merge($context, array('invalid_topic_id' => $topic_id));
                 $this->logger->log_error('TOPIC_NOT_FOUND', sprintf(__('Topic not found: %d', 'yali-ai-writer'), $topic_id), $error_context);
@@ -100,7 +100,7 @@ class ContentAuto_ArticleTaskManager {
             'current_processing_item' => 0,
             'total_rule_items' => $total_topics, // 每个主题作为一个规则项
             'generated_articles_count' => 0,
-            'status' => CONTENT_AUTO_STATUS_PENDING,
+            'status' => YALI_AI_WRITER_STATUS_PENDING,
             'subtask_status' => '{}', // 初始化为空的JSON对象
             'error_message' => '',
             'last_processed_at' => null,
@@ -110,7 +110,7 @@ class ContentAuto_ArticleTaskManager {
         
         // 插入任务记录
         $this->logger->log_info('TASK_INSERT', "开始插入任务记录", array_merge($context, array('article_task_id' => $article_task_id)));
-        $task_id = $this->database->insert('content_auto_article_tasks', $task_data);
+        $task_id = $this->database->insert('yali_ai_writer_article_tasks', $task_data);
         
         if ($task_id) {
             $success_context = array_merge($context, array('task_id' => $task_id, 'article_task_id' => $article_task_id));
@@ -138,7 +138,7 @@ class ContentAuto_ArticleTaskManager {
                 } else {
                     // 如果队列创建失败，回滚主题状态并删除任务
                     $this->unlock_topics_for_task($topic_ids);
-                    $this->database->delete('content_auto_article_tasks', array('id' => $task_id));
+                    $this->database->delete('yali_ai_writer_article_tasks', array('id' => $task_id));
                     $this->logger->log_error('QUEUE_CREATION_FAILED', '队列创建失败，已回滚任务创建', $success_context);
                     $this->performance_monitor->record_error('database', 'QUEUE_CREATION_FAILED', $success_context);
                     $this->performance_monitor->end_timing('create_article_task', false);
@@ -146,7 +146,7 @@ class ContentAuto_ArticleTaskManager {
                 }
             } else {
                 // 如果主题锁定失败，删除已创建的任务
-                $this->database->delete('content_auto_article_tasks', array('id' => $task_id));
+                $this->database->delete('yali_ai_writer_article_tasks', array('id' => $task_id));
                 $this->logger->log_error('TOPIC_LOCKING_FAILED', '主题状态锁定失败，已回滚任务创建', $success_context);
                 $this->performance_monitor->record_error('database', 'TOPIC_LOCKING_FAILED', $success_context);
                 $this->performance_monitor->end_timing('create_article_task', false);
@@ -166,7 +166,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function add_to_queue($task_id, $topic_ids) {
         // 获取任务信息
-        $task = $this->database->get_row('content_auto_article_tasks', array('id' => $task_id));
+        $task = $this->database->get_row('yali_ai_writer_article_tasks', array('id' => $task_id));
         if (!$task) {
             return false;
         }
@@ -187,13 +187,13 @@ class ContentAuto_ArticleTaskManager {
                 'reference_id' => $topic_id, // reference_id 存储主题ID
                 'priority' => 50, // 文章生成优先级（中等）
                 'retry_count' => 0,
-                'status' => CONTENT_AUTO_STATUS_PENDING,
+                'status' => YALI_AI_WRITER_STATUS_PENDING,
                 'error_message' => '',
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql')
             );
             
-            $queue_id = $this->database->insert('content_auto_job_queue', $data);
+            $queue_id = $this->database->insert('yali_ai_writer_job_queue', $data);
             if ($queue_id) {
                 $queue_ids[] = $queue_id;
             }
@@ -212,7 +212,7 @@ class ContentAuto_ArticleTaskManager {
         $topic_ids_json = json_encode($topic_ids);
         
         $existing_tasks = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}content_auto_article_tasks 
+            "SELECT * FROM {$wpdb->prefix}yali_ai_writer_article_tasks 
             WHERE topic_ids = %s AND status IN ('pending', 'processing')",
             $topic_ids_json
         ));
@@ -240,7 +240,7 @@ class ContentAuto_ArticleTaskManager {
         global $wpdb;
         
         // 获取父任务信息
-        $task = $this->database->get_row('content_auto_article_tasks', array('id' => $article_task_id));
+        $task = $this->database->get_row('yali_ai_writer_article_tasks', array('id' => $article_task_id));
         if (!$task) {
             $this->logger->log_error('TASK_NOT_FOUND', "任务不存在: {$article_task_id}");
             return false;
@@ -290,7 +290,7 @@ class ContentAuto_ArticleTaskManager {
             }
 
             // 更新父任务
-            $result = $this->database->update('content_auto_article_tasks', $update_data, array('id' => $article_task_id));
+            $result = $this->database->update('yali_ai_writer_article_tasks', $update_data, array('id' => $article_task_id));
             
             if ($result === false) {
                 throw new Exception("更新任务进度失败");
@@ -299,10 +299,10 @@ class ContentAuto_ArticleTaskManager {
             // 检查是否所有子任务都已完成，自动设置任务完成状态
             $total_processed = $completed_count + $failed_count;
             if ($total_processed >= $task['total_topics']) {
-                $final_status = ($failed_count > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
+                $final_status = ($failed_count > 0) ? YALI_AI_WRITER_STATUS_FAILED : YALI_AI_WRITER_STATUS_COMPLETED;
                 
                 $final_update = ['status' => $final_status];
-                $this->database->update('content_auto_article_tasks', $final_update, array('id' => $article_task_id));
+                $this->database->update('yali_ai_writer_article_tasks', $final_update, array('id' => $article_task_id));
                 
                 $this->logger->log_success('TASK_COMPLETED', 
                     "文章任务完成，最终状态: {$final_status}，成功: {$completed_count}，失败: {$failed_count}",
@@ -343,7 +343,7 @@ class ContentAuto_ArticleTaskManager {
         
         // 获取任务信息
         $this->logger->log_info('TASK_FETCH', '获取任务信息', $context);
-        $task = $this->database->get_row('content_auto_article_tasks', array('id' => $task_id));
+        $task = $this->database->get_row('yali_ai_writer_article_tasks', array('id' => $task_id));
         if (!$task) {
             $error_message = '文章任务不存在: ' . $task_id;
             $this->logger->log_error('TASK_NOT_FOUND', $error_message, $context);
@@ -377,7 +377,7 @@ class ContentAuto_ArticleTaskManager {
                 return ['success' => false, 'message' => $error_message];
             }
             // 重新加载任务信息以确保状态更新
-            $task = $this->database->get_row('content_auto_article_tasks', array('id' => $task_id));
+            $task = $this->database->get_row('yali_ai_writer_article_tasks', array('id' => $task_id));
         }
         
         global $wpdb;
@@ -416,7 +416,7 @@ class ContentAuto_ArticleTaskManager {
     private function update_task_heartbeat($task_id, $subtask_id, $stage = '') {
         global $wpdb;
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $updated = $wpdb->update(
             $queue_table,
             ['updated_at' => current_time('mysql')],
@@ -428,7 +428,7 @@ class ContentAuto_ArticleTaskManager {
         );
         
         // 仅在调试模式下记录心跳日志
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE && !empty($stage)) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE && !empty($stage)) {
             $this->logger->log_debug('ARTICLE_TASK_HEARTBEAT', "文章任务心跳更新", [
                 'task_id' => $task_id,
                 'subtask_id' => $subtask_id,
@@ -443,7 +443,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function process_current_topic_task($task, $subtask_id) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         $base_context = array(
             'task_id' => $task['id'],
@@ -469,7 +469,7 @@ class ContentAuto_ArticleTaskManager {
         }
         
         $topic_id = $queue_record->reference_id;
-        $topic = $this->database->get_row('content_auto_topics', array('id' => $topic_id));
+        $topic = $this->database->get_row('yali_ai_writer_topics', array('id' => $topic_id));
 
         if (!$topic) {
             $error_details = ['stage' => '主题验证', 'message' => '主题不存在'];
@@ -491,7 +491,7 @@ class ContentAuto_ArticleTaskManager {
 
         // 使用文章生成器生成文章
         require_once __DIR__ . '/class-article-generator.php';
-        $article_generator = new ContentAuto_ArticleGenerator();
+        $article_generator = new Yali_AI_Writer_ArticleGenerator();
         
         $this->logger->log_info('ARTICLE_GENERATOR_START', '开始调用文章生成器', array_merge($base_context, array(
             'topic_id' => $topic_id,
@@ -539,7 +539,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function handle_successful_processing($task_id, $task, $subtask_id) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
 
         // 1. 更新队列中的子任务状态为 completed
         $wpdb->update($queue_table,
@@ -551,10 +551,10 @@ class ContentAuto_ArticleTaskManager {
         $processed_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$queue_table} WHERE job_type = 'article' AND job_id = %d AND status IN ('completed', 'failed')", $task_id));
         $new_generated_count = $task['generated_articles_count'] + 1;
         
-        $this->database->update('content_auto_article_tasks', array(
+        $this->database->update('yali_ai_writer_article_tasks', array(
             'current_processing_item' => $processed_count,
             'generated_articles_count' => $new_generated_count,
-            'status' => CONTENT_AUTO_STATUS_PENDING, // 设置回pending，等待下一个子任务
+            'status' => YALI_AI_WRITER_STATUS_PENDING, // 设置回pending，等待下一个子任务
             'last_processed_at' => current_time('mysql')
         ), array('id' => $task_id));
         
@@ -569,7 +569,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function handle_failed_processing($task_id, $task, $subtask_id, $error_details) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
 
         // 检查是否为API错误，只有API错误才允许重试
         $error_stage = $error_details['stage'] ?? '';
@@ -605,11 +605,11 @@ class ContentAuto_ArticleTaskManager {
         // 不累积错误，只显示当前子任务的错误
         $main_task_error = sprintf(__('子任务 %s 处理失败', 'yali-ai-writer'), $subtask_id);
         
-        $this->database->update('content_auto_article_tasks',
+        $this->database->update('yali_ai_writer_article_tasks',
             [
                 'error_message' => $main_task_error,
                 'current_processing_item' => $processed_count,
-                'status' => CONTENT_AUTO_STATUS_PENDING, // 设置回pending，等待下一个子任务
+                'status' => YALI_AI_WRITER_STATUS_PENDING, // 设置回pending，等待下一个子任务
                 'last_processed_at' => current_time('mysql')
             ],
             ['id' => $task_id]
@@ -626,8 +626,8 @@ class ContentAuto_ArticleTaskManager {
         
         if ($queue_record && $queue_record->reference_id) {
             $this->database->update(
-                'content_auto_topics',
-                ['status' => CONTENT_AUTO_TOPIC_UNUSED], // 重置为 unused 允许该主题被再次拾取
+                'yali_ai_writer_topics',
+                ['status' => YALI_AI_WRITER_TOPIC_UNUSED], // 重置为 unused 允许该主题被再次拾取
                 ['id' => $queue_record->reference_id]
             );
             $this->logger->log_info('TOPIC_UNLOCKED', "任务失败，主题已解锁: {$queue_record->reference_id}", ['task_id' => $task_id, 'topic_id' => $queue_record->reference_id]);
@@ -644,7 +644,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function mark_final_failure($task_id, $subtask_id, $error_details) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
 
         $error_stage = $error_details['stage'] ?? __('未知', 'yali-ai-writer');
         $error_detail_str = is_array($error_details['message']) ? json_encode($error_details['message'], JSON_UNESCAPED_UNICODE) : $error_details['message'];
@@ -666,11 +666,11 @@ class ContentAuto_ArticleTaskManager {
         
         $main_task_error = sprintf(__('子任务 %s 最终失败（非API错误）', 'yali-ai-writer'), $subtask_id);
         
-        $this->database->update('content_auto_article_tasks',
+        $this->database->update('yali_ai_writer_article_tasks',
             [
                 'error_message' => $main_task_error,
                 'current_processing_item' => $processed_count,
-                'status' => CONTENT_AUTO_STATUS_PENDING, // 设置回pending，等待下一个子任务
+                'status' => YALI_AI_WRITER_STATUS_PENDING, // 设置回pending，等待下一个子任务
                 'last_processed_at' => current_time('mysql')
             ],
             ['id' => $task_id]
@@ -686,8 +686,8 @@ class ContentAuto_ArticleTaskManager {
         
         if ($queue_record && $queue_record->reference_id) {
             $this->database->update(
-                'content_auto_topics',
-                ['status' => CONTENT_AUTO_TOPIC_UNUSED],
+                'yali_ai_writer_topics',
+                ['status' => YALI_AI_WRITER_TOPIC_UNUSED],
                 ['id' => $queue_record->reference_id]
             );
             $this->logger->log_info('TOPIC_UNLOCKED', "任务最终失败，主题已解锁: {$queue_record->reference_id}", ['task_id' => $task_id, 'topic_id' => $queue_record->reference_id]);
@@ -702,7 +702,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function handle_exception($task_id, $task, $subtask_id, $exception) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
 
         $error_detail_message = sprintf(
             __("在文件 %1\$s 的第 %2\$d 行发生异常: %3\$s", 'yali-ai-writer'),
@@ -728,11 +728,11 @@ class ContentAuto_ArticleTaskManager {
         // 不累积错误，只显示当前子任务的错误
         $main_task_error = sprintf(__('子任务 %s 处理失败', 'yali-ai-writer'), $subtask_id);
         
-        $this->database->update('content_auto_article_tasks',
+        $this->database->update('yali_ai_writer_article_tasks',
             [
                 'error_message' => $main_task_error,
                 'current_processing_item' => $processed_count,
-                'status' => CONTENT_AUTO_STATUS_PENDING, // 设置回pending
+                'status' => YALI_AI_WRITER_STATUS_PENDING, // 设置回pending
                 'last_processed_at' => current_time('mysql')
             ],
             ['id' => $task_id]
@@ -750,14 +750,14 @@ class ContentAuto_ArticleTaskManager {
      * 检查任务是否可处理
      */
     private function is_task_processable($task) {
-        $valid_statuses = array(CONTENT_AUTO_STATUS_PENDING, CONTENT_AUTO_STATUS_PROCESSING);
+        $valid_statuses = array(YALI_AI_WRITER_STATUS_PENDING, YALI_AI_WRITER_STATUS_PROCESSING);
         
         if (!in_array($task['status'], $valid_statuses)) {
             // 尝试恢复不一致的状态
             if ($this->recovery_handler->recover_inconsistent_task_state($task['id'], 'article')) {
                 $this->logger->log_success('TASK_RECOVERED', '任务状态已恢复');
                 // 重新获取任务信息
-                $task = $this->database->get_row('content_auto_article_tasks', array('id' => $task['id']));
+                $task = $this->database->get_row('yali_ai_writer_article_tasks', array('id' => $task['id']));
                 return $task && in_array($task['status'], $valid_statuses);
             }
             return false;
@@ -772,14 +772,14 @@ class ContentAuto_ArticleTaskManager {
     private function get_current_subtask_id($task_id, $task) {
         global $wpdb;
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 首先检查是否有正在处理的子任务
         $processing_record = $wpdb->get_row($wpdb->prepare(
             "SELECT subtask_id FROM {$queue_table} 
             WHERE job_type = 'article' AND job_id = %d AND status = %s 
             ORDER BY created_at ASC LIMIT 1",
-            $task_id, CONTENT_AUTO_STATUS_PROCESSING
+            $task_id, YALI_AI_WRITER_STATUS_PROCESSING
         ));
         
         if ($processing_record && $processing_record->subtask_id) {
@@ -791,7 +791,7 @@ class ContentAuto_ArticleTaskManager {
             "SELECT subtask_id FROM {$queue_table} 
             WHERE job_type = 'article' AND job_id = %d AND status = %s 
             ORDER BY created_at ASC LIMIT 1",
-            $task_id, CONTENT_AUTO_STATUS_PENDING
+            $task_id, YALI_AI_WRITER_STATUS_PENDING
         ));
         
         return $pending_record && $pending_record->subtask_id ? $pending_record->subtask_id : null;
@@ -802,7 +802,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function finalize_task_status_if_completed($task_id, $task) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
 
         // 使用 >= 是为了防止在某些边缘情况下计数不精确
         $processed_count = $wpdb->get_var($wpdb->prepare(
@@ -817,9 +817,9 @@ class ContentAuto_ArticleTaskManager {
             ));
 
             // 如果有任何失败的子任务，则整个任务失败；否则，任务完成
-            $final_status = ($failed_count > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
+            $final_status = ($failed_count > 0) ? YALI_AI_WRITER_STATUS_FAILED : YALI_AI_WRITER_STATUS_COMPLETED;
             
-            $this->database->update('content_auto_article_tasks',
+            $this->database->update('yali_ai_writer_article_tasks',
                 ['status' => $final_status],
                 ['id' => $task_id]
             );
@@ -832,7 +832,7 @@ class ContentAuto_ArticleTaskManager {
      */
     public function get_tasks() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_article_tasks';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         return $wpdb->get_results("SELECT * FROM {$table_name} ORDER BY created_at DESC", ARRAY_A);
     }
     
@@ -844,7 +844,7 @@ class ContentAuto_ArticleTaskManager {
      * 获取任务
      */
     public function get_task($task_id) {
-        return $this->database->get_row('content_auto_article_tasks', array('id' => $task_id));
+        return $this->database->get_row('yali_ai_writer_article_tasks', array('id' => $task_id));
     }
     
     /**
@@ -864,7 +864,7 @@ class ContentAuto_ArticleTaskManager {
         // 如果按ID查询失败，尝试按article_task_id查询（字符串）
         if (!$task) {
             global $wpdb;
-            $table_name = $wpdb->prefix . 'content_auto_article_tasks';
+            $table_name = $wpdb->prefix . 'yali_ai_writer_article_tasks';
             $task = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE article_task_id = %s", $task_id), ARRAY_A);
         }
         
@@ -932,7 +932,7 @@ class ContentAuto_ArticleTaskManager {
      */
     private function get_subtask_status_counts_from_queue($task_id) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 获取该任务的所有队列项状态统计
         $status_counts = $wpdb->get_results($wpdb->prepare(
@@ -1001,7 +1001,7 @@ class ContentAuto_ArticleTaskManager {
         $topics_info = array();
         if (is_array($topic_ids)) {
             foreach ($topic_ids as $topic_id) {
-                $topic = $this->database->get_row('content_auto_topics', array('id' => $topic_id));
+                $topic = $this->database->get_row('yali_ai_writer_topics', array('id' => $topic_id));
                 if ($topic) {
                     $topics_info[] = array(
                         'id' => $topic['id'],
@@ -1015,7 +1015,7 @@ class ContentAuto_ArticleTaskManager {
         
         // 获取队列状态信息
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $queue_items = $wpdb->get_results($wpdb->prepare(
             "SELECT subtask_id, reference_id, status, error_message, created_at, updated_at 
              FROM {$queue_table} 
@@ -1028,8 +1028,8 @@ class ContentAuto_ArticleTaskManager {
             'progress' => $progress,
             'topics' => $topics_info,
             'queue_items' => $queue_items,
-            'can_retry' => in_array($progress['status'], [CONTENT_AUTO_STATUS_FAILED, CONTENT_AUTO_STATUS_PENDING]),
-            'can_pause' => $progress['status'] === CONTENT_AUTO_STATUS_PROCESSING,
+            'can_retry' => in_array($progress['status'], [YALI_AI_WRITER_STATUS_FAILED, YALI_AI_WRITER_STATUS_PENDING]),
+            'can_pause' => $progress['status'] === YALI_AI_WRITER_STATUS_PROCESSING,
             'can_resume' => $progress['status'] === 'paused'
         );
     }
@@ -1060,21 +1060,21 @@ class ContentAuto_ArticleTaskManager {
         global $wpdb;
         
         // 1. 首先根据article_task_id找到父任务信息
-        $task = $this->database->get_row('content_auto_article_tasks', array('article_task_id' => $article_task_id));
+        $task = $this->database->get_row('yali_ai_writer_article_tasks', array('article_task_id' => $article_task_id));
         if (!$task) {
             return false;
         }
         
         // 2. 删除非成功状态的子任务队列项
         // 只删除 pending, processing, failed 等非成功状态的子任务
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $deleted_queue_count = $wpdb->query($wpdb->prepare(
             "DELETE FROM {$queue_table} WHERE job_type = 'article' AND job_id = %d AND status != 'completed'",
             $task['id']
         ));
         
         // 3. 删除任务记录本身
-        $result = $this->database->delete('content_auto_article_tasks', array('article_task_id' => $article_task_id));
+        $result = $this->database->delete('yali_ai_writer_article_tasks', array('article_task_id' => $article_task_id));
         
         return $result !== false;
     }
@@ -1129,8 +1129,8 @@ class ContentAuto_ArticleTaskManager {
         $this->logger->log_info('TOPIC_LOCKING_START', "开始锁定主题状态", array('topic_ids' => $topic_ids));
         
         foreach ($topic_ids as $topic_id) {
-            $result = $this->database->update('content_auto_topics', 
-                array('status' => CONTENT_AUTO_TOPIC_QUEUED), 
+            $result = $this->database->update('yali_ai_writer_topics', 
+                array('status' => YALI_AI_WRITER_TOPIC_QUEUED), 
                 array('id' => $topic_id)
             );
             
@@ -1154,8 +1154,8 @@ class ContentAuto_ArticleTaskManager {
         $this->logger->log_info('TOPIC_UNLOCKING_START', "开始解锁主题状态", array('topic_ids' => $topic_ids));
         
         foreach ($topic_ids as $topic_id) {
-            $result = $this->database->update('content_auto_topics', 
-                array('status' => CONTENT_AUTO_TOPIC_UNUSED), 
+            $result = $this->database->update('yali_ai_writer_topics', 
+                array('status' => YALI_AI_WRITER_TOPIC_UNUSED), 
                 array('id' => $topic_id)
             );
             

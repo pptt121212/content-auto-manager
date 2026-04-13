@@ -1,0 +1,38 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "清除中...": [
+                "Clearing..."
+            ],
+            "清除队列失败": [
+                "Clear failed"
+            ],
+            "网络请求失败，请稍后重试": [
+                "Network error, retry later"
+            ],
+            "请至少选择一项进行清理": [
+                "Select at least one"
+            ],
+            "清理中...": [
+                "Cleaning..."
+            ],
+            "清理失败": [
+                "Cleanup failed"
+            ],
+            "保存中...": [
+                "Saving..."
+            ],
+            "已保存": [
+                "Saved"
+            ]
+        }
+    }
+}

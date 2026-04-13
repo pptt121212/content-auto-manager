@@ -1,0 +1,52 @@
+/* Specific overrides for publish rules */
+.yali-license-status { 
+    margin-top: 8px; 
+    font-weight: 600; 
+    padding: 10px 15px; 
+    border-radius: 8px; 
+    display: inline-block; 
+}
+.yali-license-status.valid { 
+    background: #ecfdf5; 
+    color: #059669; 
+    border: 1px solid #10b981; 
+}
+.yali-license-status.invalid { 
+    background: #fef2f2; 
+    color: #dc2626; 
+    border: 1px solid #f87171; 
+}
+
+/* Layout Refinement: Open form look */
+.yali-card .form-table { 
+    margin-top: 0 !important; 
+}
+.yali-card .form-table th { 
+    padding-left: 0 !important; 
+    width: 180px !important; 
+    color: var(--yali-text); 
+    font-weight: 600; 
+}
+.yali-card .form-table td { 
+    padding: 15px 10px !important; 
+}
+
+/* Remove box-within-box look */
+.yali-card .yali-table { 
+    border: none !important; 
+    box-shadow: none !important; 
+    background: transparent !important; 
+}
+.yali-card .yali-table td, 
+.yali-card .yali-table th { 
+    border-bottom: 1px solid #f1f5f9 !important; 
+}
+.yali-card .yali-table tr:last-child td { 
+    border-bottom: none !important; 
+}
+
+/* Disable row hover background as requested */
+.yali-card .yali-table tbody tr:hover,
+.yali-card .form-table tbody tr:hover { 
+    background: transparent !important; 
+}

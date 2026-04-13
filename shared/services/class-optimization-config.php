@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_OptimizationConfig {
+class Yali_AI_Writer_OptimizationConfig {
     
     /**
      * 配置表名
@@ -66,7 +66,7 @@ class ContentAuto_OptimizationConfig {
      */
     public function __construct() {
         global $wpdb;
-        $this->table_name = $wpdb->prefix . 'content_auto_optimization_config';
+        $this->table_name = $wpdb->prefix . 'yali_ai_writer_optimization_config';
     }
     
     /**

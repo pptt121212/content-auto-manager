@@ -8,15 +8,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_PluginLogger {
+class Yali_AI_Writer_PluginLogger {
     
     private $logs_dir;
     private $current_log_file;
 
     public function __construct() {
         // 使用 __DIR__ 计算插件根目录，避免依赖可能未定义的常量
-        $plugin_dir = defined('CONTENT_AUTO_MANAGER_PLUGIN_DIR') 
-            ? CONTENT_AUTO_MANAGER_PLUGIN_DIR 
+        $plugin_dir = defined('YALI_AI_WRITER_PLUGIN_DIR') 
+            ? YALI_AI_WRITER_PLUGIN_DIR 
             : dirname(dirname(__DIR__)) . '/';
         $this->logs_dir = $plugin_dir . 'logs';
         $this->current_log_file = $this->logs_dir . '/' . date('Y-m-d') . '.log';
@@ -49,10 +49,35 @@ class ContentAuto_PluginLogger {
             if (defined('JSON_PARTIAL_OUTPUT_ON_ERROR')) {
                 $flags |= JSON_PARTIAL_OUTPUT_ON_ERROR;
             }
-            $context_str = @json_encode($context, $flags);
-            if ($context_str === false) {
-                $context_str = "JSON Encode Error: " . json_last_error_msg() . "\n" . print_r($context, true);
+            
+            // 增加JSON最大深度，防止嵌套数组被截断
+            $context_str = @json_encode($context, $flags, 512);
+            
+            // 检查内容大小，如果超过1MB，记录到单独的文件
+            $content_size = strlen(serialize($context));
+            if ($content_size > 1000000) {
+                // 超大内容保存到单独文件
+                $large_content_file = $this->logs_dir . '/large_content_' . date('Y-m-d_H-i-s') . '_' . uniqid() . '.log';
+                @file_put_contents($large_content_file, print_r($context, true));
+                $context['_large_content_saved'] = 'Content too large (' . round($content_size/1024/1024, 2) . ' MB), saved to: ' . basename($large_content_file);
+                // 重新编码
+                $context_str = @json_encode($context, $flags, 512);
             }
+            
+            // 如果json_encode失败（可能是内容太大），尝试分段记录
+            if ($context_str === false && json_last_error() === JSON_ERROR_UTF8) {
+                // 清理非法UTF-8字符后重试
+                $clean_context = $this->sanitize_utf8($context);
+                $context_str = @json_encode($clean_context, $flags, 512);
+            }
+            
+            if ($context_str === false) {
+                // 如果还是失败，使用print_r作为fallback
+                $error_msg = json_last_error_msg();
+                $context_str = "JSON Encode Error: " . $error_msg . "\n" . print_r($context, true);
+                error_log('Yali AI Writer - JSON encode failed: ' . $error_msg . ', context size: ' . $content_size);
+            }
+            
             $log_entry .= "\nContext: " . $context_str;
         }
         
@@ -69,6 +94,26 @@ class ContentAuto_PluginLogger {
         }
         
         return $result !== false;
+    }
+    
+    /**
+     * 清理数组中的非法UTF-8字符
+     * 
+     * @param mixed $data 要清理的数据
+     * @return mixed 清理后的数据
+     */
+    private function sanitize_utf8($data) {
+        if (is_string($data)) {
+            // 移除非法UTF-8序列
+            return mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+        } elseif (is_array($data)) {
+            $result = array();
+            foreach ($data as $key => $value) {
+                $result[$key] = $this->sanitize_utf8($value);
+            }
+            return $result;
+        }
+        return $data;
     }
     
     /**

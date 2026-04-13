@@ -234,4 +234,73 @@ jQuery(document).ready(function ($) {
             }
         });
     });
+
+    // --- Pollinations Image Models Sync Logic ---
+    $(document).on('click', '#refresh-pollinations-image-models', function () {
+        const refreshBtn = $(this);
+        const modelSelect = $('#pollinations_default_model');
+        const statusSpan = $('#pollinations-model-refresh-status');
+        const currentSelected = modelSelect.val();
+
+        refreshBtn.prop('disabled', true);
+        statusSpan.show();
+
+        $.ajax({
+            url: contentAutoManager.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'cam_fetch_pollinations_image_models',
+                nonce: contentAutoManager.nonce
+            },
+            success: function (response) {
+                if (response.success && response.data.models) {
+                    modelSelect.empty();
+
+                    // 分离免费和付费模型
+                    const freeModels = response.data.models.filter(function (m) { return m.is_free; });
+                    const paidModels = response.data.models.filter(function (m) { return m.is_paid; });
+
+                    // 添加免费模型分组
+                    if (freeModels.length > 0) {
+                        const freeGroup = $('<optgroup>').attr('label', '🔒 ' + wp.i18n.__('免费模型', 'yali-ai-writer') + ' (' + freeModels.length + ')');
+                        freeModels.forEach(function (m) {
+                            const opt = $('<option>').val(m.id).text(m.id + ' - ' + m.description);
+                            if (m.id === currentSelected) {
+                                opt.prop('selected', true);
+                            }
+                            freeGroup.append(opt);
+                        });
+                        modelSelect.append(freeGroup);
+                    }
+
+                    // 添加付费模型分组
+                    if (paidModels.length > 0) {
+                        const paidGroup = $('<optgroup>').attr('label', '💎 ' + wp.i18n.__('付费模型', 'yali-ai-writer') + ' (' + paidModels.length + ')');
+                        paidModels.forEach(function (m) {
+                            const opt = $('<option>').val(m.id).text(m.id + ' - ' + m.description);
+                            if (m.id === currentSelected) {
+                                opt.prop('selected', true);
+                            }
+                            paidGroup.append(opt);
+                        });
+                        modelSelect.append(paidGroup);
+                    }
+
+                    alert('✨ ' + wp.i18n.__('图像模型同步成功！', 'yali-ai-writer') + '\n' +
+                        wp.i18n.__('免费模型:', 'yali-ai-writer') + ' ' + freeModels.length + '\n' +
+                        wp.i18n.__('付费模型:', 'yali-ai-writer') + ' ' + paidModels.length);
+                } else {
+                    alert(wp.i18n.__('❌ 获取失败:', 'yali-ai-writer') + ' ' +
+                        (response.data ? response.data.message : wp.i18n.__('未知错误', 'yali-ai-writer')));
+                }
+            },
+            error: function () {
+                alert(wp.i18n.__('网络连接错误，请稍后再试。', 'yali-ai-writer'));
+            },
+            complete: function () {
+                refreshBtn.prop('disabled', false);
+                statusSpan.hide();
+            }
+        });
+    });
 });

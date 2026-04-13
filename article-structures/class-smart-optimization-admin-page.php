@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_SmartOptimizationAdminPage {
+class Yali_AI_Writer_SmartOptimizationAdminPage {
     
     /**
      * 配置管理器
@@ -39,20 +39,20 @@ class ContentAuto_SmartOptimizationAdminPage {
      */
     public function __construct() {
         // 注册 AJAX 处理器
-        add_action('wp_ajax_get_optimization_configs', array($this, 'ajax_get_configs'));
-        add_action('wp_ajax_save_optimization_config', array($this, 'ajax_save_config'));
-        add_action('wp_ajax_save_optimization_configs', array($this, 'ajax_save_configs'));
-        add_action('wp_ajax_reset_optimization_configs', array($this, 'ajax_reset_configs'));
-        add_action('wp_ajax_get_cold_start_phases', array($this, 'ajax_get_cold_start_phases'));
-        add_action('wp_ajax_get_data_driven_structures', array($this, 'ajax_get_data_driven_structures'));
-        add_action('wp_ajax_get_diversity_overview', array($this, 'ajax_get_diversity_overview'));
-        add_action('wp_ajax_get_performance_comparison', array($this, 'ajax_get_performance_comparison'));
-        add_action('wp_ajax_run_manual_analysis', array($this, 'ajax_run_manual_analysis'));
-        add_action('wp_ajax_get_pending_analysis_count', array($this, 'ajax_get_pending_analysis_count'));
-        add_action('wp_ajax_process_single_article', array($this, 'ajax_process_single_article'));
-        add_action('wp_ajax_update_popularity_indices', array($this, 'ajax_update_popularity_indices'));
-        add_action('wp_ajax_clear_optimization_caches', array($this, 'ajax_clear_caches'));
-        add_action('wp_ajax_analyze_article_structure', array($this, 'ajax_analyze_article_structure'));
+        add_action('wp_ajax_yali_ai_writer_get_optimization_configs', array($this, 'ajax_get_configs'));
+        add_action('wp_ajax_yali_ai_writer_save_optimization_config', array($this, 'ajax_save_config'));
+        add_action('wp_ajax_yali_ai_writer_save_optimization_configs', array($this, 'ajax_save_configs'));
+        add_action('wp_ajax_yali_ai_writer_reset_optimization_configs', array($this, 'ajax_reset_configs'));
+        add_action('wp_ajax_yali_ai_writer_get_cold_start_phases', array($this, 'ajax_get_cold_start_phases'));
+        add_action('wp_ajax_yali_ai_writer_get_data_driven_structures', array($this, 'ajax_get_data_driven_structures'));
+        add_action('wp_ajax_yali_ai_writer_get_diversity_overview', array($this, 'ajax_get_diversity_overview'));
+        add_action('wp_ajax_yali_ai_writer_get_performance_comparison', array($this, 'ajax_get_performance_comparison'));
+        add_action('wp_ajax_yali_ai_writer_run_manual_analysis', array($this, 'ajax_run_manual_analysis'));
+        add_action('wp_ajax_yali_ai_writer_get_pending_analysis_count', array($this, 'ajax_get_pending_analysis_count'));
+        add_action('wp_ajax_yali_ai_writer_process_single_article', array($this, 'ajax_process_single_article'));
+        add_action('wp_ajax_yali_ai_writer_update_popularity_indices', array($this, 'ajax_update_popularity_indices'));
+        add_action('wp_ajax_yali_ai_writer_clear_optimization_caches', array($this, 'ajax_clear_caches'));
+        add_action('wp_ajax_yali_ai_writer_analyze_article_structure', array($this, 'ajax_analyze_article_structure'));
     }
     
     /**
@@ -60,23 +60,23 @@ class ContentAuto_SmartOptimizationAdminPage {
      */
     private function load_services() {
         if ($this->config === null) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-optimization-config.php';
-            $this->config = new ContentAuto_OptimizationConfig();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-optimization-config.php';
+            $this->config = new Yali_AI_Writer_OptimizationConfig();
         }
         
         if ($this->cold_start_manager === null) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-cold-start-manager.php';
-            $this->cold_start_manager = new ContentAuto_ColdStartManager();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-cold-start-manager.php';
+            $this->cold_start_manager = new Yali_AI_Writer_ColdStartManager();
         }
         
         if ($this->diversity_controller === null) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-diversity-controller.php';
-            $this->diversity_controller = new ContentAuto_DiversityController();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-diversity-controller.php';
+            $this->diversity_controller = new Yali_AI_Writer_DiversityController();
         }
         
         if ($this->popularity_calculator === null) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-popularity-calculator.php';
-            $this->popularity_calculator = new ContentAuto_PopularityCalculator();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-popularity-calculator.php';
+            $this->popularity_calculator = new Yali_AI_Writer_PopularityCalculator();
         }
     }
     
@@ -84,12 +84,6 @@ class ContentAuto_SmartOptimizationAdminPage {
      * 渲染页面
      */
     public function render_page() {
-        // 1. Define localized data for existing templates if needed
-        $localized_data = array(
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('smart_optimization_nonce')
-        );
-
         // 获取当前设置
         $this->load_services();
         $settings = $this->config->get_all_configs();
@@ -98,12 +92,8 @@ class ContentAuto_SmartOptimizationAdminPage {
         <div class="wrap yali-plugin-wrapper">
             <?php 
             // Use include instead of echo file_get_contents to allow PHP execution in view
-            include CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-structures/views/smart-optimization-settings.php'; 
+            include YALI_AI_WRITER_PLUGIN_DIR . 'article-structures/views/smart-optimization-settings.php'; 
             ?>
-            
-            <script type="text/javascript">
-                window.smartOptimization = <?php echo json_encode($localized_data); ?>;
-            </script>
         </div>
         <?php
     }
@@ -225,7 +215,7 @@ class ContentAuto_SmartOptimizationAdminPage {
         
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         // 获取数据驱动结构
         $structures = $wpdb->get_results("
@@ -287,7 +277,7 @@ class ContentAuto_SmartOptimizationAdminPage {
         $this->load_services();
         
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 获取所有内容角度
         $angles = $wpdb->get_col(
@@ -331,8 +321,8 @@ class ContentAuto_SmartOptimizationAdminPage {
     private function get_recent_selections($limit = 20) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         $results = $wpdb->get_results($wpdb->prepare("
             SELECT 
@@ -382,9 +372,9 @@ class ContentAuto_SmartOptimizationAdminPage {
         
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // AI 生成结构统计
         $ai_stats = $this->get_structure_type_stats('ai_generated');
@@ -404,9 +394,9 @@ class ContentAuto_SmartOptimizationAdminPage {
     private function get_structure_type_stats($source_type) {
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 基础统计
         $basic_stats = $wpdb->get_row($wpdb->prepare("
@@ -473,18 +463,18 @@ class ContentAuto_SmartOptimizationAdminPage {
                 wp_send_json_success(array(
                     'total' => 0,
                     'articles' => array(),
-                    'message' => '智能优化功能未启用'
+                    'message' => __('智能优化功能未启用', 'yali-ai-writer')
                 ));
                 return;
             }
             
             // 加载分析器
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-article-analyzer.php';
-            $analyzer = new ContentAuto_ArticleAnalyzer();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-article-analyzer.php';
+            $analyzer = new Yali_AI_Writer_ArticleAnalyzer();
             
             // 获取所有内容角度
             global $wpdb;
-            $topics_table = $wpdb->prefix . 'content_auto_topics';
+            $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
             $angles = $wpdb->get_col("
                 SELECT DISTINCT source_angle 
                 FROM {$topics_table} 
@@ -546,8 +536,8 @@ class ContentAuto_SmartOptimizationAdminPage {
         
         try {
             // 加载结构提取器
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-structure-extractor.php';
-            $extractor = new ContentAuto_StructureExtractor();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-structure-extractor.php';
+            $extractor = new Yali_AI_Writer_StructureExtractor();
             
             // 处理这篇文章
             $result = $extractor->extract_and_create_structure($post_id);
@@ -581,9 +571,9 @@ class ContentAuto_SmartOptimizationAdminPage {
         
         try {
             // 加载调度器
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-structure-optimization-scheduler.php';
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-structure-optimization-scheduler.php';
             
-            $scheduler = new ContentAuto_StructureOptimizationScheduler();
+            $scheduler = new Yali_AI_Writer_StructureOptimizationScheduler();
             $result = $scheduler->run_daily_analysis();
             
             if ($result['success']) {
@@ -663,8 +653,8 @@ class ContentAuto_SmartOptimizationAdminPage {
         // 支持两种 nonce 验证方式
         $nonce_valid = false;
         if (isset($_POST['nonce'])) {
-            if (wp_verify_nonce($_POST['nonce'], 'smart_optimization_nonce') || 
-                wp_verify_nonce($_POST['nonce'], 'analyze_structure_nonce')) {
+            if (wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'smart_optimization_nonce') || 
+                wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'analyze_structure_nonce')) {
                 $nonce_valid = true;
             }
         }
@@ -688,9 +678,9 @@ class ContentAuto_SmartOptimizationAdminPage {
         }
         
         // 加载结构提取器
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-structure-extractor.php';
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-structure-extractor.php';
         
-        $extractor = new ContentAuto_StructureExtractor();
+        $extractor = new Yali_AI_Writer_StructureExtractor();
         $result = $extractor->extract_and_save_from_article($post_id);
         
         if ($result['success']) {
@@ -751,43 +741,13 @@ function render_structure_analysis_metabox($post) {
         <div id="analyze-result" style="margin-top: 10px;"></div>
     </div>
     
-    <script type="text/javascript">
-    jQuery(document).ready(function($) {
-        $('#analyze-structure-btn').on('click', function() {
-            var $btn = $(this);
-            var $spinner = $('#analyze-spinner');
-            var $result = $('#analyze-result');
-            var postId = $btn.data('post-id');
-            
-            $btn.prop('disabled', true);
-            $spinner.addClass('is-active');
-            $result.html('');
-            
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'analyze_article_structure',
-                    nonce: $('#analyze_structure_nonce_field').val(),
-                    post_id: postId
-                },
-                success: function(response) {
-                    if (response.success) {
-                        $result.html('<div class="notice notice-success inline"><p>' + response.data.message + '</p></div>');
-                    } else {
-                        $result.html('<div class="notice notice-error inline"><p>' + response.data.message + '</p></div>');
-                    }
-                },
-                error: function() {
-                    $result.html('<div class="notice notice-error inline"><p>' + wp.i18n.__('请求失败，请重试', 'yali-ai-writer') + '</p></div>');
-                },
-                complete: function() {
-                    $btn.prop('disabled', false);
-                    $spinner.removeClass('is-active');
-                }
-            });
-        });
-    });
-    </script>
     <?php
+    wp_enqueue_script(
+        'yali-ai-writer-structure-metabox',
+        YALI_AI_WRITER_PLUGIN_URL . 'article-structures/assets/js/structure-analysis-metabox.js',
+        array('jquery', 'wp-i18n'),
+        YALI_AI_WRITER_VERSION,
+        true
+    );
+    wp_set_script_translations('yali-ai-writer-structure-metabox', 'yali-ai-writer', YALI_AI_WRITER_PLUGIN_DIR . 'languages');
 }

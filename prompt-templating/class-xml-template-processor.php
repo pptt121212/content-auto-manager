@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/language-mappings.php';
 require_once __DIR__ . '/class-image-prompt-manager.php';
 
-class ContentAuto_XmlTemplateProcessor {
+class Yali_AI_Writer_XmlTemplateProcessor {
     
     /**
      * 当前任务ID（用于批量多样性追踪）
@@ -61,8 +61,8 @@ class ContentAuto_XmlTemplateProcessor {
         
         // 如果不是自定义默认模式，使用系统预设的专有配图提示词模板
         if ($image_prompt_mode !== 'default') {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/class-image-prompt-manager.php';
-            $image_prompt_template = ContentAuto_ImagePromptManager::get_preset_template($image_prompt_mode);
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/class-image-prompt-manager.php';
+            $image_prompt_template = Yali_AI_Writer_ImagePromptManager::get_preset_template($image_prompt_mode);
         }
         
         // 处理SEO关键词
@@ -72,10 +72,10 @@ class ContentAuto_XmlTemplateProcessor {
         $is_rewrite_task = false;
         
         // 初始化日志记录器（始终记录关键诊断信息）
-        if (!class_exists('ContentAuto_PluginLogger')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
-        $debug_logger = new ContentAuto_PluginLogger();
+        $debug_logger = new Yali_AI_Writer_PluginLogger();
         
         if (!empty($topic_data['is_rewrite'])) {
             $is_rewrite_task = true;
@@ -83,7 +83,7 @@ class ContentAuto_XmlTemplateProcessor {
         } elseif (!empty($topic_data['rule_id'])) {
             global $wpdb;
             $rule_type = $wpdb->get_var($wpdb->prepare(
-                "SELECT rule_type FROM {$wpdb->prefix}content_auto_rules WHERE id = %d",
+                "SELECT rule_type FROM {$wpdb->prefix}yali_ai_writer_rules WHERE id = %d",
                 $topic_data['rule_id']
             ));
             $debug_logger->info('[TEMPLATE_DEBUG] Rule lookup result', [
@@ -199,20 +199,20 @@ class ContentAuto_XmlTemplateProcessor {
         }
 
         global $wpdb;
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
 
         // 1. 检查主题是否有向量
         if (empty($topic_data['vector_embedding'])) {
             return $this->get_fallback_structure($topic_data['source_angle']);
         }
 
-        $topic_vector = content_auto_decompress_vector_from_base64($topic_data['vector_embedding']);
+        $topic_vector = yali_ai_writer_decompress_vector_from_base64($topic_data['vector_embedding']);
         if (!$topic_vector) {
             return $this->get_fallback_structure($topic_data['source_angle']);
         }
 
         // 2. 从数据库获取候选结构
-        $normalized_angle = content_auto_normalize_angle($topic_data['source_angle']);
+        $normalized_angle = yali_ai_writer_normalize_angle($topic_data['source_angle']);
         $candidate_structures = $wpdb->get_results($wpdb->prepare(
             "SELECT id, title, structure, title_vector FROM {$structures_table} WHERE content_angle = %s AND title_vector IS NOT NULL AND title_vector != ''",
             $normalized_angle
@@ -225,9 +225,9 @@ class ContentAuto_XmlTemplateProcessor {
         // 3. 计算相似度并创建评分列表
         $scored_structures = [];
         foreach ($candidate_structures as $candidate) {
-            $candidate_vector = content_auto_decompress_vector_from_base64($candidate['title_vector']);
+            $candidate_vector = yali_ai_writer_decompress_vector_from_base64($candidate['title_vector']);
             if ($candidate_vector) {
-                $similarity = content_auto_calculate_cosine_similarity($topic_vector, $candidate_vector);
+                $similarity = yali_ai_writer_calculate_cosine_similarity($topic_vector, $candidate_vector);
                 $scored_structures[] = [
                     'structure' => $candidate,
                     'similarity' => $similarity
@@ -283,8 +283,8 @@ class ContentAuto_XmlTemplateProcessor {
     private function smart_select_structure($topic_data, $top_structures) {
         try {
             // 检查智能优化功能是否启用
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-optimization-config.php';
-            $config = new ContentAuto_OptimizationConfig();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-optimization-config.php';
+            $config = new Yali_AI_Writer_OptimizationConfig();
             
             if (!$config->is_optimization_enabled()) {
                 // 功能未启用，返回null触发回退逻辑
@@ -292,16 +292,16 @@ class ContentAuto_XmlTemplateProcessor {
             }
             
             // 加载智能选择器
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-smart-structure-selector.php';
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-smart-structure-selector.php';
             
             // 初始化日志记录器（可选）
             $logger = null;
-            if (class_exists('ContentAuto_PluginLogger')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
-                $logger = new ContentAuto_PluginLogger();
+            if (class_exists('Yali_AI_Writer_PluginLogger')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+                $logger = new Yali_AI_Writer_PluginLogger();
             }
             
-            $selector = new ContentAuto_SmartStructureSelector($logger);
+            $selector = new Yali_AI_Writer_SmartStructureSelector($logger);
             
             // 准备候选结构数据（提取结构信息）
             $candidates = array();
@@ -312,8 +312,8 @@ class ContentAuto_XmlTemplateProcessor {
             }
             
             // 应用多样性控制（惩罚/提升）
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-diversity-controller.php';
-            $diversity_controller = new ContentAuto_DiversityController($logger);
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-diversity-controller.php';
+            $diversity_controller = new Yali_AI_Writer_DiversityController($logger);
             
             $content_angle = isset($topic_data['source_angle']) ? $topic_data['source_angle'] : '';
             
@@ -346,7 +346,7 @@ class ContentAuto_XmlTemplateProcessor {
             
         } catch (Exception $e) {
             // 记录错误日志
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 error_log('ContentAuto: 智能结构选择失败 - ' . $e->getMessage());
             }
             
@@ -583,8 +583,8 @@ class ContentAuto_XmlTemplateProcessor {
     private function build_xml_prompt($topic_data, $title, $source_angle, $user_value, $seo_keywords, $matched_category, $target_length, $knowledge_depth, $reader_role, $normalize_output, $auto_image_insertion, $enable_internal_linking, $publish_language, $structure_template, $structure_sections, $source_materials_content, $similar_articles_content, $reference_material = '', $image_prompt_template = '', $is_rewrite_task_override = false, $template_override = null) {
         
         // 验证和获取语言指令
-        $validated_language = content_auto_validate_language_code($publish_language);
-        $language_instruction = content_auto_get_language_instructions($validated_language);
+        $validated_language = yali_ai_writer_validate_language_code($publish_language);
+        $language_instruction = yali_ai_writer_get_language_instructions($validated_language);
 
         // 获取角色描述
         $role_description = $this->get_role_description_from_publish_rules();
@@ -611,8 +611,8 @@ class ContentAuto_XmlTemplateProcessor {
         } 
         
         // 尝试从数据库获取启用的文章模板
-        if (empty($prompt) && class_exists('ContentAuto_TemplateManager')) {
-            $template_manager = new ContentAuto_TemplateManager();
+        if (empty($prompt) && class_exists('Yali_AI_Writer_TemplateManager')) {
+            $template_manager = new Yali_AI_Writer_TemplateManager();
             // 改用 get_active_template 获取完整信息（包含名称）
             $db_template = $template_manager->get_active_template('article_generation');
             
@@ -631,7 +631,7 @@ class ContentAuto_XmlTemplateProcessor {
             } elseif (!empty($topic_data['rule_id'])) {
                 global $wpdb;
                 $rule_type = $wpdb->get_var($wpdb->prepare(
-                    "SELECT rule_type FROM {$wpdb->prefix}content_auto_rules WHERE id = %d",
+                    "SELECT rule_type FROM {$wpdb->prefix}yali_ai_writer_rules WHERE id = %d",
                     $topic_data['rule_id']
                 ));
                 if ($rule_type === 'collect_url_rewrite') {
@@ -680,10 +680,10 @@ class ContentAuto_XmlTemplateProcessor {
         }
 
         // 记录选择的模板（始终记录）
-        if (!class_exists('ContentAuto_PluginLogger')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
-        $template_logger = new ContentAuto_PluginLogger();
+        $template_logger = new Yali_AI_Writer_PluginLogger();
         $template_logger->info('[TEMPLATE_FINAL] Template selection complete', [
             'is_rewrite' => $is_rewrite_task ? 'TRUE' : 'FALSE',
             'selected_template' => $selected_template,
@@ -798,7 +798,7 @@ class ContentAuto_XmlTemplateProcessor {
         }
         
         // 获取语言的AI识别名称
-        $language_ai_name = content_auto_get_language_ai_name($validated_language);
+        $language_ai_name = yali_ai_writer_get_language_ai_name($validated_language);
         
         // 非中文环境下将字数描述本地化为英文
         $localized_target_length = $target_length;
@@ -846,7 +846,7 @@ class ContentAuto_XmlTemplateProcessor {
         $prompt = str_replace(array_keys($replacements), array_values($replacements), $prompt);
 
         // 仅在调试模式下记录完整的文章生成提示词到日志文件
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $this->log_article_prompt_to_file($prompt, $topic_data, $title, $source_angle);
         }
 
@@ -935,10 +935,10 @@ class ContentAuto_XmlTemplateProcessor {
     private function log_article_prompt_to_file($prompt_content, $topic_data, $title, $source_angle) {
         try {
             // 仅在调试模式下记录完整提示词
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 // 引入日志系统
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
-                $logger = new ContentAuto_LoggingSystem();
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+                $logger = new Yali_AI_Writer_LoggingSystem();
 
                 // 调试：记录完整的 topic_data 结构到插件日志
                 $logger->log_debug('TOPIC_DATA_DEBUG', '完整的 topic_data 结构', array(
@@ -956,26 +956,21 @@ class ContentAuto_XmlTemplateProcessor {
                 ));
 
                 // 使用统一的日志系统记录完整提示词
-                $prompt_preview = $prompt_content;
-                if (strlen($prompt_preview) > 5000) {
-                    $prompt_preview = substr($prompt_preview, 0, 5000) . "... [Content truncated for log stability. Full prompt length: " . strlen($prompt_content) . "]";
-                }
-
                 $context = array(
                     'type' => 'ARTICLE_PROMPT',
                     'title' => $title,
                     'source_angle' => $source_angle,
                     'prompt_length' => strlen($prompt_content),
-                    'prompt_content' => $prompt_preview
+                    'prompt_content' => $prompt_content
                 );
 
                 $logger->log_info('COMPLETE_PROMPT', '文章生成完整提示词', $context);
             }
         } catch (Exception $e) {
             // 使用插件日志系统记录错误
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
-                $logger = new ContentAuto_LoggingSystem();
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+                $logger = new Yali_AI_Writer_LoggingSystem();
                 $logger->log_error('PROMPT_LOG_ERROR', '文章提示词日志记录失败', array(
                     'error_message' => $e->getMessage(),
                     'error_file' => $e->getFile(),
@@ -992,8 +987,8 @@ class ContentAuto_XmlTemplateProcessor {
      * 委托给专门的参考资料服务类处理
      */
     private function get_reference_material($topic_data, $publish_rules = array()) {
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-reference-material-service.php';
-        $reference_service = new ContentAuto_ReferenceMaterialService();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-reference-material-service.php';
+        $reference_service = new Yali_AI_Writer_ReferenceMaterialService();
         return $reference_service->get_reference_material($topic_data, $publish_rules);
     }
 
@@ -1003,7 +998,7 @@ class ContentAuto_XmlTemplateProcessor {
     private function get_role_description_from_publish_rules() {
         global $wpdb;
 
-        $publish_rules_table = $wpdb->prefix . 'content_auto_publish_rules';
+        $publish_rules_table = $wpdb->prefix . 'yali_ai_writer_publish_rules';
 
         // 获取角色描述
         $role_description = $wpdb->get_var(

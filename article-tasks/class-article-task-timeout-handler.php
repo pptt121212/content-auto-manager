@@ -8,14 +8,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ArticleTaskTimeoutHandler {
+class Yali_AI_Writer_ArticleTaskTimeoutHandler {
     
     private $database;
     private $logger;
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
-        $this->logger = new ContentAuto_PluginLogger();
+        $this->database = new Yali_AI_Writer_Database();
+        $this->logger = new Yali_AI_Writer_PluginLogger();
     }
     
     /**
@@ -26,8 +26,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
     public function handle_timeout_tasks() {
         global $wpdb;
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 定义超时阈值
         $normal_timeout = 900;    // 常规超时: 15分钟 (为 DeepSeek-V3 等处理超长 Prompt 的模型留出充足时间)
@@ -128,8 +128,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
     private function fix_stuck_parent_tasks() {
         global $wpdb;
         
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 获取所有处于"处理中"状态的父任务
         $stuck_tasks = $wpdb->get_results(
@@ -162,7 +162,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             
             // 如果所有子任务都已完成（没有processing和pending状态）
             if ($processed_count >= $total_topics && intval($stats->processing) == 0) {
-                $final_status = ($stats->failed > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
+                $final_status = ($stats->failed > 0) ? YALI_AI_WRITER_STATUS_FAILED : YALI_AI_WRITER_STATUS_COMPLETED;
                 
                 $update_result = $wpdb->update(
                     $article_tasks_table,
@@ -200,8 +200,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
     private function handle_timeout_subtask($subtask) {
         global $wpdb;
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         try {
             // 分析任务执行到的详细业务节点
@@ -277,8 +277,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             // 解锁相关主题（防止僵尸主题）
             if (!empty($subtask['reference_id'])) {
                 $wpdb->update(
-                    $wpdb->prefix . 'content_auto_topics',
-                    ['status' => CONTENT_AUTO_TOPIC_UNUSED],
+                    $wpdb->prefix . 'yali_ai_writer_topics',
+                    ['status' => YALI_AI_WRITER_TOPIC_UNUSED],
                     ['id' => $subtask['reference_id']]
                 );
                 $this->logger->info("超时任务处理：主题已解锁", ['topic_id' => $subtask['reference_id']]);
@@ -312,7 +312,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         
         try {
             // 获取主任务信息
-            $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+            $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
             $main_task = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM {$article_tasks_table} WHERE id = %d",
                 $subtask['job_id']
@@ -325,7 +325,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
                 
                 // 获取主题信息
                 if ($subtask['reference_id']) {
-                    $topics_table = $wpdb->prefix . 'content_auto_topics';
+                    $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
                     $topic = $wpdb->get_row($wpdb->prepare(
                         "SELECT * FROM {$topics_table} WHERE id = %d",
                         $subtask['reference_id']
@@ -378,7 +378,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             // 检查API配置状态
             if ($topic && $topic['api_config_id']) {
                 global $wpdb;
-                $api_configs_table = $wpdb->prefix . 'content_auto_api_configs';
+                $api_configs_table = $wpdb->prefix . 'yali_ai_writer_api_configs';
                 
                 $api_config = $wpdb->get_row($wpdb->prepare(
                     "SELECT * FROM {$api_configs_table} WHERE id = %d",
@@ -431,18 +431,18 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         
         try {
             global $wpdb;
-            $api_configs_table = $wpdb->prefix . 'content_auto_api_configs';
+            $api_configs_table = $wpdb->prefix . 'yali_ai_writer_api_configs';
             
             // 获取所有激活的API配置
             $active_apis = $wpdb->get_results("SELECT * FROM {$api_configs_table} WHERE is_active = 1 ORDER BY id", ARRAY_A);
             $details['active_api_count'] = count($active_apis);
             
             // 获取当前轮询索引
-            $current_api_index = get_option('content_auto_current_api_index', 0);
+            $current_api_index = get_option('yali_ai_writer_current_api_index', 0);
             $details['current_api_index'] = $current_api_index;
             
             // 获取最后API请求时间
-            $last_request_time = get_option('content_auto_last_api_request', 0);
+            $last_request_time = get_option('yali_ai_writer_last_api_request', 0);
             $details['last_api_request_time'] = $last_request_time;
             
             if ($last_request_time > 0) {
@@ -457,7 +457,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             }
             
             // 检查是否有正在进行的API请求标记
-            $api_request_in_progress = get_transient('content_auto_api_request_in_progress');
+            $api_request_in_progress = get_transient('yali_ai_writer_api_request_in_progress');
             if ($api_request_in_progress) {
                 $details['api_request_in_progress'] = $api_request_in_progress;
                 $node = 'API请求处理中阶段';
@@ -465,7 +465,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             }
             
             // 检查API失败记录
-            $failed_apis = get_option('content_auto_failed_apis', array());
+            $failed_apis = get_option('yali_ai_writer_failed_apis', array());
             if (!empty($failed_apis)) {
                 $details['recent_failed_apis'] = array();
                 $current_time = time();
@@ -488,10 +488,10 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             }
             
             // 检查UnifiedApiHandler相关状态
-            $last_api_error = get_option('content_auto_last_api_error', '');
+            $last_api_error = get_option('yali_ai_writer_last_api_error', '');
             if (!empty($last_api_error)) {
                 $details['last_api_error'] = $last_api_error;
-                $details['last_api_error_time'] = get_option('content_auto_last_api_error_time', '');
+                $details['last_api_error_time'] = get_option('yali_ai_writer_last_api_error_time', '');
             }
             
             // 检查重试次数
@@ -500,7 +500,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
                 $node = 'API重试阶段';
                 
                 // 检查是否达到最大重试次数
-                $max_retries = get_option('content_auto_max_retries', 2);
+                $max_retries = get_option('yali_ai_writer_max_retries', 2);
                 if ($subtask['retry_count'] >= $max_retries) {
                     $node = '重试次数耗尽阶段';
                     $details['issue'] = '已达到最大重试次数，但仍未成功';
@@ -556,7 +556,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         
         try {
             // 检查是否错误地读取了主题任务的字段
-            $topic_tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
+            $topic_tasks_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
             
             // 检查是否存在同ID的主题任务（这会导致数据混淆）
             $conflicting_topic_task = $wpdb->get_row($wpdb->prepare(
@@ -577,7 +577,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             }
             
             // 检查字段结构差异
-            $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+            $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
             $article_task_fields = $wpdb->get_results("SHOW COLUMNS FROM {$article_tasks_table}", ARRAY_A);
             $topic_tasks_fields = $wpdb->get_results("SHOW COLUMNS FROM {$topic_tasks_table}", ARRAY_A);
             
@@ -614,8 +614,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         
         try {
             // 检查Recovery Handler相关选项和状态
-            $recovery_in_progress = get_option('content_auto_recovery_in_progress', false);
-            $last_recovery_time = get_option('content_auto_last_recovery_time', 0);
+            $recovery_in_progress = get_option('yali_ai_writer_recovery_in_progress', false);
+            $last_recovery_time = get_option('yali_ai_writer_last_recovery_time', 0);
             
             $details['recovery_handler_check']['recovery_in_progress'] = $recovery_in_progress;
             $details['recovery_handler_check']['last_recovery_time'] = $last_recovery_time;
@@ -626,7 +626,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
             }
             
             // 检查Recovery Handler是否正确识别任务类型
-            $recovery_task_type = get_option('content_auto_recovery_task_type', '');
+            $recovery_task_type = get_option('yali_ai_writer_recovery_task_type', '');
             if (!empty($recovery_task_type) && $recovery_task_type !== 'article') {
                 $details['recovery_handler_check']['task_type_mismatch'] = true;
                 $details['recovery_handler_check']['detected_type'] = $recovery_task_type;
@@ -670,7 +670,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         
         try {
             // 检查队列项的字段完整性
-            $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+            $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
             
             // 检查当前队列项是否包含文章任务必需的字段
             $queue_item = $wpdb->get_row($wpdb->prepare(
@@ -764,7 +764,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         $details['queue_field_check'] = array();
         
         try {
-            $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+            $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
             
             // 检查队列表是否包含必需的字段
             $queue_columns = $wpdb->get_results("SHOW COLUMNS FROM {$queue_table}", ARRAY_A);
@@ -836,8 +836,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
     private function finalize_task_status_if_completed($task_id) {
         global $wpdb;
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 获取任务信息
         $task = $wpdb->get_row($wpdb->prepare(
@@ -872,7 +872,7 @@ class ContentAuto_ArticleTaskTimeoutHandler {
         // 如果所有子任务都已处理完毕（completed或failed）
         if ($processed_count >= $total_topics) {
             // 如果有任何失败的子任务，则整个任务失败；否则，任务完成
-            $final_status = ($stats->failed > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
+            $final_status = ($stats->failed > 0) ? YALI_AI_WRITER_STATUS_FAILED : YALI_AI_WRITER_STATUS_COMPLETED;
             
             $wpdb->update(
                 $article_tasks_table,
@@ -902,8 +902,8 @@ class ContentAuto_ArticleTaskTimeoutHandler {
     public function cleanup_orphaned_queues() {
         global $wpdb;
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 检查 orphaned 队列项（没有对应任务的队列项）
         $orphaned_queues = $wpdb->get_results(

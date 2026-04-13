@@ -250,6 +250,33 @@
         wp.data.dispatch('core/block-editor').removeBlock(spinnerClientId);
     }
 
+    /**
+     * 步骤2（图像版）：将生成的图像插入为 image 块，替换加载动画块
+     */
+    function replaceSpinnerWithImage(spinnerClientId, imageUrl, imageAlt) {
+        // 创建图像块
+        var imageBlock = wp.blocks.createBlock('core/image', {
+            url: imageUrl,
+            alt: imageAlt || __('AI生成配图', 'yali-ai-writer'),
+            caption: __('配图：', 'yali-ai-writer') + imageAlt,
+            align: 'center'
+        });
+
+        // 获取加载块的位置
+        var spinnerIndex = wp.data.select('core/block-editor').getBlockIndex(spinnerClientId);
+        var spinnerRoot = wp.data.select('core/block-editor').getBlockRootClientId(spinnerClientId);
+
+        // 插入图像块并移除加载块
+        wp.data.dispatch('core/block-editor').insertBlocks([imageBlock], spinnerIndex, spinnerRoot);
+        wp.data.dispatch('core/block-editor').removeBlock(spinnerClientId);
+
+        // 显示成功提示
+        wp.data.dispatch('core/notices').createSuccessNotice(
+            __('配图生成成功', 'yali-ai-writer'),
+            { isDismissible: true, id: 'yali-ai-image-success' }
+        );
+    }
+
     // ══════════════════════════════════════════════════════
     //  主执行函数：读取选区 → 关闭弹窗 → 插入 spinner → 调 API → 替换 spinner
     //  对应原插件 fetchRestApiGenerateContent 的完整流程
@@ -284,7 +311,13 @@
             .then(function (res) {
                 if (!res.success) throw new Error(res.message || '生成失败');
                 // 5. 替换加载块为生成内容
-                replaceSpinnerWithContent(spinnerClientId, res.text);
+                if (res.is_image && res.image_url) {
+                    // 图像生成结果
+                    replaceSpinnerWithImage(spinnerClientId, res.image_url, res.image_description || '');
+                } else {
+                    // 文本生成结果
+                    replaceSpinnerWithContent(spinnerClientId, res.text);
+                }
             })
             .catch(function (err) {
                 // 错误：移除加载块，显示错误通知
@@ -357,7 +390,10 @@
                     rows: 3,
                     placeholder: __('在此输入主题、关键词或粘贴要处理的文字…', 'yali-ai-writer'),
                     onChange: function (e) { setInputText(e.target.value); setErrMsg(''); },
-                })
+                }),
+
+                // 错误提示（移到输入区内，紧挨输入框下方）
+                errMsg && el('div', { className: 'yali-ai-error-message' }, errMsg)
             ),
 
             // 搜索框
@@ -371,10 +407,7 @@
                 })
             ),
 
-            // 错误提示（仅在无输入文字时点击出现）
-            errMsg && el('div', { className: 'yali-ai-status error' }, errMsg),
-
-            // 提示词列表：搜索时显示平铺，否则显示分组
+            // 提示词列表：搜索时显示平铺，否则显示分组（文本生成和图像生成分开）
             el('div', { className: 'yali-ai-prompt-list' },
                 filteredFlat
                     // 搜索模式：展平显示
@@ -384,29 +417,37 @@
                             var flatIndex = ALL_PROMPTS.indexOf(prompt);
                             return el('div', {
                                 key: i,
-                                className: 'yali-ai-prompt-item',
+                                className: 'yali-ai-prompt-item' + (prompt.is_image_generation ? ' yali-ai-image-prompt' : ''),
                                 onClick: function () { handleSelect(flatIndex); },
                                 title: prompt.prompt_desc || '',
                             }, prompt.prompt_title);
                         })
                     )
-                    // 分组模式：显示分组标题 + 提示词（与原插件 C 组件一致）
-                    : GROUPED_PROMPTS.map(function (group, gi) {
-                        var groupStartIndex = 0;
-                        for (var k = 0; k < gi; k++) { groupStartIndex += (GROUPED_PROMPTS[k].new_prompt || []).length; }
-                        return el(Fragment, { key: gi },
-                            GROUPED_PROMPTS.length > 1 && el('div', { className: 'yali-ai-group-header' }, group.group_language),
-                            (group.new_prompt || []).map(function (prompt, pi) {
-                                var flatIndex = groupStartIndex + pi;
-                                return el('div', {
-                                    key: pi,
-                                    className: 'yali-ai-prompt-item',
-                                    onClick: function () { handleSelect(flatIndex); },
-                                    title: prompt.prompt_desc || '',
-                                }, prompt.prompt_title);
-                            })
-                        );
-                    })
+                    // 分组模式：文本生成和图像生成分开显示
+                    : el(Fragment, null,
+                        // 文本生成组
+                        el('div', { className: 'yali-ai-group-header' }, __('✍️ 文本生成', 'yali-ai-writer')),
+                        ALL_PROMPTS.map(function (prompt, index) {
+                            if (prompt.is_image_generation) return null;
+                            return el('div', {
+                                key: 'text-' + index,
+                                className: 'yali-ai-prompt-item',
+                                onClick: function () { handleSelect(index); },
+                                title: prompt.prompt_desc || '',
+                            }, prompt.prompt_title);
+                        }),
+                        // 图像生成组
+                        el('div', { className: 'yali-ai-group-header', style: { marginTop: '12px' } }, __('🖼️ 图像生成', 'yali-ai-writer')),
+                        ALL_PROMPTS.map(function (prompt, index) {
+                            if (!prompt.is_image_generation) return null;
+                            return el('div', {
+                                key: 'image-' + index,
+                                className: 'yali-ai-prompt-item yali-ai-image-prompt',
+                                onClick: function () { handleSelect(index); },
+                                title: prompt.prompt_desc || '',
+                            }, prompt.prompt_title);
+                        })
+                    )
             )
         );
     }

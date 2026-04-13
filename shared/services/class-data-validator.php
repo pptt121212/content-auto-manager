@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_DataValidator {
+class Yali_AI_Writer_DataValidator {
     
     /**
      * 基本验证规则

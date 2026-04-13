@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_RuleHandler {
+class Yali_AI_Writer_RuleHandler {
 
     public function __construct() {
         // 保留 handle_form_submission 以兼容可能的非 AJAX 请求（虽然后续前端会拦截）
@@ -15,8 +15,8 @@ class ContentAuto_RuleHandler {
         
         // 注册AJAX处理函数
         add_action('wp_ajax_cam_save_rule', array($this, 'handle_ajax_save_rule')); // 新增 AJAX 保存处理
-        add_action('wp_ajax_content_auto_delete_rule', array($this, 'handle_delete_rule'));
-        add_action('wp_ajax_content_auto_get_article_titles', array($this, 'handle_get_article_titles'));
+        add_action('wp_ajax_yali_ai_writer_delete_rule', array($this, 'handle_delete_rule'));
+        add_action('wp_ajax_yali_ai_writer_get_article_titles', array($this, 'handle_get_article_titles'));
     }
 
     /**
@@ -37,7 +37,7 @@ class ContentAuto_RuleHandler {
         }
 
         // 检查是否是我们表单的提交
-        if (isset($_POST['cam_save_rule_nonce']) && wp_verify_nonce($_POST['cam_save_rule_nonce'], 'cam_save_rule_action')) {
+        if (isset($_POST['cam_save_rule_nonce']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['cam_save_rule_nonce'])), 'cam_save_rule_action')) {
             $this->process_save_rule(false);
         }
     }
@@ -67,8 +67,8 @@ class ContentAuto_RuleHandler {
         }
 
         global $wpdb;
-        $rules_table = $wpdb->prefix . 'content_auto_rules';
-        $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+        $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
+        $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
 
         // 1. 清洗和准备主规则数据
         $rule_name = sanitize_text_field($_POST['rule_name']);
@@ -100,9 +100,16 @@ class ContentAuto_RuleHandler {
             }
         } elseif ($rule_type === 'upload_text') {
             $rule_conditions['upload_text'] = isset($_POST['upload_text_content']) ? sanitize_textarea_field($_POST['upload_text_content']) : '';
-            // 限制文本长度为3000字符（使用mb_strlen确保正确计算多字节字符）
-            if (mb_strlen($rule_conditions['upload_text'], 'UTF-8') > 3000) {
-                $rule_conditions['upload_text'] = mb_substr($rule_conditions['upload_text'], 0, 3000, 'UTF-8');
+            // 验证文本长度不能超过3000字符（使用mb_strlen确保正确计算多字节字符）
+            $text_length = mb_strlen($rule_conditions['upload_text'], 'UTF-8');
+            if ($text_length > 3000) {
+                $error_message = sprintf(__('文本内容超出限制：当前%d个字符，最多允许3000个字符。请在文本内容区域删减后再保存。', 'yali-ai-writer'), $text_length);
+                if ($is_ajax) {
+                    wp_send_json_error(array('message' => $error_message));
+                } else {
+                    wp_die($error_message);
+                }
+                return;
             }
         } elseif ($rule_type === 'import_keywords') {
             $keywords_text = isset($_POST['keywords_content']) ? sanitize_textarea_field($_POST['keywords_content']) : '';
@@ -154,9 +161,9 @@ class ContentAuto_RuleHandler {
                 // 检查历史重复（两个来源）
                 if (!empty($urls_array)) {
                     global $wpdb;
-                    $topics_table = $wpdb->prefix . 'content_auto_topics';
-                    $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
-                    $rules_table = $wpdb->prefix . 'content_auto_rules';
+                    $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+                    $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
+                    $rules_table = $wpdb->prefix . 'yali_ai_writer_rules';
                     
                     // 排除当前正在编辑的规则
                     $exclude_rule_id = $is_edit_mode ? $rule_id : 0;
@@ -273,8 +280,8 @@ class ContentAuto_RuleHandler {
         // 2. 插入或更新主规则到数据库
         if ($is_edit_mode) {
             // 编辑模式：检查规则是否正在被使用
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
-            $rule_manager = new ContentAuto_RuleManager();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
+            $rule_manager = new Yali_AI_Writer_RuleManager();
 
             if ($rule_manager->is_rule_in_use($rule_id)) {
                 // 规则正在使用中，不允许修改
@@ -362,7 +369,7 @@ class ContentAuto_RuleHandler {
      */
     private function generate_rule_items($rule_id, $rule_task_id, $rule_type, $conditions, $count) {
         global $wpdb;
-        $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+        $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
 
         if ($rule_type === 'random_selection') {
             // 随机选择逻辑 - 完全随机抽取，允许重复
@@ -636,7 +643,7 @@ class ContentAuto_RuleHandler {
      */
     public function handle_delete_rule() {
         // 验证nonce
-        if (!wp_verify_nonce($_POST['nonce'], 'content_auto_manager_nonce')) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'yali_ai_writer_manager_nonce')) {
             wp_send_json_error(array('message' => __('安全验证失败。', 'yali-ai-writer')));
         }
  
@@ -653,7 +660,7 @@ class ContentAuto_RuleHandler {
         }
  
         // 使用规则管理器进行删除（包含使用状态检查）
-        $rule_manager = new ContentAuto_RuleManager();
+        $rule_manager = new Yali_AI_Writer_RuleManager();
         $result = $rule_manager->delete_rule($rule_id);
  
         if ($result['success']) {
@@ -668,13 +675,13 @@ class ContentAuto_RuleHandler {
      */
     public function handle_get_article_titles() {
         // 验证nonce
-        if (!wp_verify_nonce($_POST['nonce'], 'content_auto_manager_nonce')) {
-            wp_send_json_error(array('message' => '安全验证失败。'));
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'yali_ai_writer_manager_nonce')) {
+            wp_send_json_error(array('message' => __('安全验证失败。', 'yali-ai-writer')));
         }
         
         // 检查权限
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => '权限不足。'));
+            wp_send_json_error(array('message' => __('权限不足。', 'yali-ai-writer')));
         }
         
         // 获取文章ID列表

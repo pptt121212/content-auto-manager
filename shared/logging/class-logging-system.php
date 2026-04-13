@@ -1,7 +1,7 @@
 <?php
 /**
  * Logging System 适配器类
- * 包装 ContentAuto_PluginLogger 并提供所有需要的额外方法
+ * 包装 Yali_AI_Writer_PluginLogger 并提供所有需要的额外方法
  * 确保向后兼容性
  */
 
@@ -12,12 +12,12 @@ if (!defined('ABSPATH')) {
 // 引入底层的 PluginLogger（使用相对路径，避免常量未定义问题）
 require_once __DIR__ . '/class-plugin-logger.php';
 
-class ContentAuto_LoggingSystem {
+class Yali_AI_Writer_LoggingSystem {
     
     private $plugin_logger;
     
     public function __construct() {
-        $this->plugin_logger = new ContentAuto_PluginLogger();
+        $this->plugin_logger = new Yali_AI_Writer_PluginLogger();
     }
     
     /**
@@ -87,7 +87,7 @@ class ContentAuto_LoggingSystem {
         if (method_exists($this->plugin_logger, $method)) {
             return call_user_func_array(array($this->plugin_logger, $method), $args);
         }
-        throw new Exception("Method {$method} not found in ContentAuto_LoggingSystem");
+        throw new Exception("Method {$method} not found in Yali_AI_Writer_LoggingSystem");
     }
 }
 ?>

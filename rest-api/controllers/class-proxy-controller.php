@@ -1,8 +1,8 @@
 <?php
 namespace ContentAutoManager\RestApi\Controllers;
 
-use ContentAuto_UnifiedApiHandler;
-use ContentAuto_VectorApiHandler;
+use Yali_AI_Writer_UnifiedApiHandler;
+use Yali_AI_Writer_VectorApiHandler;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -19,15 +19,15 @@ class Proxy_Controller extends Base_Controller {
         parent::__construct( $namespace );
         
         // init handlers
-        if (!class_exists('ContentAuto_UnifiedApiHandler')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+        if (!class_exists('Yali_AI_Writer_UnifiedApiHandler')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
         }
-        if (!class_exists('ContentAuto_VectorApiHandler')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
+        if (!class_exists('Yali_AI_Writer_VectorApiHandler')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
         }
 
-        $this->unified_handler = new ContentAuto_UnifiedApiHandler();
-        $this->vector_handler = new ContentAuto_VectorApiHandler();
+        $this->unified_handler = new Yali_AI_Writer_UnifiedApiHandler();
+        $this->vector_handler = new Yali_AI_Writer_VectorApiHandler();
     }
 
     public function register_routes() {

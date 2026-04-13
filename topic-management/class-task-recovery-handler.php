@@ -8,15 +8,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_TaskRecoveryHandler {
+class Yali_AI_Writer_TaskRecoveryHandler {
     
     private $database;
     private $status_manager;
     private $logger;
     
     public function __construct($database = null, $status_manager = null, $logger = null) {
-        $this->database = $database ?: new ContentAuto_Database();
-        $this->status_manager = $status_manager ?: new ContentAuto_TaskStatusManager($this->database, $logger);
+        $this->database = $database ?: new Yali_AI_Writer_Database();
+        $this->status_manager = $status_manager ?: new Yali_AI_Writer_TaskStatusManager($this->database, $logger);
         $this->logger = $logger;
     }
     
@@ -29,16 +29,16 @@ class ContentAuto_TaskRecoveryHandler {
         // 根据任务类型确定表名和job类型
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 $job_type = 'article';
                 break;
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 $job_type = 'topic_task';
                 break;
         }
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 获取任务信息
         $task = $wpdb->get_row($wpdb->prepare(
@@ -159,7 +159,7 @@ class ContentAuto_TaskRecoveryHandler {
                 // 重新创建下一个子任务队列 - 使用数字索引，与规则项目表对应
                 // 获取当前应该创建的子任务索引
                 global $wpdb;
-                $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+                $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
                 $existing_count = $wpdb->get_var($wpdb->prepare(
                     "SELECT COUNT(*) FROM {$queue_table} WHERE job_type = %s AND job_id = %d",
                     $job_type, $task_id
@@ -188,7 +188,7 @@ class ContentAuto_TaskRecoveryHandler {
         // 根据任务类型确定表名和job类型
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 $job_type = 'article';
                 break;
             case 'material_search':
@@ -196,11 +196,11 @@ class ContentAuto_TaskRecoveryHandler {
                 return $this->recover_hanging_material_search_tasks();
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 $job_type = 'topic_task';
                 break;
         }
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 获取挂起的任务（处理状态超过阈值时间）
         // 使用 current_time('timestamp') 保持与 updated_at 字段写入的一致性
@@ -251,16 +251,16 @@ class ContentAuto_TaskRecoveryHandler {
      * 恢复挂起的素材搜索任务
      * 
      * material_search 任务没有独立的任务表，状态存储在：
-     * 1. Queue 表 (wp_content_auto_job_queue)
-     * 2. Topics 表 (wp_content_auto_topics.material_search_status)
+     * 1. Queue 表 (wp_yali_ai_writer_job_queue)
+     * 2. Topics 表 (wp_yali_ai_writer_topics.material_search_status)
      * 
      * 恢复逻辑：将超时的 processing 状态重置为 pending，让队列重新处理
      */
     private function recover_hanging_material_search_tasks() {
         global $wpdb;
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 超时阈值：15分钟（素材搜索任务通常不会超过这个时间）
         $threshold_time = date('Y-m-d H:i:s', current_time('timestamp') - (15 * MINUTE_IN_SECONDS));
@@ -337,7 +337,7 @@ class ContentAuto_TaskRecoveryHandler {
         
         // 记录日志
         if ($recovered_count > 0 || $failed_count > 0) {
-            $logger = new ContentAuto_PluginLogger();
+            $logger = new Yali_AI_Writer_PluginLogger();
             $logger->info("素材搜索任务超时恢复", [
                 'recovered' => $recovered_count,
                 'failed' => $failed_count,
@@ -361,16 +361,16 @@ class ContentAuto_TaskRecoveryHandler {
         // 根据任务类型确定表名和job类型
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 $job_type = 'article';
                 break;
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 $job_type = 'topic_task';
                 break;
         }
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 获取任务信息
         $task = $wpdb->get_row($wpdb->prepare(
@@ -380,7 +380,7 @@ class ContentAuto_TaskRecoveryHandler {
         
         if (!$task) {
             // 使用插件自定义日志类记录日志
-            $logger = new ContentAuto_PluginLogger();
+            $logger = new Yali_AI_Writer_PluginLogger();
             $logger->error(__("恢复失败: 任务不存在", 'yali-ai-writer'), array('task_id' => $task_id, 'task_type' => $task_type));
             return false;
         }
@@ -432,12 +432,12 @@ class ContentAuto_TaskRecoveryHandler {
         // 根据任务类型确定表名和job类型
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 $job_type = 'article';
                 break;
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 $job_type = 'topic_task';
                 break;
         }
@@ -461,7 +461,7 @@ class ContentAuto_TaskRecoveryHandler {
                 
             case 'delayed':
                 // 延迟重试 - 适用于API限流等问题
-                wp_schedule_single_event(time() + CONTENT_AUTO_RATE_LIMIT_DELAY, 'content_auto_delayed_retry', array($task_id));
+                wp_schedule_single_event(time() + YALI_AI_WRITER_RATE_LIMIT_DELAY, 'yali_ai_writer_delayed_retry', array($task_id));
                 return true;
                 
             case 'manual':
@@ -527,17 +527,17 @@ class ContentAuto_TaskRecoveryHandler {
      */
     private function retry_entire_task($task_id, $task_type = 'topic_task', $force_retry = false) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 根据任务类型确定表名和job类型
         switch ($task_type) {
             case 'article':
-                $task_table_name = 'content_auto_article_tasks';
+                $task_table_name = 'yali_ai_writer_article_tasks';
                 $job_type = 'article';
                 break;
             case 'topic_task':
             default:
-                $task_table_name = 'content_auto_topic_tasks';
+                $task_table_name = 'yali_ai_writer_topic_tasks';
                 $job_type = 'topic_task';
                 break;
         }
@@ -574,7 +574,7 @@ class ContentAuto_TaskRecoveryHandler {
 
         // 2. 检查重试次数限制并重置失败的子任务
         $updated_count = 0;
-        $max_retries = defined('CONTENT_AUTO_MAX_RETRIES') ? CONTENT_AUTO_MAX_RETRIES : 3;
+        $max_retries = defined('YALI_AI_WRITER_MAX_RETRIES') ? YALI_AI_WRITER_MAX_RETRIES : 3;
         
         foreach ($failed_subtasks as $subtask) {
             // 如果不是强制重试，才检查重试次数限制
@@ -669,12 +669,12 @@ class ContentAuto_TaskRecoveryHandler {
         // 根据任务类型确定表名和job类型
         switch ($task_type) {
             case 'article':
-                $task_table_name = 'content_auto_article_tasks';
+                $task_table_name = 'yali_ai_writer_article_tasks';
                 $job_type = 'article';
                 break;
             case 'topic_task':
             default:
-                $task_table_name = 'content_auto_topic_tasks';
+                $task_table_name = 'yali_ai_writer_topic_tasks';
                 $job_type = 'topic_task';
                 break;
         }
@@ -692,7 +692,7 @@ class ContentAuto_TaskRecoveryHandler {
         );
         
         // 查找特定子任务的队列记录
-        $existing = $this->database->get_row('content_auto_job_queue', 
+        $existing = $this->database->get_row('yali_ai_writer_job_queue', 
             array('job_type' => $job_type, 'job_id' => $task_id, 'subtask_id' => $subtask_id)
         );
         
@@ -705,7 +705,7 @@ class ContentAuto_TaskRecoveryHandler {
                 'retry_count' => $retry_count
             );
             
-            return $this->database->update('content_auto_job_queue', $update_data, 
+            return $this->database->update('yali_ai_writer_job_queue', $update_data, 
                 array('id' => $existing['id'])
             );
         } else {
@@ -753,9 +753,9 @@ class ContentAuto_TaskRecoveryHandler {
         } elseif ($job_type === 'topic_task' && $subtask_index !== null) {
             // 主题任务：根据subtask_index设置reference_id为规则项目ID
             global $wpdb;
-            $task = $this->database->get_row('content_auto_topic_tasks', array('id' => $task_id));
+            $task = $this->database->get_row('yali_ai_writer_topic_tasks', array('id' => $task_id));
             if ($task && isset($task['rule_id'])) {
-                $rule_items_table = $wpdb->prefix . 'content_auto_rule_items';
+                $rule_items_table = $wpdb->prefix . 'yali_ai_writer_rule_items';
                 $rule_item = $wpdb->get_row($wpdb->prepare(
                     "SELECT id FROM {$rule_items_table} WHERE rule_id = %d ORDER BY id LIMIT %d, 1",
                     $task['rule_id'], $subtask_index
@@ -767,7 +767,7 @@ class ContentAuto_TaskRecoveryHandler {
         }
         
         // 检查是否已存在相同的队列项
-        $existing = $this->database->get_row('content_auto_job_queue', 
+        $existing = $this->database->get_row('yali_ai_writer_job_queue', 
             array('job_type' => $job_type, 'job_id' => $task_id, 'subtask_id' => $queue_data['subtask_id'])
         );
         
@@ -775,7 +775,7 @@ class ContentAuto_TaskRecoveryHandler {
             return true;
         }
         
-        return $this->database->insert('content_auto_job_queue', $queue_data);
+        return $this->database->insert('yali_ai_writer_job_queue', $queue_data);
     }
     
     /**
@@ -784,7 +784,7 @@ class ContentAuto_TaskRecoveryHandler {
     private function detect_article_specific_inconsistencies($task, $queue_items, &$recovery_actions) {
         global $wpdb;
         $inconsistencies_found = false;
-        $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 解析主题ID列表
         $topic_ids = json_decode($task['topic_ids'], true);
@@ -811,7 +811,7 @@ class ContentAuto_TaskRecoveryHandler {
                 }
                 
                 if ($available_topic_id) {
-                    $wpdb->update($wpdb->prefix . 'content_auto_job_queue', 
+                    $wpdb->update($wpdb->prefix . 'yali_ai_writer_job_queue', 
                         array('reference_id' => $available_topic_id),
                         array('id' => $item['id'])
                     );
@@ -879,7 +879,7 @@ class ContentAuto_TaskRecoveryHandler {
      */
     private function sync_article_task_progress($task, $completed_queue, &$recovery_actions) {
         global $wpdb;
-        $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         $inconsistencies_found = false;
         
         // 解析并更新subtask_status
@@ -948,7 +948,7 @@ class ContentAuto_TaskRecoveryHandler {
                     'updated_at' => current_time('mysql')
                 );
                 
-                $result = $wpdb->insert($wpdb->prefix . 'content_auto_job_queue', $queue_data);
+                $result = $wpdb->insert($wpdb->prefix . 'yali_ai_writer_job_queue', $queue_data);
                 if ($result) {
                     $recovery_actions[] = sprintf(__("为主题%s重新创建队列项", 'yali-ai-writer'), $topic_id);
                     $inconsistencies_found = true;
@@ -983,7 +983,7 @@ class ContentAuto_TaskRecoveryHandler {
         global $wpdb;
         
         // 获取文章任务信息
-        $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         $task = $wpdb->get_row($wpdb->prepare(
             "SELECT topic_ids FROM {$task_table} WHERE id = %d",
             $task_id
@@ -1000,7 +1000,7 @@ class ContentAuto_TaskRecoveryHandler {
         }
         
         // 获取已处理的主题ID列表
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $processed_topic_ids = $wpdb->get_col($wpdb->prepare(
             "SELECT reference_id FROM {$queue_table} 
              WHERE job_type = 'article' AND job_id = %d AND reference_id IS NOT NULL",
@@ -1038,7 +1038,7 @@ class ContentAuto_TaskRecoveryHandler {
      */
     private function update_article_subtask_status($task_id, $topic_id, $status) {
         global $wpdb;
-        $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         // 获取当前任务信息
         $task = $wpdb->get_row($wpdb->prepare(
@@ -1070,7 +1070,7 @@ class ContentAuto_TaskRecoveryHandler {
      */
     public function requeue_failed_subtasks($task_id, $task_type = 'topic_task', $specific_subtask_ids = null) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 根据任务类型确定job类型
         $job_type = ($task_type === 'article') ? 'article' : 'topic_task';
@@ -1107,7 +1107,7 @@ class ContentAuto_TaskRecoveryHandler {
         }
         
         $requeued_count = 0;
-        $max_retries = defined('CONTENT_AUTO_MAX_RETRIES') ? CONTENT_AUTO_MAX_RETRIES : 3;
+        $max_retries = defined('YALI_AI_WRITER_MAX_RETRIES') ? YALI_AI_WRITER_MAX_RETRIES : 3;
         
         foreach ($failed_subtasks as $subtask) {
             // 检查重试次数限制
@@ -1172,17 +1172,17 @@ class ContentAuto_TaskRecoveryHandler {
         // 根据任务类型确定表名
         switch ($task_type) {
             case 'article':
-                $task_table = $wpdb->prefix . 'content_auto_article_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 $job_type = 'article';
                 break;
             case 'topic_task':
             default:
-                $task_table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $task_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 $job_type = 'topic_task';
                 break;
         }
         
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 重新计算失败任务数量
         $failed_count = $wpdb->get_var($wpdb->prepare(

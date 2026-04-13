@@ -8,20 +8,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-api-settings/class-image-api-handler.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/database/class-database.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'image-api-settings/class-image-api-handler.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/database/class-database.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
 
-class ContentAuto_AutoImageGenerator {
+class Yali_AI_Writer_AutoImageGenerator {
     
     private $database;
     private $logger;
     private $image_api_handler;
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
-        $this->logger = new ContentAuto_LoggingSystem();
-        $this->image_api_handler = new CAM_Image_API_Handler();
+        $this->database = new Yali_AI_Writer_Database();
+        $this->logger = new Yali_AI_Writer_LoggingSystem();
+        $this->image_api_handler = new Yali_AI_Writer_Image_API_Handler();
     }
     
     /**
@@ -284,7 +284,7 @@ class ContentAuto_AutoImageGenerator {
         try {
             // 如果没有传递发布规则，从数据库表中获取
             if ($publish_rules === null) {
-                $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
+                $publish_rules = $this->database->get_row('yali_ai_writer_publish_rules', array('id' => 1));
             }
             
             // 如果设置了最大图片数量，使用该值，否则默认为1
@@ -316,7 +316,7 @@ class ContentAuto_AutoImageGenerator {
         try {
             // 如果没有传递发布规则，从数据库表中获取
             if ($publish_rules === null) {
-                $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
+                $publish_rules = $this->database->get_row('yali_ai_writer_publish_rules', array('id' => 1));
             }
             
             // 检查是否启用跳过首个占位符选项
@@ -376,11 +376,11 @@ class ContentAuto_AutoImageGenerator {
      * 检查图像API是否配置
      */
     private function is_image_api_configured() {
-        if (!class_exists('CAM_Image_API_Admin_Page')) {
+        if (!class_exists('Yali_AI_Writer_Image_API_Admin_Page')) {
             return false;
         }
         
-        $image_api_settings = CAM_Image_API_Admin_Page::get_settings();
+        $image_api_settings = Yali_AI_Writer_Image_API_Admin_Page::get_settings();
         return !empty($image_api_settings['provider']);
     }
     
@@ -732,7 +732,7 @@ class ContentAuto_AutoImageGenerator {
      * 避免阻塞文章生成流程
      * 
      * 【关键修复】使用带 post_id 的唯一 hook 名称，避免多文章任务互相覆盖
-     * 原问题：所有文章使用同一个 hook 'content_auto_process_post_images'，
+     * 原问题：所有文章使用同一个 hook 'yali_ai_writer_process_post_images'，
      * 导致 WP-Cron 在短时间内调度多个任务时，后一个会覆盖前一个
      */
     public function schedule_image_generation($post_id, $content, $publish_rules = null) {
@@ -743,7 +743,7 @@ class ContentAuto_AutoImageGenerator {
         }
         
         // 【修复】使用带 post_id 的唯一 hook 名称，确保每个文章的任务独立
-        $hook_name = 'content_auto_process_post_images_' . $post_id;
+        $hook_name = 'yali_ai_writer_process_post_images_' . $post_id;
         
         // 【修复】如果该文章已有待执行的任务，先清除避免重复
         wp_clear_scheduled_hook($hook_name, $task_data);
@@ -784,7 +784,7 @@ class ContentAuto_AutoImageGenerator {
                 }
                 
                 // 执行图片生成
-                $image_generator = new ContentAuto_AutoImageGenerator();
+                $image_generator = new Yali_AI_Writer_AutoImageGenerator();
                 $options = [];
                 if ($task_publish_rules) {
                     $options['publish_rules'] = $task_publish_rules;
@@ -835,7 +835,7 @@ class ContentAuto_AutoImageGenerator {
      * @param array $context 上下文信息
      */
     private function log_debug($code, $message, $context = []) {
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $this->logger->log_debug($code, $message, $context);
         }
     }

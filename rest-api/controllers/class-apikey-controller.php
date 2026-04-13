@@ -34,12 +34,12 @@ class ApiKey_Controller extends Base_Controller {
      */
     public function generate_api_key( $request ) {
         // Verify License Status
-        if ( ! class_exists( '\ContentAuto_License_Manager' ) ) {
-            if ( defined( 'CONTENT_AUTO_MANAGER_PLUGIN_DIR' ) ) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'includes/class-license-manager.php';
+        if ( ! class_exists( '\Yali_AI_Writer_License_Manager' ) ) {
+            if ( defined( 'YALI_AI_WRITER_PLUGIN_DIR' ) ) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'includes/class-license-manager.php';
             }
         }
-        if ( class_exists( '\ContentAuto_License_Manager' ) && ! \ContentAuto_License_Manager::is_license_active() ) {
+        if ( class_exists( '\Yali_AI_Writer_License_Manager' ) && ! \Yali_AI_Writer_License_Manager::is_license_active() ) {
             return new \WP_Error( 'rest_forbidden', 'Plugin License Invalid', array( 'status' => 403 ) );
         }
 
@@ -61,12 +61,12 @@ class ApiKey_Controller extends Base_Controller {
      */
     public function get_api_key( $request ) {
         // Verify License Status
-        if ( ! class_exists( '\ContentAuto_License_Manager' ) ) {
-            if ( defined( 'CONTENT_AUTO_MANAGER_PLUGIN_DIR' ) ) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'includes/class-license-manager.php';
+        if ( ! class_exists( '\Yali_AI_Writer_License_Manager' ) ) {
+            if ( defined( 'YALI_AI_WRITER_PLUGIN_DIR' ) ) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'includes/class-license-manager.php';
             }
         }
-        if ( class_exists( '\ContentAuto_License_Manager' ) && ! \ContentAuto_License_Manager::is_license_active() ) {
+        if ( class_exists( '\Yali_AI_Writer_License_Manager' ) && ! \Yali_AI_Writer_License_Manager::is_license_active() ) {
             return rest_ensure_response( array(
                 'exists' => false,
                 'api_key' => null,
@@ -98,14 +98,14 @@ class ApiKey_Controller extends Base_Controller {
      * Get License Information for Extension Verification
      */
     public function get_license_info( $request ) {
-        if ( ! class_exists( '\ContentAuto_License_Manager' ) ) {
-             if ( defined( 'CONTENT_AUTO_MANAGER_PLUGIN_DIR' ) ) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'includes/class-license-manager.php';
+        if ( ! class_exists( '\Yali_AI_Writer_License_Manager' ) ) {
+             if ( defined( 'YALI_AI_WRITER_PLUGIN_DIR' ) ) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'includes/class-license-manager.php';
              }
         }
 
-        $license_active = class_exists( '\ContentAuto_License_Manager' ) && \ContentAuto_License_Manager::is_license_active();
-        $license_data = get_option( 'content_auto_manager_license_data', array() );
+        $license_active = class_exists( '\Yali_AI_Writer_License_Manager' ) && \Yali_AI_Writer_License_Manager::is_license_active();
+        $license_data = get_option( 'yali_ai_writer_manager_license_data', array() );
         
         // For security, we do NOT return the full License Key. 
         // We return the authorized domain and the server signature.

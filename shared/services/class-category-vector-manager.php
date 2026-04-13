@@ -8,19 +8,19 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_CategoryVectorManager {
+class Yali_AI_Writer_CategoryVectorManager {
     
     private $cache_file;
     private $vector_handler;
     private $logger;
     
     public function __construct($logger = null) {
-        $this->cache_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/cache/category_vectors.json';
+        $this->cache_file = YALI_AI_WRITER_PLUGIN_DIR . 'shared/cache/category_vectors.json';
         
-        if (!class_exists('ContentAuto_VectorApiHandler')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
+        if (!class_exists('Yali_AI_Writer_VectorApiHandler')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
         }
-        $this->vector_handler = new ContentAuto_VectorApiHandler($logger);
+        $this->vector_handler = new Yali_AI_Writer_VectorApiHandler($logger);
         $this->logger = $logger;
         
         // 确保缓存目录存在并具有正确权限
@@ -48,8 +48,8 @@ class ContentAuto_CategoryVectorManager {
      */
     private function get_leaf_categories() {
         // 使用分类过滤器获取允许的分类
-        if (class_exists('ContentAuto_Category_Filter')) {
-            $all_categories = ContentAuto_Category_Filter::get_filtered_categories(array(
+        if (class_exists('Yali_AI_Writer_Category_Filter')) {
+            $all_categories = Yali_AI_Writer_Category_Filter::get_filtered_categories(array(
                 'hide_empty' => false,
                 'number' => 0
             ));
@@ -65,8 +65,8 @@ class ContentAuto_CategoryVectorManager {
         foreach ($all_categories as $category) {
             // 检查是否有子分类（在过滤后的分类中检查）
             $children = array();
-            if (class_exists('ContentAuto_Category_Filter')) {
-                $filtered_categories = ContentAuto_Category_Filter::get_filtered_categories(array(
+            if (class_exists('Yali_AI_Writer_Category_Filter')) {
+                $filtered_categories = Yali_AI_Writer_Category_Filter::get_filtered_categories(array(
                     'parent' => $category->term_id,
                     'hide_empty' => false,
                     'number' => 1
@@ -115,11 +115,11 @@ class ContentAuto_CategoryVectorManager {
      */
     public function generate_category_vectors() {
         // 首先检查向量API配置
-        if (!class_exists('ContentAuto_ApiConfig')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'api-settings/class-api-config.php';
+        if (!class_exists('Yali_AI_Writer_ApiConfig')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'api-settings/class-api-config.php';
         }
         
-        $api_config = new ContentAuto_ApiConfig();
+        $api_config = new Yali_AI_Writer_ApiConfig();
         $vector_config = $api_config->get_vector_config();
         
         if (empty($vector_config)) {
@@ -284,8 +284,8 @@ class ContentAuto_CategoryVectorManager {
         }
         
         // 解压主题向量
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/common/functions.php';
-        $topic_vector = content_auto_decompress_vector_from_base64($topic_vector_base64);
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/common/functions.php';
+        $topic_vector = yali_ai_writer_decompress_vector_from_base64($topic_vector_base64);
         
         if ($topic_vector === false) {
             if ($this->logger) {
@@ -298,13 +298,13 @@ class ContentAuto_CategoryVectorManager {
         $highest_similarity = -1;
         
         foreach ($category_vectors as $category_data) {
-            $category_vector = content_auto_decompress_vector_from_base64($category_data['vector']);
+            $category_vector = yali_ai_writer_decompress_vector_from_base64($category_data['vector']);
             
             if ($category_vector === false) {
                 continue;
             }
             
-            $similarity = content_auto_calculate_cosine_similarity($topic_vector, $category_vector);
+            $similarity = yali_ai_writer_calculate_cosine_similarity($topic_vector, $category_vector);
             
             if ($similarity > $highest_similarity) {
                 $highest_similarity = $similarity;

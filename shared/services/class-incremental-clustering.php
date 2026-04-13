@@ -4,17 +4,17 @@
  */
 if (!defined('ABSPATH')) exit;
 
-class ContentAuto_IncrementalClustering {
+class Yali_AI_Writer_IncrementalClustering {
 
     public function __construct() {
         add_filter('cron_schedules', [$this, 'add_cron_intervals']);
         add_action('init', [$this, 'schedule_incremental_assignment']);
-        add_action('content_auto_incremental_assignment_event', [$this, 'execute_incremental_assignment']);
+        add_action('yali_ai_writer_incremental_assignment_event', [$this, 'execute_incremental_assignment']);
     }
 
     public function schedule_incremental_assignment() {
-        if (!wp_next_scheduled('content_auto_incremental_assignment_event')) {
-            wp_schedule_event(time(), 'every_five_minutes', 'content_auto_incremental_assignment_event');
+        if (!wp_next_scheduled('yali_ai_writer_incremental_assignment_event')) {
+            wp_schedule_event(time(), 'every_five_minutes', 'yali_ai_writer_incremental_assignment_event');
         }
     }
 
@@ -28,10 +28,10 @@ class ContentAuto_IncrementalClustering {
 
     public function execute_incremental_assignment() {
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
 
         // 1. Check for Golden Centroids. If they don't exist, do nothing.
-        $centroids = get_option('content_auto_vector_centroids');
+        $centroids = get_option('yali_ai_writer_vector_centroids');
         if (empty($centroids) || !is_array($centroids)) {
             return; // Cannot assign without centroids.
         }
@@ -47,13 +47,13 @@ class ContentAuto_IncrementalClustering {
         }
 
         // 确保包含必要的函数
-        if (!function_exists('content_auto_decompress_vector_from_base64')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/common/functions.php';
+        if (!function_exists('yali_ai_writer_decompress_vector_from_base64')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/common/functions.php';
         }
 
         // 3. Assign each new vector to the closest centroid.
         foreach ($topics_to_assign as $topic) {
-            $vector = content_auto_decompress_vector_from_base64($topic->vector_embedding);
+            $vector = yali_ai_writer_decompress_vector_from_base64($topic->vector_embedding);
             if (!$vector) continue;
 
             $closest_cluster_id = $this->find_closest_centroid($vector, $centroids);

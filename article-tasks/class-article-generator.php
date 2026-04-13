@@ -7,14 +7,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'prompt-templating/class-xml-template-processor.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/content-processing/class-content-filter.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/content-processing/class-markdown-converter.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-pinyin-converter.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'prompt-templating/class-xml-template-processor.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/content-processing/class-content-filter.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/content-processing/class-markdown-converter.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-pinyin-converter.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'rule-management/class-rule-manager.php';
 
-class ContentAuto_ArticleGenerator {
+class Yali_AI_Writer_ArticleGenerator {
     
     private $database;
     private $article_task_manager;
@@ -22,12 +22,12 @@ class ContentAuto_ArticleGenerator {
     private $content_filter;
 
     public function __construct() {
-        $this->database = new ContentAuto_Database();
-        $this->article_task_manager = new ContentAuto_ArticleTaskManager();
+        $this->database = new Yali_AI_Writer_Database();
+        $this->article_task_manager = new Yali_AI_Writer_ArticleTaskManager();
         
         // 初始化转换器（避免每次生成文章时重复创建）
-        $this->markdown_converter = new ContentAuto_MarkdownConverter();
-        $this->content_filter = new ContentAuto_ContentFilter();
+        $this->markdown_converter = new Yali_AI_Writer_MarkdownConverter();
+        $this->content_filter = new Yali_AI_Writer_ContentFilter();
     }
 
     /**
@@ -44,7 +44,7 @@ class ContentAuto_ArticleGenerator {
      */
     public function generate_article_for_topic($topic, $task_id = null) {
         // 获取发布规则
-        $publish_rules = $this->database->get_row('content_auto_publish_rules', array('id' => 1));
+        $publish_rules = $this->database->get_row('yali_ai_writer_publish_rules', array('id' => 1));
         
         // 如果发布规则不存在，使用默认配置
         if (!$publish_rules) {
@@ -52,7 +52,7 @@ class ContentAuto_ArticleGenerator {
         }
         
         // 获取相关内容
-        $rule_manager = new ContentAuto_RuleManager();
+        $rule_manager = new Yali_AI_Writer_RuleManager();
         $related_content = array();
         
         // 检查是否为仿写规则
@@ -176,8 +176,8 @@ class ContentAuto_ArticleGenerator {
                 $this->save_article_record($topic, $post_id, $content_text, time(), $template_name, $usage);
 
                 // 验证主题状态，只有从queued状态才能更新为used
-                if ($topic['status'] === CONTENT_AUTO_TOPIC_QUEUED) {
-                    $this->database->update('content_auto_topics', array('status' => CONTENT_AUTO_TOPIC_USED), array('id' => $topic['id']));
+                if ($topic['status'] === YALI_AI_WRITER_TOPIC_QUEUED) {
+                    $this->database->update('yali_ai_writer_topics', array('status' => YALI_AI_WRITER_TOPIC_USED), array('id' => $topic['id']));
                 } else {
                     // 如果主题不是queued状态，记录警告但继续执行
                     error_log('Warning: Topic ' . $topic['id'] . ' status is not queued before article generation, current status: ' . $topic['status']);
@@ -201,15 +201,15 @@ class ContentAuto_ArticleGenerator {
         );
         
         // 初始化日志记录器
-        if (!class_exists('ContentAuto_PluginLogger')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
-        $logger = new ContentAuto_PluginLogger();
+        $logger = new Yali_AI_Writer_PluginLogger();
         
         $logger->info('ARTICLE_GENERATION_START', '开始生成文章', $base_context);
         
         error_log('ContentAuto: generate_article - Publish Rules: ' . print_r($publish_rules, true));
-        $xml_processor = new ContentAuto_XmlTemplateProcessor();
+        $xml_processor = new Yali_AI_Writer_XmlTemplateProcessor();
         
         // 设置任务ID用于批量多样性追踪
         if ($task_id !== null) {
@@ -228,16 +228,16 @@ class ContentAuto_ArticleGenerator {
         }
         
         // 记录生成的提示词（仅在调试模式下）
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('GENERATED_PROMPT', '生成的文章提示词', array_merge($base_context, array(
                 'prompt_length' => strlen($prompt),
                 'template_name' => $template_name,
-                'prompt_preview' => substr($prompt, 0, 1000) . (strlen($prompt) > 1000 ? '...' : ''),
+                'prompt_content' => $prompt,
                 'publish_rules' => $publish_rules
             )));
         }
         
-        $unified_api_handler = new ContentAuto_UnifiedApiHandler();
+        $unified_api_handler = new Yali_AI_Writer_UnifiedApiHandler();
         $raw_content_data = $unified_api_handler->generate_content($prompt, 'article', [
             'rule_id' => $topic['rule_id'],
             'topic_id' => $topic['id'],
@@ -255,7 +255,7 @@ class ContentAuto_ArticleGenerator {
         }
 
         // 记录API返回的原始内容（仅在调试模式下）
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('API_RAW_CONTENT', 'API返回的原始内容', array_merge($base_context, array(
                 'content_length' => strlen($raw_content),
                 'raw_content' => $raw_content
@@ -270,7 +270,7 @@ class ContentAuto_ArticleGenerator {
         $filtered_content = $this->content_filter->filter_content($raw_content);
         
         // 记录过滤后的内容变化（仅在调试模式下）
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('CONTENT_FILTERED', '内容过滤完成', array_merge($base_context, array(
                 'content_before_filter' => $raw_content,
                 'content_after_filter' => $filtered_content,
@@ -288,7 +288,7 @@ class ContentAuto_ArticleGenerator {
         $html_content = $this->markdown_converter->markdown_to_html($filtered_content);
         
         // 记录Markdown转换结果（仅在调试模式下）
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('MARKDOWN_CONVERTED', 'Markdown转换为HTML', array_merge($base_context, array(
                 'markdown_content' => $filtered_content,
                 'html_content' => $html_content,
@@ -302,7 +302,7 @@ class ContentAuto_ArticleGenerator {
         $final_content = $this->insert_brand_profile($html_content, $topic, $publish_rules);
         
         // 记录品牌资料插入的结果（仅在调试模式下）
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('BRAND_PROFILE_INSERTED', '品牌资料插入完成', array_merge($base_context, array(
                 'content_before_brand' => $html_content,
                 'content_after_brand' => $final_content,
@@ -312,7 +312,7 @@ class ContentAuto_ArticleGenerator {
             )));
         }
         
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('ARTICLE_GENERATION_SUCCESS', '文章生成完成', array_merge($base_context, array(
                 'final_content_length' => strlen($final_content)
             )));
@@ -332,10 +332,10 @@ class ContentAuto_ArticleGenerator {
     }
 
     private function insert_brand_profile($html_content, $topic, $publish_rules) {
-        if (!class_exists('ContentAuto_PluginLogger')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
+        if (!class_exists('Yali_AI_Writer_PluginLogger')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-plugin-logger.php';
         }
-        $logger = new ContentAuto_PluginLogger();
+        $logger = new Yali_AI_Writer_PluginLogger();
 
         $base_context = array(
             'topic_id' => $topic['id'],
@@ -361,7 +361,7 @@ class ContentAuto_ArticleGenerator {
 
         // Condition 3: Check if any brand profiles with vectors exist
         global $wpdb;
-        $brand_profiles_table = $wpdb->prefix . 'content_auto_brand_profiles';
+        $brand_profiles_table = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
         $brand_profiles = $wpdb->get_results("SELECT * FROM {$brand_profiles_table} WHERE vector IS NOT NULL AND type IN ('standard', 'custom_html')", ARRAY_A);
 
         if (empty($brand_profiles)) {
@@ -382,7 +382,7 @@ class ContentAuto_ArticleGenerator {
         
         $topic_vector = unpack('f*', $topic_vector_decoded);
         
-        if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+        if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
             $logger->debug('BRAND_INSERTION_TOPIC_VECTOR', '主题向量信息', array_merge($base_context, array(
                 'vector_dimensions' => count($topic_vector),
                 'vector_first_5' => array_slice($topic_vector, 0, 5),
@@ -395,8 +395,8 @@ class ContentAuto_ArticleGenerator {
         $similarity_results = array();
 
         // Ensure the cosine similarity function is available
-        if (!function_exists('content_auto_calculate_cosine_similarity')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/common/functions.php';
+        if (!function_exists('yali_ai_writer_calculate_cosine_similarity')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/common/functions.php';
         }
 
         foreach ($brand_profiles as $profile) {
@@ -421,7 +421,7 @@ class ContentAuto_ArticleGenerator {
                 continue;
             }
 
-            $similarity = content_auto_calculate_cosine_similarity($topic_vector, $profile_vector);
+            $similarity = yali_ai_writer_calculate_cosine_similarity($topic_vector, $profile_vector);
             
             $similarity_results[] = array(
                 'profile_id' => $profile['id'],
@@ -429,7 +429,7 @@ class ContentAuto_ArticleGenerator {
                 'similarity' => $similarity
             );
             
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $logger->debug('BRAND_INSERTION_SIMILARITY_CALCULATION', '品牌资料相似度计算', array_merge($base_context, array(
                     'profile_id' => $profile['id'],
                     'profile_title' => $profile['title'],
@@ -512,7 +512,7 @@ class ContentAuto_ArticleGenerator {
                 'content_increase' => $final_content_length - $base_context['content_length']
             )));
 
-            if (defined('CONTENT_AUTO_DEBUG_MODE') && CONTENT_AUTO_DEBUG_MODE) {
+            if (defined('YALI_AI_WRITER_DEBUG_MODE') && YALI_AI_WRITER_DEBUG_MODE) {
                 $logger->debug('BRAND_INSERTION_DETAILS', '品牌资料插入详情', array_merge($base_context, array(
                     'html_before_insertion' => $base_context['content_length'] . ' chars',
                     'html_after_insertion' => $final_content_length . ' chars',
@@ -534,7 +534,7 @@ class ContentAuto_ArticleGenerator {
 
     private function create_wordpress_post($title, $content, $publish_rules, $topic_data) {
         // 使用拼音转换器将标题转换为拼音
-        $pinyin_converter = new ContentAuto_PinyinConverter();
+        $pinyin_converter = new Yali_AI_Writer_PinyinConverter();
         $pinyin_slug = $pinyin_converter->convert_to_pinyin($title);
 
         $post_status = $publish_rules['post_status'] ?? 'draft';
@@ -651,7 +651,7 @@ class ContentAuto_ArticleGenerator {
      */
     private function create_wordpress_post_direct($title, $content, $publish_rules, $topic_data) {
         // 使用拼音转换器将标题转换为拼音
-        $pinyin_converter = new ContentAuto_PinyinConverter();
+        $pinyin_converter = new Yali_AI_Writer_PinyinConverter();
         $pinyin_slug = $pinyin_converter->convert_to_pinyin($title);
 
         // 获取发布状态
@@ -753,8 +753,8 @@ class ContentAuto_ArticleGenerator {
             }
 
             // 加载自动图片生成器
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-tasks/class-auto-image-generator.php';
-            $image_generator = new ContentAuto_AutoImageGenerator();
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'image-tasks/class-auto-image-generator.php';
+            $image_generator = new Yali_AI_Writer_AutoImageGenerator();
 
             // 处理所有图片占位符
             $processed_content = preg_replace_callback($pattern, function($matches) use ($image_generator) {
@@ -817,8 +817,8 @@ class ContentAuto_ArticleGenerator {
                 $matched_category = $topic_data['matched_category'];
                 
                 // 尝试按名称精确匹配分类（使用过滤后的分类）
-                if (class_exists('ContentAuto_Category_Filter')) {
-                    $categories = ContentAuto_Category_Filter::get_filtered_categories(array('hide_empty' => false));
+                if (class_exists('Yali_AI_Writer_Category_Filter')) {
+                    $categories = Yali_AI_Writer_Category_Filter::get_filtered_categories(array('hide_empty' => false));
                 } else {
                     $categories = get_categories(array('hide_empty' => false));
                 }
@@ -880,9 +880,9 @@ class ContentAuto_ArticleGenerator {
             'post_id' => $post_id,
             'title' => $topic['title'],
             'content' => $article_content,
-            'status' => CONTENT_AUTO_ARTICLE_SUCCESS,
+            'status' => YALI_AI_WRITER_ARTICLE_SUCCESS,
             'processing_time' => time() - $start_time,
-            'word_count' => content_auto_manager_word_count($article_content),
+            'word_count' => yali_ai_writer_manager_word_count($article_content),
             'api_config_id' => $topic['api_config_id'],
             'api_config_name' => $topic['api_config_name'],
             'prompt_template' => $template_name,
@@ -890,7 +890,7 @@ class ContentAuto_ArticleGenerator {
             'completion_tokens' => $usage['completion_tokens'] ?? 0,
             'total_tokens' => $usage['total_tokens'] ?? 0
         ];
-        $this->database->insert('content_auto_articles', $article_data);
+        $this->database->insert('yali_ai_writer_articles', $article_data);
     }
     
     /**
@@ -902,16 +902,16 @@ class ContentAuto_ArticleGenerator {
         $default_category = get_category_by_slug('uncategorized');
         
         // 检查默认分类是否在允许的分类中
-        if ($default_category && class_exists('ContentAuto_Category_Filter')) {
-            if (!ContentAuto_Category_Filter::is_category_allowed($default_category->term_id)) {
+        if ($default_category && class_exists('Yali_AI_Writer_Category_Filter')) {
+            if (!Yali_AI_Writer_Category_Filter::is_category_allowed($default_category->term_id)) {
                 $default_category = null; // 如果不在允许列表中，重置为null
             }
         }
         
         if (!$default_category) {
             // 如果没有"未分类"或不在允许列表中，获取第一个允许的分类
-            if (class_exists('ContentAuto_Category_Filter')) {
-                $categories = ContentAuto_Category_Filter::get_filtered_categories(array('number' => 1));
+            if (class_exists('Yali_AI_Writer_Category_Filter')) {
+                $categories = Yali_AI_Writer_Category_Filter::get_filtered_categories(array('number' => 1));
             } else {
                 $categories = get_categories(array('number' => 1));
             }
@@ -949,8 +949,8 @@ class ContentAuto_ArticleGenerator {
     private function get_similar_published_articles($title) {
         // 获取当前文章的向量表示
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 查找当前标题对应的主题
         $topic = $wpdb->get_row($wpdb->prepare("SELECT id, vector_embedding FROM {$topics_table} WHERE title = %s AND vector_embedding IS NOT NULL AND vector_embedding != ''", $title));
@@ -960,7 +960,7 @@ class ContentAuto_ArticleGenerator {
         }
         
         // 使用现有的相似标题查找函数，获取更多候选主题
-        $similar_titles = content_auto_find_similar_titles($topic->id, 10); // 获取前10个相似标题
+        $similar_titles = yali_ai_writer_find_similar_titles($topic->id, 10); // 获取前10个相似标题
         
         // 收集所有有实际文章的相似标题，不限制相似度阈值
         $similar_articles = array();
@@ -998,9 +998,9 @@ class ContentAuto_ArticleGenerator {
     private function process_auto_images_sync($post_id, $content) {
         try {
             // 加载自动图片生成器
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-tasks/class-auto-image-generator.php';
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'image-tasks/class-auto-image-generator.php';
             
-            $auto_image_generator = new ContentAuto_AutoImageGenerator();
+            $auto_image_generator = new Yali_AI_Writer_AutoImageGenerator();
             
             // 同步处理图片生成，确保在文章发布前完成
             $result = $auto_image_generator->auto_generate_images_for_post($post_id, $content);
@@ -1028,9 +1028,9 @@ class ContentAuto_ArticleGenerator {
     private function process_auto_images_async($post_id, $content) {
         try {
             // 加载自动图片生成器
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-tasks/class-auto-image-generator.php';
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'image-tasks/class-auto-image-generator.php';
             
-            $auto_image_generator = new ContentAuto_AutoImageGenerator();
+            $auto_image_generator = new Yali_AI_Writer_AutoImageGenerator();
             
             // 异步处理图片生成，避免阻塞文章生成流程
             $auto_image_generator->schedule_image_generation($post_id, $content);
@@ -1047,8 +1047,8 @@ class ContentAuto_ArticleGenerator {
      * @return bool
      */
     private function is_image_api_configured() {
-        if (!class_exists('CAM_Image_API_Admin_Page')) {
-            $admin_page_file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'image-api-settings/class-image-api-admin-page.php';
+        if (!class_exists('Yali_AI_Writer_Image_API_Admin_Page')) {
+            $admin_page_file = YALI_AI_WRITER_PLUGIN_DIR . 'image-api-settings/class-image-api-admin-page.php';
             if (file_exists($admin_page_file)) {
                 require_once $admin_page_file;
             } else {
@@ -1056,11 +1056,11 @@ class ContentAuto_ArticleGenerator {
             }
         }
         
-        if (!class_exists('CAM_Image_API_Admin_Page')) {
+        if (!class_exists('Yali_AI_Writer_Image_API_Admin_Page')) {
             return false;
         }
         
-        $settings = CAM_Image_API_Admin_Page::get_settings();
+        $settings = Yali_AI_Writer_Image_API_Admin_Page::get_settings();
         $provider = isset($settings['provider']) ? $settings['provider'] : '';
         
         if (empty($provider)) {
@@ -1116,13 +1116,13 @@ class ContentAuto_ArticleGenerator {
 
         // 3. 调用 AI
         // 实例化一个新的 API Handler 避免状态干扰
-        if (!class_exists('ContentAuto_UnifiedApiHandler')) {
+        if (!class_exists('Yali_AI_Writer_UnifiedApiHandler')) {
             // 确保类已加载，虽然通常应该已经加载了
-             $file = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+             $file = YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
              if (file_exists($file)) require_once $file;
         }
         
-        $unified_api_handler = new ContentAuto_UnifiedApiHandler(); 
+        $unified_api_handler = new Yali_AI_Writer_UnifiedApiHandler(); 
         
         // 使用自定义任务类型 'metadata_completion'
         $response_data = $unified_api_handler->generate_content($prompt, 'metadata_completion', [
@@ -1174,7 +1174,7 @@ class ContentAuto_ArticleGenerator {
         }
         
         if ($updates_needed && !empty($topic['id'])) {
-             $this->database->update('content_auto_topics', $update_data, array('id' => $topic['id']));
+             $this->database->update('yali_ai_writer_topics', $update_data, array('id' => $topic['id']));
              return $update_data;
         }
         

@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_RuleParams {
+class Yali_AI_Writer_RuleParams {
     public $name = '';
     public $rule_type = '';
     public $conditions = array();

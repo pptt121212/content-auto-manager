@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class Keyword_Research_AJAX_Handler {
+class Yali_AI_Writer_Keyword_Research_AJAX_Handler {
 
     private function get_decoded_keyword($param_name = 'keyword') {
         if (!isset($_POST[$param_name])) {
@@ -53,10 +53,10 @@ class Keyword_Research_AJAX_Handler {
         $data_sources = isset($_POST['data_sources']) ? (array) $_POST['data_sources'] : ['default'];
         $deep_mining = isset($_POST['deep_mining']) ? filter_var($_POST['deep_mining'], FILTER_VALIDATE_BOOLEAN) : false;
 
-        if (!class_exists('FreeKeywordAPIs')) {
+        if (!class_exists('Yali_AI_Writer_FreeKeywordAPIs')) {
             require_once plugin_dir_path(__FILE__) . 'free_keyword_apis.php';
         }
-        $api = new FreeKeywordAPIs();
+        $api = new Yali_AI_Writer_FreeKeywordAPIs();
 
         // Total steps will be calculated by the frontend based on selected sources and deep mining depth
 
@@ -92,10 +92,10 @@ class Keyword_Research_AJAX_Handler {
         $country = isset($parts[0]) ? $parts[0] : 'cn';
         $language = isset($parts[1]) ? $parts[1] : 'zh-CN';
 
-        if (!class_exists('FreeKeywordAPIs')) {
+        if (!class_exists('Yali_AI_Writer_FreeKeywordAPIs')) {
             require_once plugin_dir_path(__FILE__) . 'free_keyword_apis.php';
         }
-        $api = new FreeKeywordAPIs();
+        $api = new Yali_AI_Writer_FreeKeywordAPIs();
         
         // 使用统一的挖掘方法处理所有数据源
         $result = $api->performSingleMiningStepByDataSource($keyword, $data_source, $step_type, $step_param, $language, $country);
@@ -131,10 +131,10 @@ class Keyword_Research_AJAX_Handler {
             wp_send_json_error(__('参数不完整', 'yali-ai-writer'));
         }
 
-        if (!class_exists('FreeKeywordAPIs')) {
+        if (!class_exists('Yali_AI_Writer_FreeKeywordAPIs')) {
             require_once plugin_dir_path(__FILE__) . 'free_keyword_apis.php';
         }
-        $api = new FreeKeywordAPIs();
+        $api = new Yali_AI_Writer_FreeKeywordAPIs();
         
         $temp_file_path = $api->getTempStorageFilePath($keyword, $session_id);
         $all_keywords = $api->readKeywordsFromTempFile($temp_file_path);
@@ -167,10 +167,10 @@ class Keyword_Research_AJAX_Handler {
         error_log('Google Trends AJAX: 请求关键词 = ' . $keyword);
 
         // 使用混合方案类，支持WordPress HTTP API和cURL自动降级，更好的429错误处理
-        if (!class_exists('FreeKeywordAPIs_Hybrid')) {
+        if (!class_exists('Yali_AI_Writer_Yali_AI_Writer_FreeKeywordAPIs_Hybrid')) {
             require_once plugin_dir_path(__FILE__) . 'free_keyword_apis_hybrid.php';
         }
-        $api = new FreeKeywordAPIs_Hybrid();
+        $api = new Yali_AI_Writer_Yali_AI_Writer_FreeKeywordAPIs_Hybrid();
 
         // 使用混合方案的 getTrendsData_Hybrid 方法，自动处理Session预热、Cookie持久化、限流重试
         $trend_data = $api->getTrendsData_Hybrid($keyword);
@@ -235,4 +235,4 @@ class Keyword_Research_AJAX_Handler {
 }
 
 // 实例化处理器
-new Keyword_Research_AJAX_Handler();
+new Yali_AI_Writer_Keyword_Research_AJAX_Handler();

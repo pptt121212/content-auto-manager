@@ -14,9 +14,22 @@ if (!defined('ABSPATH')) exit;
                 <label for="pollinations_default_model"><?php _e('默认模型', 'yali-ai-writer'); ?></label>
             </th>
             <td>
-                <input type="text" id="pollinations_default_model" name="pollinations[model]" value="<?php echo esc_attr($settings['pollinations']['model'] ?? 'flux'); ?>" class="regular-text yali-input">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <select id="pollinations_default_model" name="pollinations[model]" class="regular-text yali-select" style="min-width: 300px;">
+                        <?php
+                        $current_model = $settings['pollinations']['model'] ?? 'flux';
+                        echo '<option value="' . esc_attr($current_model) . '">' . esc_html($current_model) . ' (' . __('当前保存的模型', 'yali-ai-writer') . ')</option>';
+                        ?>
+                    </select>
+                    <button type="button" id="refresh-pollinations-image-models" class="button button-secondary yali-btn yali-btn-secondary yali-btn-small">
+                        <span class="dashicons dashicons-update"></span> <?php _e('同步图像模型', 'yali-ai-writer'); ?>
+                    </button>
+                    <span id="pollinations-model-refresh-status" style="display: none; color: #666; font-size: 13px;">
+                        <span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span><?php _e('正在同步...', 'yali-ai-writer'); ?>
+                    </span>
+                </div>
                 <p class="description yali-desc">
-                    <?php _e('可用模型：flux (默认), turbo, gptimage, kontext, seedream', 'yali-ai-writer'); ?>
+                    <?php _e('点击"同步图像模型"按钮从 Pollinations 获取最新可用图像生成模型列表。', 'yali-ai-writer'); ?>
                 </p>
             </td>
         </tr>

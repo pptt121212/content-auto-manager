@@ -29,8 +29,10 @@ jQuery(document).ready(function ($) {
     angleListContainer.on('click', '.delete-angle-btn', function (e) {
         e.stopPropagation(); // 防止触发角度选择
         const angleToDelete = $(this).data('angle');
-        // 翻译角度名称用于显示
-        const translatedAngleToDelete = wp.i18n.__(angleToDelete, 'yali-ai-writer');
+        // 优先使用i18n翻译，回退到服务端的本地化名称
+        const translatedAngleToDelete = wp.i18n.__(angleToDelete, 'yali-ai-writer') !== angleToDelete
+            ? wp.i18n.__(angleToDelete, 'yali-ai-writer')
+            : ((window.angleDisplayNames && window.angleDisplayNames[angleToDelete]) || angleToDelete);
         const msg = __('确定要删除动态角度 "%s" 吗？', 'yali-ai-writer').replace('%s', translatedAngleToDelete) + '\n\n' + __('该角度下的主题将随机重新分配到固定角度中，文章结构将被删除。', 'yali-ai-writer') + '\n\n' + __('此操作不可撤销。', 'yali-ai-writer');
         if (confirm(msg)) {
             deleteDynamicAngle(angleToDelete, $(this));
@@ -75,7 +77,7 @@ jQuery(document).ready(function ($) {
             $.ajax({
                 url: articleStructures.ajaxurl,
                 type: 'POST',
-                data: { action: 'get_content_angles', nonce: articleStructures.nonce },
+                data: { action: 'yali_ai_writer_get_content_angles', nonce: articleStructures.nonce },
                 error: function (xhr, status, error) {
                     console.error(__('获取内容角度失败:', 'yali-ai-writer'), status, error, xhr.responseText);
                 }
@@ -83,7 +85,7 @@ jQuery(document).ready(function ($) {
             $.ajax({
                 url: articleStructures.ajaxurl,
                 type: 'POST',
-                data: { action: 'get_article_structures', nonce: articleStructures.nonce },
+                data: { action: 'yali_ai_writer_get_article_structures', nonce: articleStructures.nonce },
                 error: function (xhr, status, error) {
                     console.error(__('获取文章结构失败:', 'yali-ai-writer'), status, error, xhr.responseText);
                 }
@@ -91,7 +93,7 @@ jQuery(document).ready(function ($) {
             $.ajax({
                 url: articleStructures.ajaxurl,
                 type: 'POST',
-                data: { action: 'get_structure_popularity_stats', nonce: articleStructures.nonce },
+                data: { action: 'yali_ai_writer_get_structure_popularity_stats', nonce: articleStructures.nonce },
                 error: function (xhr, status, error) {
                     console.error(__('获取受欢迎度统计失败:', 'yali-ai-writer'), status, error, xhr.responseText);
                 }
@@ -160,7 +162,7 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             timeout: 150000, // 2.5分钟超时
             data: {
-                action: 'generate_article_structures',
+                action: 'yali_ai_writer_generate_article_structures',
                 nonce: articleStructures.nonce,
                 angle: currentAngle
             },
@@ -195,7 +197,7 @@ jQuery(document).ready(function ($) {
         $.ajax({
             url: articleStructures.ajaxurl,
             type: 'POST',
-            data: { action: 'delete_article_structure', nonce: articleStructures.nonce, id: id },
+            data: { action: 'yali_ai_writer_delete_article_structure', nonce: articleStructures.nonce, id: id },
             success: function (response) {
                 if (response.success) {
                     btn.closest('.structure-card').fadeOut(300, function () { $(this).remove(); });
@@ -219,7 +221,7 @@ jQuery(document).ready(function ($) {
         $.ajax({
             url: articleStructures.ajaxurl,
             type: 'POST',
-            data: { action: 'get_associated_articles', nonce: articleStructures.nonce, structure_id: structureId },
+            data: { action: 'yali_ai_writer_get_associated_articles', nonce: articleStructures.nonce, structure_id: structureId },
             success: function (response) {
                 if (response.success) {
                     let content = '';
@@ -304,7 +306,7 @@ jQuery(document).ready(function ($) {
 
             window.angleTypes.dynamic.forEach(angle => {
                 const usageTotal = angleUsageTotals[angle] || 0;
-                // 对于动态角度，通常没翻译，尝试i18n，否则用服务端名称
+                // 优先使用i18n翻译，回退到服务端的本地化名称
                 const translatedAngle = wp.i18n.__(angle, 'yali-ai-writer') !== angle
                     ? wp.i18n.__(angle, 'yali-ai-writer')
                     : ((window.angleDisplayNames && window.angleDisplayNames[angle]) || angle);
@@ -519,7 +521,7 @@ jQuery(document).ready(function ($) {
             url: articleStructures.ajaxurl,
             type: 'POST',
             data: {
-                action: 'delete_dynamic_angle',
+                action: 'yali_ai_writer_delete_dynamic_angle',
                 angle: angle,
                 nonce: articleStructures.nonce
             },

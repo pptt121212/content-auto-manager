@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
-class CAM_Image_API_Admin_Page {
+class Yali_AI_Writer_Image_API_Admin_Page {
 
     private static $option_name = 'cam_image_api_settings';
 
@@ -23,7 +23,7 @@ class CAM_Image_API_Admin_Page {
             return;
         }
         
-        $version = defined('CONTENT_AUTO_MANAGER_VERSION') ? CONTENT_AUTO_MANAGER_VERSION : '1.0.0';
+        $version = defined('YALI_AI_WRITER_VERSION') ? YALI_AI_WRITER_VERSION : '1.0.0';
         $plugin_dir_url = plugin_dir_url(__FILE__);
 
         wp_enqueue_style(
@@ -46,17 +46,17 @@ class CAM_Image_API_Admin_Page {
             'contentAutoManager',
             [
                 'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce'   => wp_create_nonce('content_auto_manager_nonce'), // Generic nonce
+                'nonce'   => wp_create_nonce('yali_ai_writer_manager_nonce'), // Generic nonce
                 'save_nonce' => wp_create_nonce('cam_save_image_api_settings'), // Specific save nonce
             ]
         );
 
         // Load translations
-        wp_set_script_translations('cam-image-api-settings', 'yali-ai-writer', CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'languages');
+        wp_set_script_translations('cam-image-api-settings', 'yali-ai-writer', YALI_AI_WRITER_PLUGIN_DIR . 'languages');
     }
 
     public static function create_page() {
-        self::handle_form_submission();
+        // 表单处理已移至 admin/form-handlers.php，在 admin_init 钩子中执行
         $settings = self::get_settings();
         include_once plugin_dir_path(__FILE__) . 'views/image-api-config-form.php';
     }
@@ -66,7 +66,7 @@ class CAM_Image_API_Admin_Page {
             return;
         }
 
-        if (!wp_verify_nonce($_POST['cam_save_image_api_settings_nonce'], 'cam_save_image_api_settings')) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['cam_save_image_api_settings_nonce'])), 'cam_save_image_api_settings')) {
             wp_die('Nonce verification failed.');
         }
 
@@ -133,7 +133,7 @@ class CAM_Image_API_Admin_Page {
      */
     public static function save_settings_ajax() {
         // Check nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_save_image_api_settings')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_save_image_api_settings')) {
             wp_send_json_error(['message' => 'Nonce verification failed.']);
         }
 
@@ -237,6 +237,6 @@ class CAM_Image_API_Admin_Page {
     }
 }
 
-CAM_Image_API_Admin_Page::init();
+Yali_AI_Writer_Image_API_Admin_Page::init();
 
 

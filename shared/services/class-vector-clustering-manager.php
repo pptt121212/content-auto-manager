@@ -4,21 +4,21 @@
  */
 if (!defined('ABSPATH')) exit;
 
-class ContentAuto_VectorClusteringManager {
+class Yali_AI_Writer_VectorClusteringManager {
 
     const CLUSTERING_THRESHOLD = 100; // Minimum number of un-clustered vectors to trigger a new clustering process.
-    const CLUSTERING_LOCK_TRANSIENT = 'content_auto_clustering_lock';
+    const CLUSTERING_LOCK_TRANSIENT = 'yali_ai_writer_clustering_lock';
 
     public function __construct() {
         // Add the custom cron schedule and schedule the event.
         add_filter('cron_schedules', [$this, 'add_cron_intervals']);
         add_action('init', [$this, 'schedule_clustering_check']);
-        add_action('content_auto_clustering_check_event', [$this, 'check_and_trigger_clustering']);
+        add_action('yali_ai_writer_clustering_check_event', [$this, 'check_and_trigger_clustering']);
     }
 
     public function schedule_clustering_check() {
-        if (!wp_next_scheduled('content_auto_clustering_check_event')) {
-            wp_schedule_event(time(), 'hourly', 'content_auto_clustering_check_event');
+        if (!wp_next_scheduled('yali_ai_writer_clustering_check_event')) {
+            wp_schedule_event(time(), 'hourly', 'yali_ai_writer_clustering_check_event');
         }
     }
 
@@ -32,7 +32,7 @@ class ContentAuto_VectorClusteringManager {
 
     public function check_and_trigger_clustering() {
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
 
         // 1. Check if a clustering process is already running.
         if (get_transient(self::CLUSTERING_LOCK_TRANSIENT)) {
@@ -50,11 +50,11 @@ class ContentAuto_VectorClusteringManager {
     }
 
     private function execute_clustering() {
-        $logger = new ContentAuto_PluginLogger();
+        $logger = new Yali_AI_Writer_PluginLogger();
         $logger->info('Starting automatic vector clustering process via async state machine...');
 
         // 初始化状态
-        update_option('content_auto_clustering_status', array(
+        update_option('yali_ai_writer_clustering_status', array(
             'status' => 'running',
             'has_error' => false,
             'progress_message' => __('初始化增量聚类任务(定时触发)...', 'yali-ai-writer') . "\n",
@@ -63,11 +63,11 @@ class ContentAuto_VectorClusteringManager {
         ));
 
         // 清理老旧转轮机器状态
-        delete_option('content_auto_clustering_state');
+        delete_option('yali_ai_writer_clustering_state');
 
         // 发射内部起步令牌
         $internal_token = wp_generate_password(32, false);
-        set_transient('content_auto_clustering_internal_token', $internal_token, 120);
+        set_transient('yali_ai_writer_clustering_internal_token', $internal_token, 120);
         
         // 大锁护体
         set_transient(self::CLUSTERING_LOCK_TRANSIENT, true, HOUR_IN_SECONDS * 2);

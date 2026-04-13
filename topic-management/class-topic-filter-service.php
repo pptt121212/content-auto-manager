@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_TopicFilterService {
+class Yali_AI_Writer_TopicFilterService {
     
     /**
      * 向量相似度阈值，用于判断重复标题
@@ -31,7 +31,7 @@ class ContentAuto_TopicFilterService {
     public function get_filtered_topics($filters, $page = 1, $per_page = 20) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $where_clauses = array();
         $where_values = array();
         
@@ -145,7 +145,7 @@ class ContentAuto_TopicFilterService {
             $filters = array();
         }
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $duplicates = array(
             'exact_duplicates' => array(),      // 完全相同的标题
             'similar_duplicates' => array(),    // 向量相似的标题
@@ -513,8 +513,8 @@ class ContentAuto_TopicFilterService {
         }
         
         // 尝试使用全局函数
-        if (function_exists('content_auto_decompress_vector_from_base64')) {
-            return content_auto_decompress_vector_from_base64($base64_vector);
+        if (function_exists('yali_ai_writer_decompress_vector_from_base64')) {
+            return yali_ai_writer_decompress_vector_from_base64($base64_vector);
         }
         
         // 降级方案：直接base64解码
@@ -537,8 +537,8 @@ class ContentAuto_TopicFilterService {
         }
         
         // 使用全局函数
-        if (function_exists('content_auto_calculate_cosine_similarity')) {
-            return content_auto_calculate_cosine_similarity($vector1, $vector2);
+        if (function_exists('yali_ai_writer_calculate_cosine_similarity')) {
+            return yali_ai_writer_calculate_cosine_similarity($vector1, $vector2);
         }
         
         // 降级计算
@@ -572,7 +572,7 @@ class ContentAuto_TopicFilterService {
             return array();
         }
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $placeholders = implode(',', array_fill(0, count($ids), '%d'));
         
         $query = $wpdb->prepare(
@@ -605,14 +605,14 @@ class ContentAuto_TopicFilterService {
             );
         }
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         // 只删除未使用的主题
         $placeholders = implode(',', array_fill(0, count($topic_ids), '%d'));
         
         $query = $wpdb->prepare(
             "DELETE FROM {$topics_table} WHERE id IN ({$placeholders}) AND status = %s",
-            array_merge($topic_ids, array(CONTENT_AUTO_TOPIC_UNUSED))
+            array_merge($topic_ids, array(YALI_AI_WRITER_TOPIC_UNUSED))
         );
         
         $deleted_count = $wpdb->query($query);
@@ -671,7 +671,7 @@ class ContentAuto_TopicFilterService {
     public function delete_all_filtered_topics($filters) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $where_clauses = array();
         $where_values = array();
         
@@ -764,7 +764,7 @@ class ContentAuto_TopicFilterService {
     public function get_available_categories() {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         $categories = $wpdb->get_col("
             SELECT DISTINCT matched_category 
@@ -782,7 +782,7 @@ class ContentAuto_TopicFilterService {
     public function get_filter_stats() {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         
         return array(
             'total' => intval($wpdb->get_var("SELECT COUNT(*) FROM {$topics_table}")),

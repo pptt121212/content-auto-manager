@@ -1,7 +1,7 @@
 <?php
 namespace ContentAutoManager\RestApi\Controllers;
 
-use ContentAuto_ApiConfig;
+use Yali_AI_Writer_ApiConfig;
 
 /**
  * Controller for Config API
@@ -24,16 +24,18 @@ class Config_Controller extends Base_Controller {
      * @return \WP_REST_Response
      */
     public function get_config( $request ) {
-        if ( ! class_exists( 'ContentAuto_ApiConfig' ) ) {
-            if ( defined( 'CONTENT_AUTO_MANAGER_PLUGIN_DIR' ) ) {
-                 $api_config_path = CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'api-settings/class-api-config.php';
+        global $wpdb;
+
+        if ( ! class_exists( 'Yali_AI_Writer_ApiConfig' ) ) {
+            if ( defined( 'YALI_AI_WRITER_PLUGIN_DIR' ) ) {
+                 $api_config_path = YALI_AI_WRITER_PLUGIN_DIR . 'api-settings/class-api-config.php';
                  if ( file_exists( $api_config_path ) ) {
                      require_once $api_config_path;
                  }
             }
         }
 
-        $api_config = new ContentAuto_ApiConfig();
+        $api_config = new Yali_AI_Writer_ApiConfig();
 
         // 获取所有激活的 LLM 配置（排除向量API）
         $all_configs = $api_config->get_configs();
@@ -74,11 +76,17 @@ class Config_Controller extends Base_Controller {
             }
         }
 
+        // 读取发布规则中的发布语言
+        $publish_rules_table = $wpdb->prefix . 'yali_ai_writer_publish_rules';
+        $publish_rule = $wpdb->get_row( "SELECT publish_language FROM {$publish_rules_table} WHERE id = 1 LIMIT 1", ARRAY_A );
+        $publish_language = $publish_rule && !empty($publish_rule['publish_language']) ? $publish_rule['publish_language'] : 'zh-CN';
+
         // 构建响应
         $response = array(
             'llm' => null,
-            'llm_list' => $llm_configs,  // 所有激活的 LLM
-            'vector' => $vector_config
+            'llm_list' => $llm_configs,
+            'vector' => $vector_config,
+            'publish_language' => $publish_language,
         );
 
         // 兼容性：llm 字段返回第一个激活的 LLM

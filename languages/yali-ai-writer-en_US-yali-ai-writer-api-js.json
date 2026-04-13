@@ -1,6 +1,6 @@
 {
-    "translation-revision-date": "2026-03-16 08:18:40+0800",
-    "generator": "Reconstructed Build Mo Script",
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
     "domain": "messages",
     "locale_data": {
         "messages": {
@@ -12,20 +12,11 @@
             "暂无API配置": [
                 "No API configurations found."
             ],
-            "API配置": [
-                "API Config"
+            "当前保存的模型": [
+                "Currently saved model"
             ],
-            "确认": [
-                "Confirm"
-            ],
-            "无": [
-                "None"
-            ],
-            "，": [
-                ", "
-            ],
-            "可选": [
-                "Optional"
+            "已保存": [
+                "Saved"
             ]
         }
     }

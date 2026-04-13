@@ -1,6 +1,6 @@
 {
-    "translation-revision-date": "2026-03-16 08:18:40+0800",
-    "generator": "Reconstructed Build Mo Script",
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
     "domain": "messages",
     "locale_data": {
         "messages": {
@@ -8,19 +8,7 @@
                 "domain": "messages",
                 "plural-forms": "nplurals=2; plural=(n != 1);",
                 "lang": "en_US"
-            },
-            "删除": [
-                "Delete"
-            ],
-            "编辑": [
-                "Edit"
-            ],
-            "添加": [
-                "Add"
-            ],
-            "禁用": [
-                "Disabled"
-            ]
+            }
         }
     }
 }

@@ -8,13 +8,13 @@ if (!defined('ABSPATH')) {
 }
 
 // 确保必要的类被加载
-if (!class_exists('ContentAuto_ArticleTaskTimeoutHandler')) {
-    require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-tasks/class-article-task-timeout-handler.php';
+if (!class_exists('Yali_AI_Writer_ArticleTaskTimeoutHandler')) {
+    require_once YALI_AI_WRITER_PLUGIN_DIR . 'article-tasks/class-article-task-timeout-handler.php';
 }
 
 if (defined('WP_CLI') && WP_CLI) {
     
-    class ContentAuto_ArticleTimeout_Command extends WP_CLI_Command {
+    class Yali_AI_Writer_ArticleTimeout_Command extends WP_CLI_Command {
         
         /**
          * 处理超时的文章任务
@@ -31,16 +31,16 @@ if (defined('WP_CLI') && WP_CLI) {
          */
         public function handle_timeouts($args, $assoc_args) {
             // 确保文章任务超时处理器类已加载
-            if (!class_exists('ContentAuto_ArticleTaskTimeoutHandler')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-tasks/class-article-task-timeout-handler.php';
+            if (!class_exists('Yali_AI_Writer_ArticleTaskTimeoutHandler')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'article-tasks/class-article-task-timeout-handler.php';
             }
             
-            if (!class_exists('ContentAuto_ArticleTaskTimeoutHandler')) {
+            if (!class_exists('Yali_AI_Writer_ArticleTaskTimeoutHandler')) {
                 WP_CLI::error('无法加载文章任务超时处理器类');
                 return;
             }
             
-            $timeout_handler = new ContentAuto_ArticleTaskTimeoutHandler();
+            $timeout_handler = new Yali_AI_Writer_ArticleTaskTimeoutHandler();
             
             // 处理超时任务
             WP_CLI::line('正在处理超时的文章任务子项...');
@@ -71,8 +71,8 @@ if (defined('WP_CLI') && WP_CLI) {
         public function show_processing($args, $assoc_args) {
             global $wpdb;
             
-            $queue_table = $wpdb->prefix . 'content_auto_job_queue';
-            $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+            $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+            $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
             
             // 获取所有处理中的文章任务子项
             $processing_subtasks = $wpdb->get_results(
@@ -109,5 +109,5 @@ if (defined('WP_CLI') && WP_CLI) {
         }
     }
     
-    WP_CLI::add_command('content-auto', 'ContentAuto_ArticleTimeout_Command');
+    WP_CLI::add_command('content-auto', 'Yali_AI_Writer_ArticleTimeout_Command');
 }

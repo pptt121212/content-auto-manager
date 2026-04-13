@@ -10,9 +10,9 @@ if (!defined('ABSPATH')) {
 }
 
 // 引入日志系统
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/logging/class-logging-system.php';
 
-abstract class ContentAuto_BaseTaskProcessor {
+abstract class Yali_AI_Writer_BaseTaskProcessor {
     
     protected $database;
     protected $logger;
@@ -20,10 +20,10 @@ abstract class ContentAuto_BaseTaskProcessor {
     protected $api_config;
     
     public function __construct() {
-        $this->database = new ContentAuto_Database();
-        $this->logger = new ContentAuto_LoggingSystem();
-        $this->rule_manager = new ContentAuto_RuleManager();
-        $this->api_config = new ContentAuto_ApiConfig();
+        $this->database = new Yali_AI_Writer_Database();
+        $this->logger = new Yali_AI_Writer_LoggingSystem();
+        $this->rule_manager = new Yali_AI_Writer_RuleManager();
+        $this->api_config = new Yali_AI_Writer_ApiConfig();
     }
     
     /**
@@ -128,7 +128,7 @@ abstract class ContentAuto_BaseTaskProcessor {
      */
     protected function is_task_processable($task) {
         // 基础检查：任务状态
-        if (!in_array($task['status'], [CONTENT_AUTO_STATUS_PENDING, 'processing'])) {
+        if (!in_array($task['status'], [YALI_AI_WRITER_STATUS_PENDING, 'processing'])) {
             return false;
         }
         
@@ -159,8 +159,8 @@ abstract class ContentAuto_BaseTaskProcessor {
         // 移除API请求间隔时间检查，因为子任务间已有30秒间隔
         // 仅在非重试的首次请求时检查API请求间隔时间
         // if (!$is_retry) {
-        //     $min_interval = CONTENT_AUTO_MIN_API_INTERVAL;
-        //     $last_request_time = get_option('content_auto_last_api_request', 0);
+        //     $min_interval = YALI_AI_WRITER_MIN_API_INTERVAL;
+        //     $last_request_time = get_option('yali_ai_writer_last_api_request', 0);
         //     $current_time = time();
         //     
         //     if ($current_time - $last_request_time < $min_interval) {
@@ -171,7 +171,7 @@ abstract class ContentAuto_BaseTaskProcessor {
         // }
         
         // 更新最后请求时间
-        update_option('content_auto_last_api_request', current_time('timestamp'));
+        update_option('yali_ai_writer_last_api_request', current_time('timestamp'));
         return true;
     }
     
@@ -190,11 +190,11 @@ abstract class ContentAuto_BaseTaskProcessor {
      */
     protected function handle_successful_processing($job_id, $subtask_id, $task) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 1. 更新队列中的子任务状态为 completed
         $wpdb->update($queue_table,
-            ['status' => CONTENT_AUTO_STATUS_COMPLETED, 'updated_at' => current_time('mysql'), 'error_message' => ''],
+            ['status' => YALI_AI_WRITER_STATUS_COMPLETED, 'updated_at' => current_time('mysql'), 'error_message' => ''],
             ['job_type' => $this->get_task_type(), 'job_id' => $job_id, 'subtask_id' => $subtask_id]
         );
         
@@ -217,12 +217,12 @@ abstract class ContentAuto_BaseTaskProcessor {
      */
     protected function handle_failed_processing($job_id, $subtask_id, $task, $result) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 1. 更新队列中的子任务状态为 failed
         $error_message = is_array($result) && isset($result['message']) ? $result['message'] : '未知错误';
         $wpdb->update($queue_table,
-            ['status' => CONTENT_AUTO_STATUS_FAILED, 'error_message' => $error_message, 'updated_at' => current_time('mysql')],
+            ['status' => YALI_AI_WRITER_STATUS_FAILED, 'error_message' => $error_message, 'updated_at' => current_time('mysql')],
             ['job_type' => $this->get_task_type(), 'job_id' => $job_id, 'subtask_id' => $subtask_id]
         );
         
@@ -253,7 +253,7 @@ abstract class ContentAuto_BaseTaskProcessor {
      */
     protected function finalize_task_if_completed($job_id, $task) {
         global $wpdb;
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         // 检查所有子任务的状态
         $total_subtasks = $wpdb->get_var($wpdb->prepare(
@@ -273,7 +273,7 @@ abstract class ContentAuto_BaseTaskProcessor {
         
         // 如果所有子任务都已完成或有失败，更新任务状态
         if ($completed_subtasks + $failed_subtasks >= $total_subtasks) {
-            $final_status = ($failed_subtasks > 0) ? CONTENT_AUTO_STATUS_FAILED : CONTENT_AUTO_STATUS_COMPLETED;
+            $final_status = ($failed_subtasks > 0) ? YALI_AI_WRITER_STATUS_FAILED : YALI_AI_WRITER_STATUS_COMPLETED;
             
             $this->database->update($this->get_task_table(), [
                 'status' => $final_status,

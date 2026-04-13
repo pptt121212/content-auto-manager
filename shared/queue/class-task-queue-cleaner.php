@@ -12,7 +12,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_TaskQueueCleaner {
+require_once dirname(dirname(__FILE__)) . '/services/class-extension-task-state-ledger.php';
+
+class Yali_AI_Writer_TaskQueueCleaner {
     
     const OPTION_QUEUE_KEY = 'cam_extension_task_queue';
     
@@ -21,15 +23,15 @@ class ContentAuto_TaskQueueCleaner {
     public function __construct() {
         // 显式加载 PluginLogger 类（如果尚未加载）
         // 使用相对路径，避免依赖可能未定义的常量
-        if (!class_exists('ContentAuto_PluginLogger')) {
+        if (!class_exists('Yali_AI_Writer_PluginLogger')) {
             $logger_file = dirname(dirname(__FILE__)) . '/logging/class-plugin-logger.php';
             if (file_exists($logger_file)) {
                 require_once $logger_file;
             }
         }
         
-        if (class_exists('ContentAuto_PluginLogger')) {
-            $this->logger = new ContentAuto_PluginLogger();
+        if (class_exists('Yali_AI_Writer_PluginLogger')) {
+            $this->logger = new Yali_AI_Writer_PluginLogger();
         }
     }
     
@@ -51,7 +53,7 @@ class ContentAuto_TaskQueueCleaner {
         );
         
         // 1. 清理数据库队列 (job_queue)
-        $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         $deleted_db = $wpdb->query($wpdb->prepare(
             "DELETE FROM {$queue_table} WHERE job_type = %s AND job_id = %d AND status != 'completed'",
             $task_type,
@@ -99,6 +101,9 @@ class ContentAuto_TaskQueueCleaner {
         $deleted_count = $original_count - count($queue);
         
         if ($deleted_count > 0) {
+            foreach ($queue as $task_id => $task) {
+                Yali_AI_Writer_ExtensionTaskStateLedger::sync_queue_task($task_id, $task);
+            }
             update_option(self::OPTION_QUEUE_KEY, $queue);
         }
         
@@ -137,7 +142,7 @@ class ContentAuto_TaskQueueCleaner {
         $original_count = count($queue);
         
         $queue = array_filter($queue, function($task) {
-            return isset($task['status']) && $task['status'] === 'pending';
+            return isset($task['status']) && in_array($task['status'], array('pending', 'notified', 'claimed'), true);
         });
         
         $deleted_count = $original_count - count($queue);
@@ -166,9 +171,9 @@ class ContentAuto_TaskQueueCleaner {
         
         // 1. 标记 DB 队列中的孤儿任务为 failed
         // 改进：允许 parent 任务为 'completed' 状态时保留其 subtasks 采集任务一段时间，仅在 parent 彻底被删除或标记失败时清理
-        $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
-        $topic_tasks_table = $wpdb->prefix . 'content_auto_topic_tasks';
-        $article_tasks_table = $wpdb->prefix . 'content_auto_article_tasks';
+        $job_queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
+        $topic_tasks_table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
+        $article_tasks_table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
         
         $marked = $wpdb->query(
             "UPDATE {$job_queue_table} q
@@ -220,8 +225,8 @@ class ContentAuto_TaskQueueCleaner {
         }
 
         $original_count = count($queue);
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $job_queue_table = $wpdb->prefix . 'content_auto_job_queue';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $job_queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
         
         $queue = array_filter($queue, function($task) use ($wpdb, $topics_table, $job_queue_table) {
             // 只清理 pending 状态的任务。已完成的留待定期清理
@@ -292,6 +297,7 @@ class ContentAuto_TaskQueueCleaner {
         if (isset($queue[$task_unique_id])) {
             unset($queue[$task_unique_id]);
             update_option(self::OPTION_QUEUE_KEY, $queue);
+            Yali_AI_Writer_ExtensionTaskStateLedger::mark_terminal($task_unique_id, 'deleted');
             return true;
         }
         
@@ -313,6 +319,7 @@ class ContentAuto_TaskQueueCleaner {
             $queue[$task_unique_id]['status'] = 'completed';
             $queue[$task_unique_id]['completed_at'] = time();
             update_option(self::OPTION_QUEUE_KEY, $queue);
+            Yali_AI_Writer_ExtensionTaskStateLedger::mark_terminal($task_unique_id, 'completed');
             return true;
         }
         
@@ -345,7 +352,7 @@ class ContentAuto_TaskQueueCleaner {
         
         // 1. 清理已完成的主题任务
         if ($options['clean_topic_tasks']) {
-            $table = $wpdb->prefix . 'content_auto_topic_tasks';
+            $table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
             $deleted = $wpdb->query("DELETE FROM {$table} WHERE status = 'completed'");
             $stats['topic_tasks_deleted'] = ($deleted !== false) ? $deleted : 0;
             
@@ -354,7 +361,7 @@ class ContentAuto_TaskQueueCleaner {
         
         // 2. 清理已完成的文章任务
         if ($options['clean_article_tasks']) {
-            $table = $wpdb->prefix . 'content_auto_article_tasks';
+            $table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
             $deleted = $wpdb->query("DELETE FROM {$table} WHERE status = 'completed'");
             $stats['article_tasks_deleted'] = ($deleted !== false) ? $deleted : 0;
             

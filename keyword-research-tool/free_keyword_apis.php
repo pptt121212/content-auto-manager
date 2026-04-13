@@ -1,4 +1,7 @@
 <?php
+if (!defined('ABSPATH')) {
+    exit;
+}
 /**
  * 免费关键词挖掘和趋势分析API集合
  * 无需授权的标准请求方式
@@ -10,9 +13,9 @@
  */
 
 // 引入百度API处理类
-require_once plugin_dir_path(__FILE__) . 'BaiduSuggestion.php';
+require_once plugin_dir_path(__FILE__) . 'Yali_AI_Writer_BaiduSuggestion.php';
 
-class FreeKeywordAPIs {
+class Yali_AI_Writer_FreeKeywordAPIs {
     
     /**
      * ==========================================
@@ -396,57 +399,75 @@ class FreeKeywordAPIs {
      * @return array ['body' => string, 'http_code' => int]
      */
     private function makeRequest($url, $headers = []) {
-        $ch = curl_init();
-        
         // 合并浏览器标准头
         $standardHeaders = $this->getBrowserHeaders();
         $mergedHeaders = array_merge($standardHeaders, $headers);
         
-        // 标准curl配置
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $this->buildHeadersArray($mergedHeaders));
-        curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate, br'); // 明确支持压缩以提升效率
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+        // 读取本地存储的 Cookie
+        $cookie_jar = [];
+        if (file_exists($this->cookie_file)) {
+            $file_age = time() - filemtime($this->cookie_file);
+            if ($file_age < 3600) {
+                $cookie_content = file_get_contents($this->cookie_file);
+                if (!empty($cookie_content)) {
+                    parse_str(str_replace('; ', '&', $cookie_content), $cookie_jar);
+                }
+            }
+        }
         
-        // 持久化cookie支持 (模拟浏览器Session)
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file);
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
+        $args = [
+            'method'      => 'GET',
+            'timeout'     => 30,
+            'redirection' => 5,
+            'httpversion' => '1.1',
+            'sslverify'   => false,
+            'headers'     => $mergedHeaders,
+            'cookies'     => $cookie_jar,
+            'decompress'  => true, // 明确支持压缩响应解压
+        ];
         
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        $error = curl_error($ch);
-        curl_close($ch);
+        $response = wp_remote_request($url, $args);
         
-        if ($response === false) {
-            error_log("API请求失败: cURL Error: $error, URL: $url");
+        if (is_wp_error($response)) {
+            $error_msg = $response->get_error_message();
+            error_log("API请求失败: WP HTTP Error: {$error_msg}, URL: $url");
             return ['body' => false, 'http_code' => 0];
+        }
+        
+        $httpCode = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $contentType = wp_remote_retrieve_header($response, 'content-type');
+        
+        // 保存 Cookie 到本地方便下次使用 (模拟 CURLOPT_COOKIEJAR)
+        $cookies = wp_remote_retrieve_cookies($response);
+        if (!empty($cookies)) {
+            foreach ($cookies as $cookie) {
+                $cookie_jar[$cookie->name] = $cookie->value;
+            }
+            $cookie_content = '';
+            foreach ($cookie_jar as $name => $value) {
+                $cookie_content .= "{$name}={$value}; ";
+            }
+            @file_put_contents($this->cookie_file, $cookie_content, LOCK_EX);
+            @chmod($this->cookie_file, 0644);
         }
 
         // --- 编码自动转换 (UTF-8 强制执行) ---
-        // 针对百度、淘宝等可能返回 GBK 的接口进行检测
         $charset = '';
-        if (preg_match('/charset=([^;]+)/i', $contentType, $matches)) {
+        if (is_string($contentType) && preg_match('/charset=([^;]+)/i', $contentType, $matches)) {
             $charset = strtoupper(trim($matches[1]));
         }
 
         if ($charset === 'GBK' || $charset === 'GB2312') {
-            $response = mb_convert_encoding($response, 'UTF-8', $charset);
+            $body = mb_convert_encoding($body, 'UTF-8', $charset);
         } else if (function_exists('mb_detect_encoding')) {
-            // 如果 Header 没写，尝试内容探测 (针对中国常用编码优化)
-            $detect = mb_detect_encoding($response, ['UTF-8', 'GBK', 'GB2312', 'BIG5']);
+            $detect = mb_detect_encoding($body, ['UTF-8', 'GBK', 'GB2312', 'BIG5']);
             if ($detect && $detect !== 'UTF-8') {
-                $response = mb_convert_encoding($response, 'UTF-8', $detect);
+                $body = mb_convert_encoding($body, 'UTF-8', $detect);
             }
         }
         
-        return ['body' => $response, 'http_code' => $httpCode];
+        return ['body' => $body, 'http_code' => $httpCode];
     }
 
     /**
@@ -1046,7 +1067,7 @@ class FreeKeywordAPIs {
      * @param string $keyword 搜索关键词
      * @return array 联想词列表
      */
-    public function getBaiduSuggestions($keyword) {
+    public function getYali_AI_Writer_BaiduSuggestions($keyword) {
         if (empty($keyword)) return [];
         
         $endpoint = 'https://suggestion.baidu.com/su';
@@ -1064,8 +1085,8 @@ class FreeKeywordAPIs {
         $request = $this->makeRequest($url, $headers);
         
         if ($request['http_code'] === 200 && $request['body']) {
-            // 借用 BaiduSuggestion 的解析逻辑
-            $baiduHelper = new BaiduSuggestion();
+            // 借用 Yali_AI_Writer_BaiduSuggestion 的解析逻辑
+            $baiduHelper = new Yali_AI_Writer_BaiduSuggestion();
             return $baiduHelper->parseJsonpResponse($request['body']);
         }
         
@@ -1079,8 +1100,8 @@ class FreeKeywordAPIs {
      * @param string $dataSource 数据源类型 (仅支持联想词)
      * @return array 关键词建议列表
      */
-    public function getBaiduSuggestionsByDataSource($keyword, $dataSource = 'suggestions') {
-        return $this->getBaiduSuggestions($keyword);
+    public function getYali_AI_Writer_BaiduSuggestionsByDataSource($keyword, $dataSource = 'suggestions') {
+        return $this->getYali_AI_Writer_BaiduSuggestions($keyword);
     }
 
     /**
@@ -1116,7 +1137,7 @@ class FreeKeywordAPIs {
         }
 
         // 获取百度搜索建议（仅联想词）
-        $suggestions = $this->getBaiduSuggestionsByDataSource($searchKeyword, $dataSource);
+        $suggestions = $this->getYali_AI_Writer_BaiduSuggestionsByDataSource($searchKeyword, $dataSource);
 
         return [
             'keywords' => $suggestions,
@@ -1410,7 +1431,7 @@ class FreeKeywordAPIs {
                 $raw_suggestions = $this->getGoogleShoppingSuggestions($keyword, $language, $country);
                 break;
             case 'baidu':
-                $raw_suggestions = $this->getBaiduSuggestions($keyword);
+                $raw_suggestions = $this->getYali_AI_Writer_BaiduSuggestions($keyword);
                 break;
             case 'duckduckgo':
                 $raw_suggestions = $this->getDuckDuckGoSuggestions($keyword);

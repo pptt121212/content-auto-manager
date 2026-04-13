@@ -10,17 +10,17 @@ if (!defined('ABSPATH')) {
 
 require_once __DIR__ . '/class-auto-image-generator.php';
 
-class ContentAuto_AsyncImageProcessor {
+class Yali_AI_Writer_AsyncImageProcessor {
     
     private $auto_image_generator;
     private $logger;
     
     public function __construct() {
-        $this->auto_image_generator = new ContentAuto_AutoImageGenerator();
-        $this->logger = new ContentAuto_LoggingSystem();
+        $this->auto_image_generator = new Yali_AI_Writer_AutoImageGenerator();
+        $this->logger = new Yali_AI_Writer_LoggingSystem();
         
         // 注册固定的异步任务处理器（向后兼容旧任务）
-        add_action('content_auto_process_post_images', [$this, 'process_post_images'], 10, 3);
+        add_action('yali_ai_writer_process_post_images', [$this, 'process_post_images'], 10, 3);
         
         // 【关键修复】使用通配钩子模式捕获所有动态图片任务
         // 这样无论任务使用什么hook名称（只要包含特定前缀），都能被正确处理
@@ -29,7 +29,7 @@ class ContentAuto_AsyncImageProcessor {
     
     /**
      * 在 WordPress init 钩子中注册动态处理器
-     * 捕获所有以 'content_auto_process_post_images_' 开头的任务
+     * 捕获所有以 'yali_ai_writer_process_post_images_' 开头的任务
      */
     public function register_dynamic_handlers_on_init() {
         global $wp_filter;
@@ -50,7 +50,7 @@ class ContentAuto_AsyncImageProcessor {
             
             foreach ($cronhooks as $hook => $events) {
                 // 检查是否是图片生成任务的动态 hook（带post_id的唯一hook）
-                if (preg_match('/^content_auto_process_post_images_(\d+)$/', $hook, $matches)) {
+                if (preg_match('/^yali_ai_writer_process_post_images_(\d+)$/', $hook, $matches)) {
                     $post_id = intval($matches[1]);
                     
                     // 避免重复注册同一个 hook
@@ -167,11 +167,11 @@ class ContentAuto_AsyncImageProcessor {
         
         // 更新文章数据库记录（如果存在）
         try {
-            $database = new ContentAuto_Database();
+            $database = new Yali_AI_Writer_Database();
             
             // 查找对应的文章记录
             global $wpdb;
-            $article_table = $wpdb->prefix . 'content_auto_articles';
+            $article_table = $wpdb->prefix . 'yali_ai_writer_articles';
             
             $article = $wpdb->get_row($wpdb->prepare(
                 "SELECT id FROM {$article_table} WHERE post_id = %d",
@@ -220,4 +220,4 @@ class ContentAuto_AsyncImageProcessor {
 }
 
 // 初始化异步图片处理器
-new ContentAuto_AsyncImageProcessor();
+new Yali_AI_Writer_AsyncImageProcessor();

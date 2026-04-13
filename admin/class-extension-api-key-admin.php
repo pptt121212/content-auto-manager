@@ -7,12 +7,38 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ExtensionApiKey_Admin {
+class Yali_AI_Writer_ExtensionApiKey_Admin {
 
     public function __construct() {
         add_action('admin_menu', array($this, 'add_admin_menu'), 100);
         add_action('admin_init', array($this, 'handle_generate_key'));
         add_action('wp_ajax_cam_check_verify_result', array($this, 'handle_check_verify_result'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
+    }
+
+    /**
+     * Enqueue admin scripts
+     */
+    public function enqueue_scripts($hook) {
+        if ($hook !== 'toplevel_page_yali-ai-writer_page_cam-extension-api-key' && strpos($hook, 'cam-extension-api-key') === false) {
+            return;
+        }
+
+        wp_enqueue_script(
+            'yali-ai-writer-extension-api-key-admin-inline-js',
+            YALI_AI_WRITER_PLUGIN_URL . 'admin/assets/js/extension-api-key-admin-inline.js',
+            array('jquery', 'wp-i18n'),
+            YALI_AI_WRITER_VERSION,
+            true
+        );
+        wp_localize_script('yali-ai-writer-extension-api-key-admin-inline-js', 'extensionApiKeyData', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'restUrl' => esc_url(rest_url('content-auto-manager/v1/tasks/create')),
+            'restNonce' => wp_create_nonce('wp_rest'),
+            'verifyNonce' => wp_create_nonce('cam_check_verify_result'),
+            'apiKey' => get_option('cam_extension_api_key', '')
+        ));
+        wp_set_script_translations('yali-ai-writer-extension-api-key-admin-inline-js', 'yali-ai-writer', YALI_AI_WRITER_PLUGIN_DIR . 'languages');
     }
 
     public function handle_check_verify_result() {
@@ -23,7 +49,7 @@ class ContentAuto_ExtensionApiKey_Admin {
         }
         
         // 检查授权状态
-        if (!class_exists('ContentAuto_License_Manager') || !ContentAuto_License_Manager::is_license_active()) {
+        if (!class_exists('Yali_AI_Writer_License_Manager') || !Yali_AI_Writer_License_Manager::is_license_active()) {
             wp_send_json_error(array('status' => 'error', 'message' => __('Plugin not licensed', 'yali-ai-writer')));
         }
 
@@ -72,7 +98,7 @@ class ContentAuto_ExtensionApiKey_Admin {
             return;
         }
 
-        if (!wp_verify_nonce($_POST['cam_generate_api_key_nonce'], 'cam_generate_api_key')) {
+        if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['cam_generate_api_key_nonce'])), 'cam_generate_api_key')) {
             return;
         }
 
@@ -81,8 +107,8 @@ class ContentAuto_ExtensionApiKey_Admin {
         }
         
         // 检查授权状态
-        if (!class_exists('ContentAuto_License_Manager') || !ContentAuto_License_Manager::is_license_active()) {
-            add_settings_error('content_auto_manager_messages', 'license_error', __('授权无效，无法生成 API Key。', 'yali-ai-writer'), 'error');
+        if (!class_exists('Yali_AI_Writer_License_Manager') || !Yali_AI_Writer_License_Manager::is_license_active()) {
+            add_settings_error('yali_ai_writer_manager_messages', 'license_error', __('授权无效，无法生成 API Key。', 'yali-ai-writer'), 'error');
             return;
         }
 
@@ -111,11 +137,11 @@ class ContentAuto_ExtensionApiKey_Admin {
             <h1><?php _e('浏览器扩展连接', 'yali-ai-writer'); ?></h1>
             
             <?php 
-            if (!class_exists('ContentAuto_License_Manager')) {
-                require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'includes/class-license-manager.php';
+            if (!class_exists('Yali_AI_Writer_License_Manager')) {
+                require_once YALI_AI_WRITER_PLUGIN_DIR . 'includes/class-license-manager.php';
             }
             
-            if (!ContentAuto_License_Manager::is_license_active()): 
+            if (!Yali_AI_Writer_License_Manager::is_license_active()): 
             ?>
                 <div class="notice notice-error" style="margin-top: 20px;">
                     <p><strong><?php _e('授权受限', 'yali-ai-writer'); ?></strong></p>
@@ -199,73 +225,10 @@ class ContentAuto_ExtensionApiKey_Admin {
             </div>
         </div>
 
-        <script>
-        jQuery(document).ready(function($) {
-            $('#cam-verify-btn').on('click', function(e) {
-                e.preventDefault();
-                var $btn = $(this);
-                var $status = $('#cam-verify-status');
-                $btn.prop('disabled', true).css('opacity', '0.7');
-                $status.text('<?php _e('⏳ 正在创建任务...', 'yali-ai-writer'); ?>').css('color', '#666');
-
-                // 1. Create Task via REST API
-                $.ajax({
-                    url: '<?php echo esc_url(rest_url('content-auto-manager/v1/tasks/create')); ?>',
-                    method: 'POST',
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('X-WP-Nonce', '<?php echo wp_create_nonce('wp_rest'); ?>');
-                        xhr.setRequestHeader('X-CAM-API-Key', '<?php echo esc_js(get_option('cam_extension_api_key', '')); ?>');
-                    },
-                    data: JSON.stringify({
-                        type: 'connection_verify',
-                        payload: { timestamp: Date.now() }
-                    }),
-                    contentType: 'application/json',
-                    success: function(response) {
-                        var taskId = response.task_id;
-                        $status.text('<?php _e('⏳ 等待扩展响应... (请在浏览器右侧打开插件)', 'yali-ai-writer'); ?>').css('color', '#d63638');
-
-                        // 2. Poll Status
-                        var pollCount = 0;
-                        var maxPolls = 30; // 30 * 2s = 60s timeout
-
-                        var pollInterval = setInterval(function() {
-                            pollCount++;
-                            if (pollCount > maxPolls) {
-                                clearInterval(pollInterval);
-                                $status.text('<?php _e('❌ 验证超时：扩展没有在 60秒内响应。请确保扩展面板已打开。', 'yali-ai-writer'); ?>').css('color', 'red');
-                                $btn.prop('disabled', false).css('opacity', '');
-                                return;
-                            }
-
-                            $.post(ajaxurl, {
-                                action: 'cam_check_verify_result',
-                                task_id: taskId,
-                                nonce: '<?php echo wp_create_nonce('cam_check_verify_result'); ?>'
-                            }, function(res) {
-                                if (res.success) {
-                                    clearInterval(pollInterval);
-                                    $status.text('<?php _e('✅ 验证成功！扩展通信正常。', 'yali-ai-writer'); ?>').css('color', 'green');
-                                    $btn.prop('disabled', false).css('opacity', '');
-                                } else {
-                                    // if res.data.status === 'not_found', it might mean something wrong, or just not processed
-                                }
-                            });
-
-                        }, 2000);
-                    },
-                    error: function(err) {
-                        $status.text('<?php _e('错误：', 'yali-ai-writer'); ?>' + (err.responseJSON ? err.responseJSON.message : err.statusText)).css('color', 'red');
-                        $btn.prop('disabled', false).css('opacity', '');
-                    }
-                });
-            });
-        });
-        </script>
         <?php
     }
 }
 
 // Initialize
-new ContentAuto_ExtensionApiKey_Admin();
+new Yali_AI_Writer_ExtensionApiKey_Admin();
 

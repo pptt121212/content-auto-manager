@@ -1,6 +1,6 @@
 {
-    "translation-revision-date": "2026-03-16 08:18:40+0800",
-    "generator": "Reconstructed Build Mo Script",
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
     "domain": "messages",
     "locale_data": {
         "messages": {
@@ -9,44 +9,23 @@
                 "plural-forms": "nplurals=2; plural=(n != 1);",
                 "lang": "en_US"
             },
-            "JavaScript配置错误：articleStructures变量未定义": [
-                "JavaScript configuration error: articleStructures variable is undefined"
+            "确定要删除动态角度 \"%s\" 吗？": [
+                "Are you sure you want to delete the dynamic angle \"%s\"?"
             ],
-            "articleStructures 全局变量未定义": [
-                "articleStructures global variable is undefined"
+            "该角度下的主题将随机重新分配到固定角度中，文章结构将被删除。": [
+                "Topics under this angle will be randomly reassigned to fixed angles, and the article structure will be deleted."
             ],
-            "生成新结构": [
-                "Generate New Structure"
-            ],
-            "📊 结构表现统计": [
-                "📊 Structure Performance Stats"
-            ],
-            "此内容角度下暂无文章结构。请点击右上角按钮生成新的结构。": [
-                "No article structures found for this content angle. Please click the button in the upper right to generate a new structure."
+            "此操作不可撤销。": [
+                "This action cannot be undone."
             ],
             "确定要删除ID为 %s 的结构吗？此操作不可撤销。": [
                 "Are you sure you want to delete the structure with ID %s? This action cannot be undone."
             ],
-            "结构列表": [
-                "Structure List"
+            "articleStructures 全局变量未定义": [
+                "articleStructures global variable is undefined"
             ],
-            "文章结构": [
-                "Article Structure"
-            ],
-            "失败: ": [
-                "Failed: "
-            ],
-            "失败": [
-                "Failed"
-            ],
-            "删除失败: ": [
-                "Delete failed: "
-            ],
-            "加载失败": [
-                "Failed to load."
-            ],
-            "重试": [
-                "Retry"
+            "JavaScript配置错误：articleStructures变量未定义": [
+                "JavaScript configuration error: articleStructures variable is undefined"
             ],
             "获取内容角度失败:": [
                 "Failed to get content angles:"
@@ -63,6 +42,9 @@
             "加载内容角度失败: ": [
                 "Failed to load content angles: "
             ],
+            "未知错误": [
+                "Unknown error"
+            ],
             "文章结构加载失败:": [
                 "Failed to load article structures:"
             ],
@@ -75,95 +57,26 @@
             "生成失败: ": [
                 "Generation failed: "
             ],
+            "生成超时，请稍后刷新页面查看结果": [
+                "Generation timed out, please refresh the page later to view results"
+            ],
             "权限过期，请刷新页面重试": [
                 "Permission expired, please refresh the page and try again"
             ],
             "生成失败，请检查网络连接": [
                 "Generation failed, please check network connection"
             ],
+            "删除失败: ": [
+                "Delete failed: "
+            ],
             "请求失败": [
                 "Request failed"
-            ],
-            "获取关联文章失败。": [
-                "Failed to get associated articles."
-            ],
-            "删除失败:": [
-                "Delete failed:"
-            ],
-            "加载内容角度失败:": [
-                "Failed to load content angles:"
-            ],
-            "生成失败:": [
-                "Generation failed:"
-            ],
-            "生成失败": [
-                "Generation failed"
-            ],
-            "删除失败": [
-                "Delete failed"
-            ],
-            "加载失败:": [
-                "Load failed:"
-            ],
-            "删除": [
-                "Delete"
-            ],
-            "是": [
-                "Yes"
-            ],
-            "否": [
-                "No"
-            ],
-            "添加": [
-                "Add"
-            ],
-            "清空": [
-                "Clear"
-            ],
-            "文章标题": [
-                "Article Title"
-            ],
-            "操作": [
-                "Actions"
-            ],
-            "篇": [
-                "articles"
-            ],
-            "已删除": [
-                "Dismissed"
-            ],
-            "未知错误": [
-                "Unknown error"
-            ],
-            "确定": [
-                "OK"
-            ],
-            "包含": [
-                "Contains"
-            ],
-            "结果": [
-                "Results"
-            ],
-            "名称": [
-                "Name"
-            ],
-            "类型": [
-                "Type"
-            ],
-            "次": [
-                "Times"
-            ],
-            "未知": [
-                "Unknown"
-            ],
-            "刷新": [
-                "Refresh"
             ],
             "关联的文章": [
                 "Associated Articles"
             ],
-            "生成超时，请稍后刷新页面查看结果": [
-                "Generation timed out, please refresh the page later to view results"
+            "📊 结构表现统计": [
+                "📊 Structure Performance Stats"
             ],
             "关联文章数：": [
                 "Total Associated Articles:"
@@ -180,11 +93,20 @@
             "📝 关联文章列表": [
                 "📝 Associated Articles List"
             ],
+            "文章标题": [
+                "Article Title"
+            ],
             "外部访问": [
                 "External Visits"
             ],
+            "发布日期": [
+                "Publish Date"
+            ],
             "暂无关联文章。": [
                 "No associated articles found."
+            ],
+            "获取关联文章失败。": [
+                "Failed to get associated articles."
             ],
             "未找到内容角度。": [
                 "No content angles found."
@@ -194,6 +116,15 @@
             ],
             "删除此动态角度": [
                 "Delete this dynamic angle"
+            ],
+            "结构列表": [
+                "Structure List"
+            ],
+            "生成新结构": [
+                "Generate New Structure"
+            ],
+            "此内容角度下暂无文章结构。请点击右上角按钮生成新的结构。": [
+                "No article structures found for this content angle. Please click the button in the upper right to generate a new structure."
             ],
             "无数据": [
                 "No Data"
@@ -210,45 +141,6 @@
             "📉 不太受欢迎": [
                 "📉 Not Very Popular"
             ],
-            "关联文章": [
-                "Associate Articles"
-            ],
-            "使用次数: ": [
-                "Usage Count: "
-            ],
-            "删除时发生网络错误": [
-                "Network error occurred during deletion"
-            ],
-            "请从左侧选择一个内容角度": [
-                "Please select a content angle from the left"
-            ],
-            "文章数": [
-                "Posts"
-            ],
-            "受欢迎度": [
-                "Popularity"
-            ],
-            "使用次数": [
-                "Usage"
-            ],
-            "内容角度": [
-                "Content Angle"
-            ],
-            "平均访问量": [
-                "Average Visits"
-            ],
-            "超时": [
-                "Timeout"
-            ],
-            "回退": [
-                "Fallback"
-            ],
-            "文章": [
-                "Article"
-            ],
-            "此操作不可撤销。": [
-                "This action cannot be undone."
-            ],
             "篇文章": [
                 "articles"
             ],
@@ -258,62 +150,23 @@
             "平均": [
                 "Avg"
             ],
-            "使用次数:": [
-                "Usage count:"
+            "关联文章": [
+                "Associate Articles"
             ],
-            "网络错误": [
-                "Network error"
+            "删除": [
+                "Delete"
             ],
-            "错误：": [
-                "Error:"
+            "使用次数: ": [
+                "Usage Count: "
             ],
-            "固定": [
-                "Fixed"
-            ],
-            "中": [
-                "Medium"
-            ],
-            "分钟": [
-                "minutes"
-            ],
-            "移除": [
-                "Remove"
-            ],
-            "ID": [
-                "ID"
-            ],
-            "无": [
-                "None"
-            ],
-            "查看": [
-                "View"
-            ],
-            "组": [
-                "Groups"
-            ],
-            "，": [
-                ", "
-            ],
-            "。": [
-                "."
-            ],
-            "发布日期": [
-                "Publish Date"
-            ],
-            "发布": [
-                "Publish"
-            ],
-            "状态": [
-                "Status"
-            ],
-            "标题": [
-                "Title"
-            ],
-            "该角度下的主题将随机重新分配到固定角度中，文章结构将被删除。": [
-                "Topics under this angle will be randomly reassigned to fixed angles, and the article structure will be deleted."
+            "请从左侧选择一个内容角度": [
+                "Please select a content angle from the left"
             ],
             "动态角度已删除，相关主题已重新分配": [
                 "Dynamic angle deleted, related topics have been reassigned"
+            ],
+            "删除时发生网络错误": [
+                "Network error occurred during deletion"
             ],
             "知识科普": [
                 "Knowledge Base"

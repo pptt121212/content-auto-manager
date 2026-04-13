@@ -20,7 +20,7 @@ function cam_ajax_manual_add_topics() {
     }
     
     // 验证nonce
-    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'cam_manual_add_topics')) {
+    if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'cam_manual_add_topics')) {
         wp_send_json_error(array('message' => __('安全验证失败', 'yali-ai-writer')));
     }
     
@@ -52,7 +52,7 @@ function cam_ajax_manual_add_topics() {
     
     // 分割主题标题并插入数据库
     $title_array = explode("\n", $titles);
-    $database = new ContentAuto_Database();
+    $database = new Yali_AI_Writer_Database();
     $added_count = 0;
     $skipped_count = 0;
     
@@ -70,11 +70,11 @@ function cam_ajax_manual_add_topics() {
                 'seo_keywords' => '',
                 'matched_category' => $matched_category,
                 'priority_score' => 3,
-                'status' => CONTENT_AUTO_TOPIC_UNUSED,
+                'status' => YALI_AI_WRITER_TOPIC_UNUSED,
                 'reference_material' => $reference_material
             );
             
-            $result = $database->insert('content_auto_topics', $data);
+            $result = $database->insert('yali_ai_writer_topics', $data);
             if ($result) {
                 $added_count++;
             } else {

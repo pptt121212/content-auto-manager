@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_DatabaseWrapper {
+class Yali_AI_Writer_DatabaseWrapper {
     
     /**
      * 数据库连接
@@ -298,7 +298,7 @@ class ContentAuto_DatabaseWrapper {
         try {
             // 验证任务存在
             $task = $this->get_row(
-                "SELECT * FROM {$this->wpdb->prefix}content_auto_topic_tasks WHERE id = %d",
+                "SELECT * FROM {$this->wpdb->prefix}yali_ai_writer_topic_tasks WHERE id = %d",
                 array($task_id)
             );
             
@@ -323,13 +323,13 @@ class ContentAuto_DatabaseWrapper {
             
             // 执行更新
             $result = $this->update(
-                "{$this->wpdb->prefix}content_auto_topic_tasks",
+                "{$this->wpdb->prefix}yali_ai_writer_topic_tasks",
                 $update_data,
                 array('id' => $task_id)
             );
             
             // 触发状态变更钩子
-            do_action('content_auto_task_status_changed', $task_id, $task->status, $new_status);
+            do_action('yali_ai_writer_task_status_changed', $task_id, $task->status, $new_status);
             
             $this->commit_transaction($transaction_id);
             
@@ -350,7 +350,7 @@ class ContentAuto_DatabaseWrapper {
         try {
             // 验证任务存在
             $task = $this->get_row(
-                "SELECT * FROM {$this->wpdb->prefix}content_auto_topic_tasks WHERE id = %d",
+                "SELECT * FROM {$this->wpdb->prefix}yali_ai_writer_topic_tasks WHERE id = %d",
                 array($task_id)
             );
             
@@ -359,7 +359,7 @@ class ContentAuto_DatabaseWrapper {
             }
             
             // 验证进度数据
-            $validator = new ContentAuto_DataValidator();
+            $validator = new Yali_AI_Writer_DataValidator();
             $errors = $validator->validate_field('progress', $progress_data, $validator->validation_rules['progress']);
             
             if (!empty($errors)) {
@@ -379,25 +379,25 @@ class ContentAuto_DatabaseWrapper {
             
             // 更新或插入进度记录
             $existing_progress = $this->get_row(
-                "SELECT * FROM {$this->wpdb->prefix}content_auto_task_progress WHERE task_id = %d",
+                "SELECT * FROM {$this->wpdb->prefix}yali_ai_writer_task_progress WHERE task_id = %d",
                 array($task_id)
             );
             
             if ($existing_progress) {
                 $this->update(
-                    "{$this->wpdb->prefix}content_auto_task_progress",
+                    "{$this->wpdb->prefix}yali_ai_writer_task_progress",
                     $progress_record,
                     array('task_id' => $task_id)
                 );
             } else {
                 $this->insert(
-                    "{$this->wpdb->prefix}content_auto_task_progress",
+                    "{$this->wpdb->prefix}yali_ai_writer_task_progress",
                     $progress_record
                 );
             }
             
             // 触发进度更新钩子
-            do_action('content_auto_task_progress_updated', $task_id, $progress_data);
+            do_action('yali_ai_writer_task_progress_updated', $task_id, $progress_data);
             
             $this->commit_transaction($transaction_id);
             
@@ -417,7 +417,7 @@ class ContentAuto_DatabaseWrapper {
         
         try {
             // 验证任务数据
-            $validator = new ContentAuto_DataValidator();
+            $validator = new Yali_AI_Writer_DataValidator();
             $errors = $validator->validate_task_data($task_data);
             
             if (!empty($errors)) {
@@ -437,12 +437,12 @@ class ContentAuto_DatabaseWrapper {
             
             // 插入任务
             $task_id = $this->insert(
-                "{$this->wpdb->prefix}content_auto_topic_tasks",
+                "{$this->wpdb->prefix}yali_ai_writer_topic_tasks",
                 $task_record
             );
             
             // 触发任务创建钩子
-            do_action('content_auto_task_created', $task_id, $task_data);
+            do_action('yali_ai_writer_task_created', $task_id, $task_data);
             
             $this->commit_transaction($transaction_id);
             
@@ -505,7 +505,7 @@ class ContentAuto_DatabaseWrapper {
      * 锁定任务
      */
     public function lock_task($task_id) {
-        $lock_key = "content_auto_task_{$task_id}";
+        $lock_key = "yali_ai_writer_task_{$task_id}";
         $lock_value = uniqid();
         
         // 尝试获取锁（30秒超时）
@@ -525,7 +525,7 @@ class ContentAuto_DatabaseWrapper {
      * 释放任务锁
      */
     public function unlock_task($task_id, $lock_value) {
-        $lock_key = "content_auto_task_{$task_id}";
+        $lock_key = "yali_ai_writer_task_{$task_id}";
         
         $result = $this->get_var(
             "SELECT RELEASE_LOCK(%s) as release_result",

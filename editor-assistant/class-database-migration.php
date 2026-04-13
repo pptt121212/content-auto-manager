@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_Editor_Database_Migration {
+class Yali_AI_Writer_Editor_Database_Migration {
 
     public function __construct() {
         add_action('admin_init', array($this, 'run_migration'));
@@ -38,7 +38,7 @@ class ContentAuto_Editor_Database_Migration {
     private function add_enable_editor_assistant_field() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . 'content_auto_publish_rules';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_publish_rules';
         
         // 检查字段是否存在
         $column_exists = $wpdb->get_var(
@@ -62,4 +62,4 @@ class ContentAuto_Editor_Database_Migration {
     }
 }
 
-// 数据库迁移将在 content_auto_manager_init 函数中统一初始化
+// 数据库迁移将在 yali_ai_writer_manager_init 函数中统一初始化

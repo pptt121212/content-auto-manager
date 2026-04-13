@@ -26,7 +26,7 @@
         $yali_smart_opt_embedded = true;
         
         // 加载智能优化视图
-        include_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'article-structures/views/smart-optimization-settings.php'; 
+        include_once YALI_AI_WRITER_PLUGIN_DIR . 'article-structures/views/smart-optimization-settings.php'; 
         ?>
     <?php else : ?>
         <div class="yali-grid-layout" style="margin-top:20px; grid-template-columns: 280px 1fr !important; gap: 20px;">

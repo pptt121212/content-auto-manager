@@ -1,0 +1,29 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "⏳ 正在创建任务...": [
+                "⏳ Creating task..."
+            ],
+            "⏳ 等待扩展响应... (请在浏览器右侧打开插件)": [
+                "⏳ Waiting for extension response... (Please open the extension panel on the right side of browser)"
+            ],
+            "❌ 验证超时：扩展没有在 60秒内响应。请确保扩展面板已打开。": [
+                "❌ Verification timeout: Extension did not respond within 60 seconds. Please ensure the extension panel is open."
+            ],
+            "✅ 验证成功！扩展通信正常。": [
+                "✅ Verification successful! Extension communication is working normally."
+            ],
+            "错误：": [
+                "Error:"
+            ]
+        }
+    }
+}

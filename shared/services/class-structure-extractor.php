@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_StructureExtractor {
+class Yali_AI_Writer_StructureExtractor {
     
     /**
      * 统一API处理器（用于AI结构泛化）
@@ -47,22 +47,22 @@ class ContentAuto_StructureExtractor {
     /**
      * 构造函数
      * 
-     * @param ContentAuto_PluginLogger|null $logger 日志记录器
+     * @param Yali_AI_Writer_PluginLogger|null $logger 日志记录器
      */
     public function __construct($logger = null) {
         $this->logger = $logger;
         
         // 初始化API处理器
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
-        $this->api_handler = new ContentAuto_UnifiedApiHandler($logger);
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+        $this->api_handler = new Yali_AI_Writer_UnifiedApiHandler($logger);
         
         // 初始化向量API处理器
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
-        $this->vector_handler = new ContentAuto_VectorApiHandler($logger);
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
+        $this->vector_handler = new Yali_AI_Writer_VectorApiHandler($logger);
         
         // 初始化配置管理器
-        require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-optimization-config.php';
-        $this->config = new ContentAuto_OptimizationConfig();
+        require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-optimization-config.php';
+        $this->config = new Yali_AI_Writer_OptimizationConfig();
     }
     
     /**
@@ -160,8 +160,8 @@ class ContentAuto_StructureExtractor {
     private function get_article_content_angle($post_id) {
         global $wpdb;
         
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
-        $articles_table = $wpdb->prefix . 'content_auto_articles';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
+        $articles_table = $wpdb->prefix . 'yali_ai_writer_articles';
         
         // 通过 articles 表关联 topics 表获取 source_angle
         $content_angle = $wpdb->get_var($wpdb->prepare("
@@ -250,41 +250,33 @@ class ContentAuto_StructureExtractor {
             $headings_text .= $prefix . $heading['text'] . "\n";
         }
         
-        $prompt = <<<PROMPT
-你是一位资深的内容结构设计专家。请基于以下从高表现文章中提取的结构，生成一个泛化的、可复用的文章结构模板。
+        $prompt = "你是一位资深的内容结构设计专家。请基于以下从高表现文章中提取的结构，生成一个泛化的、可复用的文章结构模板。\n\n" .
+                  "## 原始文章信息\n" .
+                  "- 文章标题：" . $extracted_structure['post_title'] . "\n" .
+                  "- 内容角度：" . $content_angle . "\n\n" .
+                  "## 提取的标题结构\n" .
+                  $headings_text . "\n\n" .
+                  "## 任务要求\n" .
+                  "1. 分析上述标题结构的逻辑模式和组织规律\n" .
+                  "2. 将具体的标题内容泛化为通用的章节指导\n" .
+                  "3. 保持原有的逻辑顺序和层次关系\n" .
+                  "4. 生成的结构应该适用于同一内容角度下的其他主题\n\n" .
+                  "## 输出格式\n" .
+                  "请严格按照以下JSON格式输出，不要包含任何代码块标记：\n\n" .
+                  "{\n" .
+                  '    "title": "结构框架的标题（15-35字符，体现方法论特色）",' . "\n" .
+                  '    "structure": [' . "\n" .
+                  '        "第一章节的泛化指导",' . "\n" .
+                  '        "第二章节的泛化指导",' . "\n" .
+                  '        "..."' . "\n" .
+                  "    ]\n" .
+                  "}\n\n" .
+                  "注意：\n" .
+                  "- title 应该是一个创新的框架名称，体现结构的方法论特色\n" .
+                  "- structure 数组中的每个元素应该是泛化后的章节指导，而非具体内容\n" .
+                  "- 章节数量应该在4-7个之间\n" .
+                  '- 直接输出JSON，不要包含```json标记';
 
-## 原始文章信息
-- 文章标题：{$extracted_structure['post_title']}
-- 内容角度：{$content_angle}
-
-## 提取的标题结构
-{$headings_text}
-
-## 任务要求
-1. 分析上述标题结构的逻辑模式和组织规律
-2. 将具体的标题内容泛化为通用的章节指导
-3. 保持原有的逻辑顺序和层次关系
-4. 生成的结构应该适用于同一内容角度下的其他主题
-
-## 输出格式
-请严格按照以下JSON格式输出，不要包含任何代码块标记：
-
-{
-    "title": "结构框架的标题（15-35字符，体现方法论特色）",
-    "structure": [
-        "第一章节的泛化指导",
-        "第二章节的泛化指导",
-        "..."
-    ]
-}
-
-注意：
-- title 应该是一个创新的框架名称，体现结构的方法论特色
-- structure 数组中的每个元素应该是泛化后的章节指导，而非具体内容
-- 章节数量应该在4-7个之间
-- 直接输出JSON，不要包含```json标记
-PROMPT;
-        
         return $prompt;
     }
     
@@ -477,7 +469,7 @@ PROMPT;
     public function merge_or_create($new_structure, $content_angle) {
         global $wpdb;
         
-        $structures_table = $wpdb->prefix . 'content_auto_article_structures';
+        $structures_table = $wpdb->prefix . 'yali_ai_writer_article_structures';
         
         // 首先生成新结构的向量
         $new_vector = $this->generate_structure_vector($new_structure);
@@ -698,7 +690,7 @@ PROMPT;
      */
     public function batch_extract_for_angle($content_angle, $limit = 5) {
         require_once dirname(__FILE__) . '/class-article-analyzer.php';
-        $analyzer = new ContentAuto_ArticleAnalyzer($this->logger);
+        $analyzer = new Yali_AI_Writer_ArticleAnalyzer($this->logger);
         
         // 获取未处理的高表现文章
         $articles = $analyzer->get_unprocessed_high_performers($content_angle, $limit);

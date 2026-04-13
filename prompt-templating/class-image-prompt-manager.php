@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_ImagePromptManager {
+class Yali_AI_Writer_ImagePromptManager {
     
     /**
      * 获取默认的配图提示词模板

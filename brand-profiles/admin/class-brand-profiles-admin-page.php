@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_Brand_Profiles_Admin_Page {
+class Yali_AI_Writer_Brand_Profiles_Admin_Page {
 
     public function __construct() {
         add_action('wp_ajax_cam_get_brand_profiles', [$this, 'ajax_get_brand_profiles']);
@@ -20,13 +20,13 @@ class ContentAuto_Brand_Profiles_Admin_Page {
     public function render_page() {
         // 脚本和样式通过 wp_enqueue_script/style 在 class-admin-menu.php 中统一加载
         // 避免重复加载导致事件监听器绑定多次
-        include CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'brand-profiles/views/brand-profiles-management.php';
+        include YALI_AI_WRITER_PLUGIN_DIR . 'brand-profiles/views/brand-profiles-management.php';
     }
 
     public function ajax_get_brand_profiles() {
         check_ajax_referer('brand_profiles_nonce', 'nonce');
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_brand_profiles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
         $results = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC", ARRAY_A);
         wp_send_json_success($results);
     }
@@ -40,7 +40,7 @@ class ContentAuto_Brand_Profiles_Admin_Page {
         }
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_brand_profiles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
         $id = intval($_POST['id']);
 
         $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $id), ARRAY_A);
@@ -63,15 +63,15 @@ class ContentAuto_Brand_Profiles_Admin_Page {
         }
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_brand_profiles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
 
         $data = $this->prepare_brand_profile_data($_POST);
 
         // 使用标题生成向量
-        if (!class_exists('ContentAuto_VectorApiHandler')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
+        if (!class_exists('Yali_AI_Writer_VectorApiHandler')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
         }
-        $vector_handler = new ContentAuto_VectorApiHandler();
+        $vector_handler = new Yali_AI_Writer_VectorApiHandler();
         $vector_result = $vector_handler->generate_embeddings_batch([$data['title']]);
 
         if ($vector_result && !empty($vector_result['embeddings'])) {
@@ -106,16 +106,16 @@ class ContentAuto_Brand_Profiles_Admin_Page {
         }
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_brand_profiles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
         $id = intval($_POST['id']);
 
         $data = $this->prepare_brand_profile_data($_POST);
 
         // 使用标题生成向量
-        if (!class_exists('ContentAuto_VectorApiHandler')) {
-            require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
+        if (!class_exists('Yali_AI_Writer_VectorApiHandler')) {
+            require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-api-handler.php';
         }
-        $vector_handler = new ContentAuto_VectorApiHandler();
+        $vector_handler = new Yali_AI_Writer_VectorApiHandler();
         $vector_result = $vector_handler->generate_embeddings_batch([$data['title']]);
 
         if ($vector_result && !empty($vector_result['embeddings'])) {
@@ -143,7 +143,7 @@ class ContentAuto_Brand_Profiles_Admin_Page {
         }
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'content_auto_brand_profiles';
+        $table_name = $wpdb->prefix . 'yali_ai_writer_brand_profiles';
         $id = intval($_POST['id']);
 
         $result = $wpdb->delete($table_name, ['id' => $id]);

@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class ContentAuto_SafetySentinel {
+class Yali_AI_Writer_SafetySentinel {
 
     /**
      * 检查当前执行上下文是否仍然有效
@@ -21,7 +21,7 @@ class ContentAuto_SafetySentinel {
 
         // 1. 如果有 Job Queue ID，最优先级检查队列记录
         if (!empty($params['job_queue_id'])) {
-            $queue_table = $wpdb->prefix . 'content_auto_job_queue';
+            $queue_table = $wpdb->prefix . 'yali_ai_writer_job_queue';
             $status = $wpdb->get_var($wpdb->prepare(
                 "SELECT status FROM $queue_table WHERE id = %d",
                 $params['job_queue_id']
@@ -51,18 +51,18 @@ class ContentAuto_SafetySentinel {
         switch ($type) {
             case 'topic_task':
             case 'topic_generation':
-                $table = $wpdb->prefix . 'content_auto_topic_tasks';
+                $table = $wpdb->prefix . 'yali_ai_writer_topic_tasks';
                 break;
             case 'article':
             case 'article_task':
             case 'article_generation':
-                $table = $wpdb->prefix . 'content_auto_article_tasks';
+                $table = $wpdb->prefix . 'yali_ai_writer_article_tasks';
                 break;
             case 'topic':
             case 'topic_item':
             case 'material_search':
                 // 单个主题记录或素材搜索
-                $table = $wpdb->prefix . 'content_auto_topics';
+                $table = $wpdb->prefix . 'yali_ai_writer_topics';
                 break;
         }
 

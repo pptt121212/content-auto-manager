@@ -2,18 +2,18 @@
 /**
  * 优化后的主题生成API处理器
  * 职责：业务逻辑处理（标签替换、结果解析）、API轮询控制
- * 通信：委托给 ContentAuto_UnifiedApiHandler 处理
+ * 通信：委托给 Yali_AI_Writer_UnifiedApiHandler 处理
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'api-settings/class-api-config.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
-require_once CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'topic-management/class-json-parser.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'api-settings/class-api-config.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-unified-api-handler.php';
+require_once YALI_AI_WRITER_PLUGIN_DIR . 'topic-management/class-json-parser.php';
 
-class ContentAuto_TopicApiHandler {
+class Yali_AI_Writer_TopicApiHandler {
     
     private $api_config;
     private $logger;
@@ -21,7 +21,7 @@ class ContentAuto_TopicApiHandler {
     private $current_api_config;
     
     public function __construct($logger = null) {
-        $this->api_config = new ContentAuto_ApiConfig();
+        $this->api_config = new Yali_AI_Writer_ApiConfig();
         $this->logger = $logger;
         $this->last_api_error = null;
     }
@@ -50,7 +50,7 @@ class ContentAuto_TopicApiHandler {
             $full_prompt = str_replace(array('{N}', '{{N}}'), $count, $prompt);
             
             // 3. 【核心优化：接入统一通信层】
-            $unified_handler = new ContentAuto_UnifiedApiHandler($this->logger);
+            $unified_handler = new Yali_AI_Writer_UnifiedApiHandler($this->logger);
             $result_data = $unified_handler->generate_content($full_prompt, 'topic_generation', [
                 'rule_id' => $rule_id,
                 'rule_item_index' => $rule_item_index,
@@ -96,7 +96,7 @@ class ContentAuto_TopicApiHandler {
         if (empty($content)) return array();
         
         // 优先使用 JSON 解析器
-        $json_parser = new ContentAuto_JsonParser($this->logger);
+        $json_parser = new Yali_AI_Writer_JsonParser($this->logger);
         // ✅ 修正方法名: 从 parse 改为 parse_json_topics
         $topics = $json_parser->parse_json_topics($content, $count, $rule_id, $rule_item_index);
         

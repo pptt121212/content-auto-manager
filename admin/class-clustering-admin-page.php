@@ -4,15 +4,16 @@ if (!defined('ABSPATH')) exit;
 /**
  * Adds an admin page to manually trigger the vector clustering process.
  */
-class ContentAuto_ClusteringAdminPage {
+class Yali_AI_Writer_ClusteringAdminPage {
 
     public function __construct() {
-        // 菜单注册已移至 ContentAuto_AdminMenu 类统一管理
+        // 菜单注册已移至 Yali_AI_Writer_AdminMenu 类统一管理
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
     }
 
     public function render_page() {
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $vector_count = $wpdb->get_var("SELECT COUNT(*) FROM {$topics_table} WHERE vector_embedding IS NOT NULL AND vector_embedding != ''");
         
         // Remove the 100 max clusters hard cap. Use an adaptable formula based on data size.
@@ -39,13 +40,7 @@ class ContentAuto_ClusteringAdminPage {
            . '</div>'
            . '</div>';
 
-        // Handle the similarity search form submission
-        if (isset($_POST['find_similar_titles'])) {
-            if (!isset($_POST['similarity_nonce']) || !wp_verify_nonce($_POST['similarity_nonce'], 'find_similar_titles_action')) {
-                wp_die(__('安全验证失败!', 'yali-ai-writer'));
-            }
-            $this->handle_similarity_search();
-        }
+        // 表单处理已移至 admin/form-handlers.php，在 admin_init 钩子中执行
 
         echo '<div class="yali-card">'
            . '<div class="yali-card-header"><div class="yali-card-title">' . __('聚类操作与状态', 'yali-ai-writer') . '</div></div>'
@@ -84,112 +79,33 @@ class ContentAuto_ClusteringAdminPage {
     }
 
     private function render_scripts() {
-        ?>
-        <script>
-        jQuery(document).ready(function($) {
-            var pollingInterval = null;
-            var $btn = $('#start-clustering-btn');
-            var $console = $('#clustering-console');
-            var $badge = $('#clustering-status-badge');
+        // 脚本已通过 wp_enqueue_scripts 加载
+    }
 
-            function startPolling() {
-                if (pollingInterval) clearInterval(pollingInterval);
-                $console.show();
-                pollingInterval = setInterval(fetchStatus, 3000);
-            }
+    /**
+     * Enqueue admin scripts
+     */
+    public function enqueue_scripts($hook) {
+        if ($hook !== 'admin_page_yali-ai-writer-clustering') {
+            return;
+        }
 
-            function stopPolling() {
-                if (pollingInterval) clearInterval(pollingInterval);
-            }
-
-            function appendToConsole(text) {
-                // simple diff check to avoid flickering
-                var currentHtml = $console.html();
-                // format text lines with <br>
-                var newHtml = text.replace(/\n/g, '<br>');
-                if (currentHtml !== newHtml) {
-                    $console.html(newHtml);
-                    $console.scrollTop($console[0].scrollHeight);
-                }
-            }
-
-            function fetchStatus() {
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: { action: 'get_clustering_status' },
-                    success: function(response) {
-                        if (response.success && response.data) {
-                            var statusObj = response.data;
-                            
-                            if (statusObj.status !== 'idle') {
-                                $btn.prop('disabled', true).css('opacity', '0.7');
-                                $console.show();
-                                appendToConsole(statusObj.progress_message || '');
-                                
-                                if (statusObj.status === 'running') {
-                                    $badge.text('<?php _e('聚类正在后台进行中...', 'yali-ai-writer'); ?>').css('color', '#2271b1');
-                                } else if (statusObj.status === 'completed') {
-                                    $badge.text('<?php _e('聚类已完成！', 'yali-ai-writer'); ?>').css('color', 'green');
-                                    stopPolling();
-                                    $btn.prop('disabled', false).css('opacity', '');
-                                } else if (statusObj.has_error) {
-                                    $badge.text('<?php _e('执行出错，已停止。', 'yali-ai-writer'); ?>').css('color', 'red');
-                                    stopPolling();
-                                    $btn.prop('disabled', false).css('opacity', '');
-                                }
-                            } else {
-                                $btn.prop('disabled', false).css('opacity', '');
-                                stopPolling();
-                            }
-                        }
-                    },
-                    error: function() {
-                        // silently fail on network error and retry next loop
-                    }
-                });
-            }
-
-            $btn.on('click', function(e) {
-                e.preventDefault();
-                if (!confirm("<?php _e('这是一个高消耗操作，将在后台运行。确定要开始吗？', 'yali-ai-writer'); ?>")) return;
-
-                $btn.prop('disabled', true).css('opacity', '0.7');
-                $badge.text('<?php _e('正在启动后台进程...', 'yali-ai-writer'); ?>').css('color', '#2271b1');
-                
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'start_vector_clustering',
-                        nonce: $(this).data('nonce')
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            startPolling();
-                        } else {
-                            alert(response.data.message || 'Error occurred');
-                            $btn.prop('disabled', false).css('opacity', '');
-                            $badge.text('');
-                        }
-                    },
-                    error: function() {
-                        alert('<?php _e('网络错误，启动命令发送失败。', 'yali-ai-writer'); ?>');
-                        $btn.prop('disabled', false).css('opacity', '');
-                        $badge.text('');
-                    }
-                });
-            });
-
-            // Initial poll to restore state if a task is already running in background
-            fetchStatus();
-        });
-        </script>
-        <?php
+        wp_enqueue_script(
+            'yali-ai-writer-clustering-admin-inline-js',
+            YALI_AI_WRITER_PLUGIN_URL . 'admin/assets/js/clustering-admin-inline.js',
+            array('jquery', 'wp-i18n'),
+            YALI_AI_WRITER_VERSION,
+            true
+        );
+        wp_localize_script('yali-ai-writer-clustering-admin-inline-js', 'clusteringAdminData', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('start_clustering_action')
+        ));
+        wp_set_script_translations('yali-ai-writer-clustering-admin-inline-js', 'yali-ai-writer', YALI_AI_WRITER_PLUGIN_DIR . 'languages');
     }
 
     private function update_status($append_msg, $status_state = 'running', $has_error = false) {
-        $status = get_option('content_auto_clustering_status', array());
+        $status = get_option('yali_ai_writer_clustering_status', array());
         if (!is_array($status)) {
             $status = array(
                 'status' => 'running',
@@ -210,7 +126,7 @@ class ContentAuto_ClusteringAdminPage {
             $status['has_error'] = true;
         }
 
-        update_option('content_auto_clustering_status', $status);
+        update_option('yali_ai_writer_clustering_status', $status);
     }
 
     public function do_clustering_background() {
@@ -219,15 +135,15 @@ class ContentAuto_ClusteringAdminPage {
         ini_set('memory_limit', '1024M'); 
         
         try {
-            require_once(CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/services/class-vector-clustering-manager.php');
-            if (!function_exists('content_auto_decompress_vector_from_base64')) {
-                require_once(CONTENT_AUTO_MANAGER_PLUGIN_DIR . 'shared/common/functions.php');
+            require_once(YALI_AI_WRITER_PLUGIN_DIR . 'shared/services/class-vector-clustering-manager.php');
+            if (!function_exists('yali_ai_writer_decompress_vector_from_base64')) {
+                require_once(YALI_AI_WRITER_PLUGIN_DIR . 'shared/common/functions.php');
             }
 
             global $wpdb;
-            $topics_table = $wpdb->prefix . 'content_auto_topics';
+            $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
             
-            $state = get_option('content_auto_clustering_state');
+            $state = get_option('yali_ai_writer_clustering_state');
         
         // --- 阶段 1: 初始化 (INIT) ---
         if (!$state) {
@@ -237,7 +153,7 @@ class ContentAuto_ClusteringAdminPage {
             
             if ($vector_count == 0 || !$vector_count) {
                 $this->update_status(__('错误：未找到可供聚类的向量。', 'yali-ai-writer'), 'error', true);
-                delete_transient(ContentAuto_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
+                delete_transient(Yali_AI_Writer_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
                 return;
             }
             
@@ -251,7 +167,7 @@ class ContentAuto_ClusteringAdminPage {
             
             $centroids = [];
             foreach ($sampled_topics as $topic) {
-                $decoded = content_auto_decompress_vector_from_base64($topic->vector_embedding);
+                $decoded = yali_ai_writer_decompress_vector_from_base64($topic->vector_embedding);
                 if ($decoded) {
                     $centroids[] = $decoded;
                 }
@@ -264,11 +180,11 @@ class ContentAuto_ClusteringAdminPage {
             
             if (empty($centroids)) {
                 $this->update_status(__('错误：提取聚类中心参考点失败，未找到有效向量，任务中止。', 'yali-ai-writer'), 'error', true);
-                delete_transient(ContentAuto_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
+                delete_transient(Yali_AI_Writer_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
                 return;
             }
             
-            update_option('content_auto_vector_centroids', $centroids);
+            update_option('yali_ai_writer_vector_centroids', $centroids);
             
             // 初始化累加器
             $accumulators = [];
@@ -285,14 +201,14 @@ class ContentAuto_ClusteringAdminPage {
                 'batch_size' => 500,
                 'accumulators' => $accumulators
             ];
-            update_option('content_auto_clustering_state', $state);
+            update_option('yali_ai_writer_clustering_state', $state);
             
             $this->update_status(__('初始化完成，即将启动轻量级流式处理引擎。', 'yali-ai-writer'));
             $this->trigger_next_batch();
             return;
         }
         
-        $centroids = get_option('content_auto_vector_centroids');
+        $centroids = get_option('yali_ai_writer_vector_centroids');
         
         // --- 阶段 2: 批处理计算归类 (BATCH_PROCESS) ---
         if ($state['phase'] === 'batch_process') {
@@ -301,7 +217,7 @@ class ContentAuto_ClusteringAdminPage {
             
             if ($offset >= $state['total']) {
                 $state['phase'] = 'epoch_update';
-                update_option('content_auto_clustering_state', $state);
+                update_option('yali_ai_writer_clustering_state', $state);
                 $this->trigger_next_batch();
                 return;
             }
@@ -317,7 +233,7 @@ class ContentAuto_ClusteringAdminPage {
             if (!empty($topics)) {
                 $updated_count = 0;
                 foreach ($topics as $topic) {
-                    $vector = content_auto_decompress_vector_from_base64($topic->vector_embedding);
+                    $vector = yali_ai_writer_decompress_vector_from_base64($topic->vector_embedding);
                     if (!$vector) continue;
                     
                     // 找最近中心点
@@ -325,7 +241,7 @@ class ContentAuto_ClusteringAdminPage {
                     $max_similarity = -2.0;
 
                     for ($k = 0; $k < count($centroids); $k++) {
-                        $similarity = content_auto_calculate_cosine_similarity($vector, $centroids[$k]);
+                        $similarity = yali_ai_writer_calculate_cosine_similarity($vector, $centroids[$k]);
                         if ($similarity > $max_similarity) {
                             $max_similarity = $similarity;
                             $best_cluster = $k;
@@ -350,13 +266,13 @@ class ContentAuto_ClusteringAdminPage {
                 }
                 
                 $state['processed'] += count($topics);
-                update_option('content_auto_clustering_state', $state);
+                update_option('yali_ai_writer_clustering_state', $state);
                 $this->trigger_next_batch();
                 return;
             } else {
                 // 本世代全表跑完
                 $state['phase'] = 'epoch_update';
-                update_option('content_auto_clustering_state', $state);
+                update_option('yali_ai_writer_clustering_state', $state);
                 $this->trigger_next_batch();
                 return;
             }
@@ -382,12 +298,12 @@ class ContentAuto_ClusteringAdminPage {
                 }
             }
             
-            update_option('content_auto_vector_centroids', $new_centroids);
+            update_option('yali_ai_writer_vector_centroids', $new_centroids);
             $this->update_status(__('聚类中心已成功更新并保存。', 'yali-ai-writer'));
             
             if ($state['epoch'] >= $state['max_epochs']) {
                  $state['phase'] = 'finalize';
-                 update_option('content_auto_clustering_state', $state);
+                 update_option('yali_ai_writer_clustering_state', $state);
                  $this->trigger_next_batch();
                  return;
             } else {
@@ -397,7 +313,7 @@ class ContentAuto_ClusteringAdminPage {
                  for ($k = 0; $k < $num_clusters; $k++) {
                      $state['accumulators'][$k] = ['sum' => [], 'count' => 0];
                  }
-                 update_option('content_auto_clustering_state', $state);
+                 update_option('yali_ai_writer_clustering_state', $state);
                  $this->update_status(sprintf(__('准备开始下一轮迭代微调：第 %d 轮...', 'yali-ai-writer'), $state['epoch']));
                  $this->trigger_next_batch();
                  return;
@@ -407,8 +323,8 @@ class ContentAuto_ClusteringAdminPage {
             // --- 阶段 4: 结束清理 (FINALIZE) ---
             if ($state['phase'] === 'finalize') {
                 $this->update_status(__('所有迭代均已完成！正在清理临时运行状态...', 'yali-ai-writer'));
-                delete_option('content_auto_clustering_state');
-                delete_transient(ContentAuto_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
+                delete_option('yali_ai_writer_clustering_state');
+                delete_transient(Yali_AI_Writer_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
                 $this->update_status(__('向量聚类任务成功结束！结果已持久化保存。', 'yali-ai-writer'), 'completed');
                 return;
             }
@@ -417,10 +333,10 @@ class ContentAuto_ClusteringAdminPage {
             // 全局终极兜底捕获，防止任何 Fatal Error 或未处理异常导致死锁
             error_log('Content Auto Clustering Fatal Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             $this->update_status(sprintf(__('系统发生严重致命错误，任务被迫强制中止: %s (在 %s 第 %d 行)', 'yali-ai-writer'), $e->getMessage(), basename($e->getFile()), $e->getLine()), 'error', true);
-            delete_option('content_auto_clustering_state');
+            delete_option('yali_ai_writer_clustering_state');
             
-            if (class_exists('ContentAuto_VectorClusteringManager')) {
-                delete_transient(ContentAuto_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
+            if (class_exists('Yali_AI_Writer_VectorClusteringManager')) {
+                delete_transient(Yali_AI_Writer_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT);
             }
         }
     }
@@ -431,10 +347,10 @@ class ContentAuto_ClusteringAdminPage {
     private function trigger_next_batch() {
         // 创建接力棒令牌
         $internal_token = wp_generate_password(32, false);
-        set_transient('content_auto_clustering_internal_token', $internal_token, 120);
+        set_transient('yali_ai_writer_clustering_internal_token', $internal_token, 120);
         
         // 刷新大锁过期时间，确保上百万级任务在跑几天几夜也不会意外过期防并发
-        set_transient(ContentAuto_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT, true, HOUR_IN_SECONDS * 2);
+        set_transient(Yali_AI_Writer_VectorClusteringManager::CLUSTERING_LOCK_TRANSIENT, true, HOUR_IN_SECONDS * 2);
         
         $url = admin_url('admin-ajax.php');
         $args = array(
@@ -463,7 +379,7 @@ class ContentAuto_ClusteringAdminPage {
         
         // Validate that the topic exists
         global $wpdb;
-        $topics_table = $wpdb->prefix . 'content_auto_topics';
+        $topics_table = $wpdb->prefix . 'yali_ai_writer_topics';
         $topic = $wpdb->get_row($wpdb->prepare("SELECT id, title FROM {$topics_table} WHERE id = %d", $topic_id));
         
         if (!$topic) {
@@ -476,7 +392,7 @@ class ContentAuto_ClusteringAdminPage {
         flush();
 
         // Call the similarity function to find similar titles
-        $similar_titles = content_auto_find_similar_titles($topic_id, 20); // Get top 20 similar titles
+        $similar_titles = yali_ai_writer_find_similar_titles($topic_id, 20); // Get top 20 similar titles
 
         if (empty($similar_titles)) {
             echo __('未找到相似的标题。请确保已执行聚类操作。', 'yali-ai-writer') . '<br>';

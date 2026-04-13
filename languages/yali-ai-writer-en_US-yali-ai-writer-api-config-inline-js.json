@@ -1,0 +1,188 @@
+{
+    "translation-revision-date": "2026-04-13 18:43:09+0800",
+    "generator": "Strict Regex Yali AI Writer Script",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "plural-forms": "nplurals=2; plural=(n != 1);",
+                "lang": "en_US"
+            },
+            "请输入搜索关键词": [
+                "Please enter search keyword"
+            ],
+            "正在搜索...": [
+                "Searching..."
+            ],
+            "找到结果数：": [
+                "Found results:"
+            ],
+            "未找到相关结果。": [
+                "No results found."
+            ],
+            "错误： ": [
+                "Error: "
+            ],
+            "系统错误： ": [
+                "System Error: "
+            ],
+            "正在获取配额信息...": [
+                "Getting quota info..."
+            ],
+            "充足": [
+                "Sufficient"
+            ],
+            "不足": [
+                "Insufficient"
+            ],
+            "已用完": [
+                "Exhausted"
+            ],
+            "次": [
+                "Times"
+            ],
+            "获取配额信息失败: 服务器错误": [
+                "Failed to get quota: Server Error"
+            ],
+            "配置ID无效": [
+                "Invalid configuration ID"
+            ],
+            "测试失败: ": [
+                "Test failed: "
+            ],
+            "连接测试失败: ": [
+                "Connection test failed: "
+            ],
+            "例如: https:\/\/api.openai.com\/v1\/chat\/completions": [
+                "e.g., https:\/\/api.openai.com\/v1\/chat\/completions"
+            ],
+            "例如: https:\/\/generativelanguage.googleapis.com\/v1beta\/models": [
+                "e.g., https:\/\/generativelanguage.googleapis.com\/v1beta\/models"
+            ],
+            "例如: https:\/\/api.anthropic.com\/v1\/messages": [
+                "e.g., https:\/\/api.anthropic.com\/v1\/messages"
+            ],
+            "当前保存的模型": [
+                "Currently saved model"
+            ],
+            "↗️ 请先点击\"同步多模型\"获取可用模型列表": [
+                "↗️ Please click 'Sync Models' to get available models"
+            ],
+            "<strong>模型获取方式：<\/strong>点击\"同步多模型\"按钮从 Pollinations 获取最新可用模型列表。<br>系统会自动过滤语音\/图像\/视频生成模型，仅显示文本生成模型。": [
+                "<strong>Model Source:<\/strong> Click 'Sync Models' to fetch latest available models from Pollinations.<br>System auto-filters voice\/image\/video models, only text generation models shown."
+            ],
+            "Pollinations 现在需要 API Key 才能稳定使用。<br><strong>申请地址：<\/strong><a href=\"https:\/\/enter.pollinations.ai\/\" target=\"_blank\">https:\/\/enter.pollinations.ai\/<\/a><br>使用 API Key 后，不仅连接更稳定，且通过该接口生成的文章内容质量更高。": [
+                "Pollinations now requires an API Key for stable access.<br><strong>Apply:<\/strong> <a href=\"https:\/\/enter.pollinations.ai\/\" target=\"_blank\">https:\/\/enter.pollinations.ai\/<\/a><br>Using API Key ensures stable connection and better article quality."
+            ],
+            "请输入您的 API Key": [
+                "Please enter your API Key"
+            ],
+            "API Key (必填)": [
+                "API Key (Required)"
+            ],
+            "请输入 API Key 以查看账户信息": [
+                "Please enter API Key to view account info."
+            ],
+            "插件官方API服务，通过授权码验证使用。<br><strong>如何申请使用：<\/strong><br>1. 联系插件作者微信：qn006699 获取插件授权码后使用<br>2. 在发布规则中配置授权码<br>3. 即可开始使用官方API服务": [
+                "Plugin's official API service, verified by authorization code.<br><strong>How to apply:<\/strong><br>1. Contact plugin author via WeChat: qn006699 to get an auth code<br>2. Configure the auth code in Publish Rules<br>3. Start using the official API service"
+            ],
+            "正在拉取账户信息...": [
+                "Pulling account info..."
+            ],
+            "Key 预算 (Pollen)": [
+                "Key Budget (Pollen)"
+            ],
+            "花粉余额 (Pollen)": [
+                "Pollen Balance"
+            ],
+            "账户金额 (USD)": [
+                "Account Balance (USD)"
+            ],
+            "账户等级": [
+                "Account Level"
+            ],
+            "累计消耗 (Pollen)": [
+                "Total Spent (Pollen)"
+            ],
+            "累计 Token": [
+                "Total Tokens"
+            ],
+            "今日消耗 (Pollen)": [
+                "Today's Spent (Pollen)"
+            ],
+            "今日 Token": [
+                "Today's Tokens"
+            ],
+            "权限提醒 (Missing Scopes)": [
+                "Permission Alert (Missing Scopes)"
+            ],
+            "当前 API Key 缺失 <b>account:balance<\/b> 或 <b>account:usage<\/b> 权限。如需查看完整账单，请在 Pollinations 仪表板重新生成 Key 并勾选相应权限。": [
+                "Current API Key is missing <b>account:balance<\/b> or <b>account:usage<\/b> permission. To view full billing, please regenerate Key in Pollinations dashboard with required scopes."
+            ],
+            "未能获取账户详细数据，请确认 API Key 是否有 account 相关权限。": [
+                "Could not retrieve account details. Ensure API Key has account scopes."
+            ],
+            "获取失败: ": [
+                "Failed to get: "
+            ],
+            "密钥失效或接口请求频率限制": [
+                "Invalid Key or rate limit exceeded."
+            ],
+            "网络连接异常": [
+                "Network connection error."
+            ],
+            "顶级模型，性能最强": [
+                "Top model, best performance"
+            ],
+            "标准模型，响应快": [
+                "Standard model, fast response"
+            ],
+            "极速模型": [
+                "Super fast model"
+            ],
+            "Claude 3 标准版": [
+                "Claude 3 Standard"
+            ],
+            "Gemini 标准版": [
+                "Gemini Standard"
+            ],
+            "通义千问": [
+                "Qwen Coder"
+            ],
+            "联网搜索推理": [
+                "Web search reasoning"
+            ],
+            "智谱清言": [
+                "Zhipu AI (GLM)"
+            ],
+            "海螺 AI": [
+                "Minimax AI"
+            ],
+            "模型列表同步成功！": [
+                "Model list synchronized successfully!"
+            ],
+            "❌ 获取失败: ": [
+                "❌ Fetch failed: "
+            ],
+            "未知错误": [
+                "Unknown error"
+            ],
+            "网络连接错误，请稍后再试。": [
+                "Network error, please try again later."
+            ],
+            "用于向量嵌入的模型名称，例如: text-embedding-ada-002": [
+                "Model name for embeddings, e.g., text-embedding-ada-002"
+            ],
+            "Jina Embeddings v4 固定为1024维，请使用: jina-embeddings-v4": [
+                "Jina v4 is fixed at 1024 dimensions; use: jina-embeddings-v4"
+            ],
+            "Jina v4 可选填密钥，留空则允许": [
+                "Jina v4 optional key; leave blank if allowed."
+            ],
+            "留空则不修改": [
+                "Leave blank to not modify"
+            ]
+        }
+    }
+}

@@ -6,24 +6,24 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('YALI_GSC_DIR', plugin_dir_path(__FILE__));
-define('YALI_GSC_URL', plugin_dir_url(__FILE__));
+define('YALI_AI_WRITER_GSC_DIR', plugin_dir_path(__FILE__));
+define('YALI_AI_WRITER_GSC_URL', plugin_dir_url(__FILE__));
 
 // Require necessary files
-if (file_exists(YALI_GSC_DIR . 'class-gsc-api-client.php')) {
-    require_once YALI_GSC_DIR . 'class-gsc-api-client.php';
+if (file_exists(YALI_AI_WRITER_GSC_DIR . 'class-gsc-api-client.php')) {
+    require_once YALI_AI_WRITER_GSC_DIR . 'class-gsc-api-client.php';
 }
-if (file_exists(YALI_GSC_DIR . 'class-gsc-admin-page.php')) {
-    require_once YALI_GSC_DIR . 'class-gsc-admin-page.php';
+if (file_exists(YALI_AI_WRITER_GSC_DIR . 'class-gsc-admin-page.php')) {
+    require_once YALI_AI_WRITER_GSC_DIR . 'class-gsc-admin-page.php';
 }
-if (file_exists(YALI_GSC_DIR . 'ajax-handler.php')) {
-    require_once YALI_GSC_DIR . 'ajax-handler.php';
+if (file_exists(YALI_AI_WRITER_GSC_DIR . 'ajax-handler.php')) {
+    require_once YALI_AI_WRITER_GSC_DIR . 'ajax-handler.php';
 }
 
 // Initialize the GSC Admin Page
 add_action('plugins_loaded', function() {
-    if (class_exists('ContentAuto_GSC_Admin_Page')) {
-        new ContentAuto_GSC_Admin_Page();
+    if (class_exists('Yali_AI_Writer_GSC_Admin_Page')) {
+        new Yali_AI_Writer_GSC_Admin_Page();
     }
 });
 
